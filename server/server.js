@@ -14,6 +14,8 @@ const medicineRoutes = require('./routes/medicines');
 const templateRoutes = require('./routes/templates');
 const casePaperRoutes = require('./routes/casePapers');
 const clinicRoutes = require('./routes/clinic');
+const whatsappRoutes = require('./routes/whatsapp');
+const { initBackgroundScheduler } = require('./services/whatsappService');
 
 const app = express();
 
@@ -31,6 +33,11 @@ app.use('/api/medicines', medicineRoutes);
 app.use('/api/templates', templateRoutes);
 app.use('/api/case-papers', casePaperRoutes);
 app.use('/api/clinic', clinicRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
+
+// Start automated background scheduler
+initBackgroundScheduler();
+
 
 // Healthcheck
 app.get('/api/health', (req, res) => {

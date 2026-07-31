@@ -31,18 +31,18 @@ export default function Toast({ type, message, title, onClose }: ToastProps) {
   const cleanMessage = message.replace(/!/g, '.');
 
   return (
-    <div className="fixed top-20 right-8 z-[100] max-w-sm pointer-events-auto">
-      <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700/80 shadow-2xl rounded-xl px-4 py-3 text-white flex items-center justify-between gap-3 animate-in slide-in-from-top-3 fade-in duration-200">
+    <div className="fixed bottom-6 right-6 z-[100] max-w-sm pointer-events-auto">
+      <div className="bg-[#1a1c1a] backdrop-blur-md border border-[#4b463e] shadow-2xl rounded-xl px-4 py-3 text-white flex items-center justify-between gap-3 animate-in slide-in-from-bottom-3 fade-in duration-200">
         <div className="flex items-center gap-3">
-          <div className="p-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 shrink-0">
-            <Icon className="w-4 h-4 text-slate-200" />
+          <div className="p-1.5 rounded-lg bg-white/10 border border-white/15 text-white shrink-0">
+            <Icon className="w-4 h-4 text-emerald-400" />
           </div>
 
           <div className="space-y-0.5">
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-300 font-mono">
+            <h4 className="text-[10px] font-bold uppercase tracking-wider text-[#cdc6ba]">
               {title || defaultTitle}
             </h4>
-            <p className="text-xs text-slate-100 font-medium leading-tight">
+            <p className="text-xs text-white font-medium leading-tight">
               {cleanMessage}
             </p>
           </div>
@@ -51,11 +51,12 @@ export default function Toast({ type, message, title, onClose }: ToastProps) {
         <button
           type="button"
           onClick={onClose}
-          className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors shrink-0 ml-2"
+          className="p-1 text-[#cdc6ba] hover:text-white hover:bg-white/10 rounded-lg transition-colors shrink-0 ml-2"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
     </div>
   );
+
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { UserPlus, ArrowLeft, BookOpen, ListOrdered } from 'lucide-react';
+import { UserPlus, ArrowLeft, BookOpen, ListOrdered, Users } from 'lucide-react';
 import { useClinic } from '../context/ClinicContext';
 import QueueStatistics from './QueueStatistics';
 import QueueList from './QueueList';
@@ -54,63 +54,75 @@ export default function ReceptionistDashboard() {
     : undefined;
 
   return (
-    <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#faf9f6] p-5 rounded-xl border border-[#e4e2e1] shadow-sm">
-        <div>
-          <h2 className="text-xl font-bold font-serif text-[#1a1c1a]">Reception Desk & OPD Register</h2>
-          <p className="text-xs text-[#7c766d]">
-            Check-in patients, manage live queue, and maintain official Daily Patient Register logs.
-          </p>
+    <div className="space-y-5">
+
+      {/* ── Top Header ── */}
+      <div className="bg-[#faf9f6] rounded-2xl border border-[#e4e2e1] shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-[#e4e2e1] bg-[#f8f6f0] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#ecfdf5] border border-[#a7f3d0] flex items-center justify-center">
+              <Users className="w-4.5 h-4.5 text-[#047857]" />
+            </div>
+            <div>
+              <h2 className="text-base font-serif font-bold text-[#1a1c1a]">Reception Desk</h2>
+              <p className="text-[11px] text-[#7c766d] mt-0.5">
+                Check-in patients · Manage live queue · Daily OPD Register
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {view !== 'opd-register' ? (
+              <button
+                onClick={() => setView('opd-register')}
+                className="btn-secondary text-xs"
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>OPD Register</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setView('queue')}
+                className="btn-secondary text-xs"
+              >
+                <ListOrdered className="w-3.5 h-3.5" />
+                <span>Live Queue</span>
+              </button>
+            )}
+
+            {view === 'queue' ? (
+              <button
+                onClick={handleNewPatientClick}
+                className="btn-primary text-xs"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Add Patient to Queue</span>
+              </button>
+            ) : view === 'register' ? (
+              <button
+                onClick={() => { setView('queue'); setSelectedPatientForForm(null); }}
+                className="btn-secondary text-xs"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Back to Queue</span>
+              </button>
+            ) : null}
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {view !== 'opd-register' ? (
-            <button
-              onClick={() => setView('opd-register')}
-              className="px-4 py-2.5 bg-[#f2eee3] text-[#4b463e] border border-[#cdc6ba] hover:bg-[#e8e2d2] rounded-lg font-bold text-xs shadow-sm transition-all flex items-center gap-2"
-            >
-              <BookOpen className="w-4 h-4 text-[#4b463e]" />
-              <span>View Daily OPD Register</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => setView('queue')}
-              className="px-4 py-2.5 bg-[#f2eee3] text-[#4b463e] border border-[#cdc6ba] hover:bg-[#e8e2d2] rounded-lg font-bold text-xs transition-all flex items-center gap-2"
-            >
-              <ListOrdered className="w-4 h-4 text-[#4b463e]" />
-              <span>Back to Live Queue</span>
-            </button>
-          )}
-
-          {view === 'queue' ? (
-            <button
-              onClick={handleNewPatientClick}
-              className="px-5 py-2.5 bg-gradient-to-r from-[#064e3b] to-[#047857] text-white hover:opacity-90 rounded-lg font-bold text-xs shadow-md transition-all flex items-center gap-2"
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>Add Patient to Queue</span>
-            </button>
-          ) : view === 'register' ? (
-            <button
-              onClick={() => { setView('queue'); setSelectedPatientForForm(null); }}
-              className="px-4 py-2 bg-[#f2eee3] text-[#4b463e] border border-[#cdc6ba] hover:bg-[#e8e2d2] rounded-lg font-medium text-xs transition-colors flex items-center gap-1.5"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Queue</span>
-            </button>
-          ) : null}
-        </div>
+        {/* Statistics — only visible in queue/register views */}
+        {view !== 'opd-register' && (
+          <div className="px-6 py-4">
+            <QueueStatistics queue={queue} />
+          </div>
+        )}
       </div>
 
-      {/* Main View Area */}
+      {/* ── Main View Area ── */}
       {view === 'opd-register' ? (
         <DailyPatientRegister />
       ) : (
         <>
-          {/* Queue Statistics KPI Row */}
-          <QueueStatistics queue={queue} />
-
           {view === 'queue' ? (
             <QueueList 
               queue={queue} 
@@ -120,8 +132,8 @@ export default function ReceptionistDashboard() {
               onViewDetails={(item) => setActiveModalQueueItem(item)}
             />
           ) : (
-            <div className="space-y-6">
-              <div className="bg-[#faf9f6] p-5 rounded-xl border border-[#e4e2e1] shadow-sm">
+            <div className="space-y-5">
+              <div className="section-card">
                 <PatientSearch 
                   patients={patients}
                   onSelectPatient={handleSelectPatientFromSearch}

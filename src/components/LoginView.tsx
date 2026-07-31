@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Activity, Lock, Mail, UserCheck, ShieldAlert, ArrowRight } from 'lucide-react';
+import { Lock, Mail, UserCheck, ShieldAlert, ArrowRight } from 'lucide-react';
 import { useClinic } from '../context/ClinicContext';
 
 interface Props {
@@ -50,8 +50,12 @@ export default function LoginView({ onSuccess }: Props) {
         
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="w-14 h-14 rounded-2xl bg-[#1a1c1a] flex items-center justify-center text-[#faf9f6] mx-auto shadow-md">
-            <Activity className="w-7 h-7 text-[#faf9f6]" />
+          <div className="flex justify-center items-center py-1">
+            <img
+              src="/logo-symbol.png"
+              alt="Shinagare Clinic Emblem"
+              className="h-16 w-auto mx-auto object-contain drop-shadow-sm"
+            />
           </div>
           <div>
             <h1 className="text-2xl font-serif font-bold text-[#1a1c1a] tracking-tight">ClinicOS</h1>

@@ -82,42 +82,35 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings }: Pr
       {/* ══════════════════════════════════════════════════════ */}
       {/* SHARED HEADER SECTION (EXACT MATCH TO BOTH TEMPLATES)  */}
       {/* ══════════════════════════════════════════════════════ */}
-      <div className="clinic-print-header" style={{ paddingTop: '2px' }}>
+      <div className="clinic-print-header" style={{ paddingTop: '10mm', marginBottom: '4px' }}>
         {/* Title Row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '6px' }}>
           {clinicSettings.logoUrl ? (
             <img
               src={clinicSettings.logoUrl}
               alt="Clinic Logo"
               style={{
-                height: '65px',
+                height: '54px',
                 width: 'auto',
-                clipPath: 'inset(5% 4% 12% 18%)',
+                objectFit: 'contain',
                 mixBlendMode: 'multiply',
-                filter: 'contrast(140%) brightness(106%) saturate(115%)',
-                marginRight: '-6px',
                 display: 'block',
-                imageRendering: '-webkit-optimize-contrast' as any,
               }}
             />
           ) : (
             <img
-              src="/logo.png"
+              src="/logo-symbol.png"
               alt="Clinic Logo"
               style={{
-                height: '65px',
+                height: '54px',
                 width: 'auto',
-                clipPath: 'inset(5% 4% 12% 18%)',
-                mixBlendMode: 'multiply',
-                filter: 'contrast(140%) brightness(106%) saturate(115%)',
-                marginRight: '-6px',
+                objectFit: 'contain',
                 display: 'block',
-                imageRendering: '-webkit-optimize-contrast' as any,
               }}
             />
           )}
 
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span
               style={{
                 fontSize: '42px',
@@ -125,7 +118,6 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings }: Pr
                 color: '#93231f',
                 fontFamily: "'DV-TTYogesh', 'Shivaji', 'Amita', 'Karma', serif",
                 lineHeight: 1,
-                marginBottom: '-4px',
               }}
             >
               {clinicNameHi || 'शिनगारे'}
@@ -136,6 +128,8 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings }: Pr
                 fontWeight: 700,
                 color: '#442E4A',
                 fontFamily: "'Mukta', 'Poppins', sans-serif",
+                lineHeight: 1,
+                paddingTop: '6px',
               }}
             >
               {clinicNameEn || 'स्किन & कॉस्मेटीक क्लिनिक'}
@@ -377,6 +371,9 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings }: Pr
                 fontWeight: 500,
                 boxSizing: 'border-box',
                 overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
               }}
             >
               {/* Past History */}
@@ -523,34 +520,33 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings }: Pr
                 style={{
                   border: '1.5px solid #111',
                   borderRadius: '50%',
-                  width: '110px',
-                  height: '110px',
+                  width: '135px',
+                  height: '135px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'center',
                   alignItems: 'center',
                   textAlign: 'center',
-                  fontSize: '6.5px',
+                  fontSize: '6.4px',
                   lineHeight: 1.05,
-                  margin: '4px auto 0',
-                  padding: '4px',
+                  margin: '4px auto 2px',
+                  padding: '10px 8px',
                   fontWeight: 600,
                   color: '#111',
                   boxSizing: 'border-box',
                 }}
               >
-                <strong>DRUG VERBAL CONSENT</strong>
-                <div style={{ height: '2px' }} />
+                <strong style={{ fontSize: '7.2px', display: 'block', marginBottom: '1px' }}>DRUG VERBAL CONSENT</strong>
                 Dx & indication explained.<br />
-                Risks incl: Hepatotoxicity, Severe<br />
-                anemia, Hemolysis, Dapsone syndrome,<br />
-                Thrombosis risk, Infection risk.<br />
+                Risks: Hepatotoxicity, Severe<br />
+                anemia, Hemolysis, Dapsone<br />
+                syndrome, Infection risk.<br />
                 Severe cutaneous adverse<br />
-                reactions.(SJS/TEN)<br />
+                reactions (SJS/TEN).<br />
                 Teratogenicity discussed.<br />
-                Monitoring & alternatives<br />
-                explained.<br />
-                Pt verbalized understanding & consented.
+                Monitoring & alternatives.<br />
+                Pt verbalized understanding<br />
+                & consented.
               </div>
             </aside>
 

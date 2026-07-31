@@ -17,12 +17,17 @@
   --color-espresso-900: #1a1c1a;
   --color-earth-700: #4b463e;
   --color-muted-500: #7c766d;
+
+  /* Brand Green */
+  --color-brand-dark: #064e3b;
+  --color-brand-mid: #047857;
+  --color-brand-light: #ecfdf5;
 }
 
 /* ── Global Styles ── */
 body {
   font-family: var(--font-sans);
-  background-color: #faf9f6;
+  background-color: #faf9f7;
   color: #1a1c1a;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -44,6 +49,219 @@ h1, h2, h3, .font-heading {
   border: 1px solid #e4e2e1;
 }
 
+/* ── Section Card — standard content container ── */
+.section-card {
+  background-color: #faf9f6;
+  border: 1px solid #e4e2e1;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px 0 rgba(26, 28, 26, 0.04);
+}
+
+/* ── Form Inputs — on-brand focus ring ── */
+.form-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #cdc6ba;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+  font-size: 0.875rem;
+  color: #1a1c1a;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.form-input:focus {
+  border-color: #047857;
+  box-shadow: 0 0 0 2px rgba(4, 120, 87, 0.15);
+}
+.form-input.error {
+  border-color: #f87171;
+  background-color: #fff5f5;
+}
+
+.form-input-sm {
+  padding: 0.375rem 0.625rem;
+  font-size: 0.75rem;
+}
+
+textarea.form-input {
+  resize: vertical;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #4b463e;
+  margin-bottom: 0.25rem;
+}
+
+.form-label-red {
+  color: #b91c1c;
+}
+
+/* ── Status Badges ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.badge-waiting {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+.badge-consulting {
+  background-color: #fffbeb;
+  color: #92400e;
+  border-color: #fde68a;
+}
+.badge-completed {
+  background-color: #f0fdf4;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+.badge-cancelled {
+  background-color: #f2eee3;
+  color: #6b7280;
+  border-color: #cdc6ba;
+}
+
+/* ── Stat Cards ── */
+.stat-card {
+  background-color: #faf9f6;
+  border: 1px solid #e4e2e1;
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 1px 3px 0 rgba(26, 28, 26, 0.04);
+}
+.stat-card-blue  {}
+.stat-card-amber {}
+.stat-card-green {}
+.stat-card-purple {}
+
+/* ── Pill Toggle Buttons (Templates, Investigation Chips) ── */
+.pill-btn {
+  padding: 0.375rem 0.875rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background-color: #f2eee3;
+  color: #4b463e;
+  border: 1px solid #cdc6ba;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pill-btn:hover {
+  background-color: #e8e2d2;
+  border-color: #b5ae9e;
+}
+.pill-btn-active {
+  background: linear-gradient(135deg, #064e3b, #047857);
+  color: #ecfdf5;
+  border-color: #065f46;
+  box-shadow: 0 2px 6px rgba(6, 78, 59, 0.25);
+}
+
+/* ── Primary CTA Button ── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: linear-gradient(135deg, #064e3b, #047857);
+  color: #ecfdf5;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 0.75rem;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(6, 78, 59, 0.22);
+  transition: all 0.15s;
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #022c22, #064e3b);
+  box-shadow: 0 4px 12px rgba(6, 78, 59, 0.3);
+}
+.btn-primary:active { transform: scale(0.97); }
+
+/* ── Secondary Sand Button ── */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background-color: #f2eee3;
+  color: #4b463e;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 0.75rem;
+  border: 1px solid #cdc6ba;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-secondary:hover {
+  background-color: #e8e2d2;
+  border-color: #b5ae9e;
+}
+
+/* ── Rx Medicine Table Row ── */
+.rx-row {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr 6rem 8rem 6rem 2rem;
+  gap: 0.5rem;
+  align-items: center;
+  background-color: #ffffff;
+  border: 1px solid #e4e2e1;
+  border-radius: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  transition: box-shadow 0.15s;
+}
+.rx-row:hover {
+  box-shadow: 0 2px 8px rgba(26, 28, 26, 0.06);
+  border-color: #cdc6ba;
+}
+
+/* ── Table Improvements ── */
+.clinic-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.clinic-table thead tr {
+  background-color: #f2eee3;
+  border-bottom: 1px solid #e4e2e1;
+}
+.clinic-table thead th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7c766d;
+  white-space: nowrap;
+}
+.clinic-table tbody tr {
+  border-bottom: 1px solid rgba(228, 226, 225, 0.5);
+  transition: background-color 0.1s;
+}
+.clinic-table tbody tr:hover {
+  background-color: rgba(242, 238, 227, 0.4);
+}
+.clinic-table tbody td {
+  padding: 0.875rem 1rem;
+  vertical-align: middle;
+}
+
 /* ── Strict 1-Page A4 Print Media Rules ── */
 @media print {
   * {
@@ -63,20 +281,32 @@ h1, h2, h3, .font-heading {
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
+    background: white !important;
   }
 
   .app-header, nav, button, input, select, textarea, .no-print {
     display: none !important;
   }
 
-  .print-page, .print-page *, .print-template-root, .print-template-root * {
+  /* Reset outer container positioning during print */
+  .fixed.inset-0 {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    display: block !important;
+  }
+
+  .print-page, .print-page * {
     visibility: visible !important;
   }
 
   .print-page {
-    position: absolute;
-    left: 0;
-    top: 0;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
     width: 210mm !important;
     height: 297mm !important;
     max-height: 297mm !important;
@@ -89,6 +319,7 @@ h1, h2, h3, .font-heading {
     background: white !important;
     color: #000 !important;
     overflow: hidden !important;
+    z-index: 999999 !important;
   }
 
   .rx-paper-root {
@@ -103,3 +334,4 @@ h1, h2, h3, .font-heading {
     max-width: 100% !important;
   }
 }
+

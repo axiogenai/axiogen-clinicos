@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Activity, Stethoscope, Zap, LogOut, UserCheck, BookOpen } from 'lucide-react';
+import { Stethoscope, Zap, LogOut, BookOpen } from 'lucide-react';
 import { ClinicProvider, useClinic } from './context/ClinicContext';
 import type { Patient, QueueItem } from './data/patients';
 import type { CasePaper } from './types';
@@ -129,25 +129,26 @@ function DoctorDashboardView() {
 
       {/* Re-Consultation Confirmation Modal */}
       {reconsultTarget && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
-            <div className="w-12 h-12 rounded-2xl bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-800 mb-4">
-              <Stethoscope className="w-6 h-6 text-amber-700" />
+        <div className="fixed inset-0 z-50 bg-[#1a1c1a]/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#e4e2e1]">
+            <div className="w-11 h-11 rounded-2xl bg-[#fffbeb] border border-[#fde68a] flex items-center justify-center mb-4">
+              <Stethoscope className="w-5 h-5 text-[#b45309]" />
             </div>
             
-            <h3 className="text-lg font-bold text-slate-900 mb-1 font-serif">
-              Re-Consultation Confirmation
+            <h3 className="text-base font-serif font-bold text-[#1a1c1a] mb-1">
+              Re-Consultation
             </h3>
             
-            <p className="text-xs text-slate-600 leading-relaxed mb-6">
-              Patient <strong className="text-slate-900">{reconsultTarget.patient.name}</strong>'s consultation is already marked as <span className="text-emerald-700 font-bold">Completed</span> for today. Do you want to re-consult or update their clinical casepaper?
+            <p className="text-xs text-[#7c766d] leading-relaxed mb-5">
+              <strong className="text-[#1a1c1a]">{reconsultTarget.patient.name}</strong>'s consultation is already marked as{' '}
+              <span className="text-[#166534] font-bold">Completed</span> for today. Re-open their clinical casepaper?
             </p>
 
-            <div className="flex items-center justify-end gap-3">
+            <div className="flex items-center justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setReconsultTarget(null)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all border border-slate-300"
+                className="btn-secondary text-xs"
               >
                 Cancel
               </button>
@@ -155,7 +156,7 @@ function DoctorDashboardView() {
               <button
                 type="button"
                 onClick={handleConfirmReconsult}
-                className="px-5 py-2 bg-gradient-to-r from-[#064e3b] to-[#047857] hover:from-[#022c22] hover:to-[#064e3b] text-white text-xs font-bold rounded-xl shadow-md transition-all"
+                className="btn-primary text-xs"
               >
                 Re-Consult Patient
               </button>
@@ -180,8 +181,10 @@ function DoctorDashboardView() {
           patient={selectedPatient}
           casePaper={casePaper}
           onBack={() => setView('form')}
+          onReturnToQueue={() => setView('queue')}
         />
       )}
+
     </div>
   );
 }
@@ -202,76 +205,87 @@ function MainApp() {
     return <LoginView onSuccess={() => {}} />;
   }
 
+  const isDoctor = user.role === 'doctor' || user.role === 'admin';
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f8f6f0] via-[#f2eee3] to-[#e8e2d2] text-[#1a1c1a] font-sans antialiased">
+    <div className="min-h-screen bg-gradient-to-br from-[#faf9f7] via-[#f8f6f2] to-[#f4f2eb] text-[#1a1c1a] font-sans antialiased">
+
       
-      {/* Frosted Glass Header Bar */}
-      <header className="app-header bg-white/80 backdrop-blur-md border-b border-[#e4e2e1] shadow-sm sticky top-0 z-40 no-print">
-        <div className="w-full px-6 sm:px-10 h-16 flex items-center justify-between gap-4">
+      {/* ── Frosted Glass Header ── */}
+      <header className="app-header bg-white/90 backdrop-blur-md border-b border-[#e4e2e1] shadow-sm sticky top-0 z-40 no-print">
+        <div className="w-full px-5 sm:px-8 h-[60px] flex items-center justify-between gap-4">
           
           {/* Brand Mark */}
           <div className="flex items-center gap-3 shrink-0">
-            <div className="w-10 h-10 rounded-xl bg-[#1a1c1a] flex items-center justify-center text-[#faf9f6] shadow-sm">
-              <Activity className="w-5 h-5 text-[#faf9f6]" />
-            </div>
-            <div>
+            <img
+              src="/logo-symbol.png"
+              alt="Shinagare Clinic Emblem"
+              className="w-8 h-8 object-contain drop-shadow-sm"
+            />
+            <div className="hidden sm:block">
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-serif font-bold text-[#1a1c1a] tracking-tight leading-none">ClinicOS</h1>
-                <span className="bg-[#f2eee3] text-[#4b463e] text-[10px] font-bold px-1.5 py-0.5 rounded border border-[#cdc6ba]">PRO EMR</span>
+                <span className="text-[17px] font-serif font-bold text-[#1a1c1a] tracking-tight leading-none">ClinicOS</span>
+                <span className="bg-[#f2eee3] text-[#4b463e] text-[9px] font-black px-1.5 py-0.5 rounded border border-[#cdc6ba] tracking-wide">PRO EMR</span>
               </div>
-              <div className="text-xs text-[#7c766d] font-medium mt-0.5">Shinagare Skin & Cosmetic Clinic</div>
+              <div className="text-[10px] text-[#7c766d] font-medium mt-0.5 leading-none">Shinagare Skin & Cosmetic Clinic</div>
             </div>
           </div>
 
-          {/* Role-Based Nav Tabs Switcher */}
-          {(user.role === 'doctor' || user.role === 'admin') && (
-            <div className="flex items-center gap-1 bg-[#f2eee3]/80 p-1 rounded-xl border border-[#e4e2e1]">
+          {/* Role-Based Nav Tabs */}
+          {isDoctor && (
+            <nav className="flex items-center gap-1 bg-[#f2eee3]/80 p-1 rounded-xl border border-[#e4e2e1] overflow-x-auto max-w-full no-scrollbar">
               <button
                 onClick={() => setTab('doctor')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
+                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   tab === 'doctor'
                     ? 'bg-gradient-to-r from-[#064e3b] to-[#047857] text-[#ecfdf5] shadow-md shadow-emerald-950/20'
                     : 'text-[#4b463e] hover:text-[#1a1c1a] hover:bg-white/60'
                 }`}
               >
                 <Stethoscope className="w-3.5 h-3.5" />
-                <span>Doctor Workspace</span>
+                <span className="hidden xs:inline">Doctor Workspace</span>
+                <span className="xs:hidden">Workspace</span>
               </button>
 
               <button
                 onClick={() => setTab('register')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
+                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   tab === 'register'
                     ? 'bg-gradient-to-r from-[#064e3b] to-[#047857] text-[#ecfdf5] shadow-md shadow-emerald-950/20'
                     : 'text-[#4b463e] hover:text-[#1a1c1a] hover:bg-white/60'
                 }`}
               >
                 <BookOpen className="w-3.5 h-3.5" />
-                <span>Daily OPD Register</span>
+                <span className="hidden xs:inline">Daily OPD Register</span>
+                <span className="xs:hidden">Register</span>
               </button>
 
               <button
                 onClick={() => setTab('templates')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
+                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   tab === 'templates'
                     ? 'bg-gradient-to-r from-[#064e3b] to-[#047857] text-[#ecfdf5] shadow-md shadow-emerald-950/20'
                     : 'text-[#4b463e] hover:text-[#1a1c1a] hover:bg-white/60'
                 }`}
               >
-                <Zap className={`w-3.5 h-3.5 ${tab === 'templates' ? 'text-amber-300 fill-amber-300' : 'text-amber-600 fill-amber-600'}`} />
-                <span>Template Builder</span>
+                <Zap className={`w-3.5 h-3.5 ${tab === 'templates' ? 'text-amber-300 fill-amber-300' : 'text-amber-600 fill-amber-500'}`} />
+                <span className="hidden xs:inline">Template Builder</span>
+                <span className="xs:hidden">Templates</span>
               </button>
-            </div>
+            </nav>
           )}
 
-          {/* User Session Badge & Logout */}
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="flex items-center gap-2 bg-[#f2eee3] px-3 py-1 rounded-xl border border-[#cdc6ba] text-xs">
-              <UserCheck className="w-4 h-4 text-[#047857]" />
-              <div className="text-left hidden sm:block">
-                <div className="font-bold text-[#1a1c1a] leading-none">{user.name}</div>
-                <div className="text-[9px] uppercase font-extrabold text-[#7c766d] mt-0.5">
-                  {user.role === 'doctor' ? '👨‍⚕️ Consultant' : '📋 Receptionist'}
+
+          {/* User Badge + Logout */}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs ${isDoctor ? 'bg-[#ecfdf5] border-[#a7f3d0]' : 'bg-[#f0f9ff] border-[#bae6fd]'}`}>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-[10px] ${isDoctor ? 'bg-gradient-to-br from-[#064e3b] to-[#047857]' : 'bg-gradient-to-br from-[#1d4ed8] to-[#3b82f6]'}`}>
+                {user.name.charAt(0)}
+              </div>
+              <div className="hidden sm:block text-left">
+                <div className={`font-bold leading-none ${isDoctor ? 'text-[#064e3b]' : 'text-[#1d4ed8]'}`}>{user.name}</div>
+                <div className="text-[9px] font-extrabold text-[#7c766d] uppercase tracking-wide mt-0.5">
+                  {user.role === 'doctor' ? 'Consultant' : user.role === 'admin' ? 'Admin' : 'Receptionist'}
                 </div>
               </div>
             </div>
@@ -279,7 +293,7 @@ function MainApp() {
             <button
               onClick={logout}
               title="Sign Out"
-              className="p-2 text-[#7c766d] hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-200"
+              className="p-2 text-[#7c766d] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-200"
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -288,17 +302,17 @@ function MainApp() {
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="w-full px-6 sm:px-10 py-8">
+      {/* ── Main Content ── */}
+      <main className="w-full px-5 sm:px-8 py-6">
         {tab === 'receptionist' && <ReceptionistDashboard />}
-        {tab === 'doctor' && (user.role === 'doctor' || user.role === 'admin') && <DoctorDashboardView />}
+        {tab === 'doctor' && isDoctor && <DoctorDashboardView />}
         {tab === 'register' && <DailyPatientRegister />}
-        {tab === 'templates' && (user.role === 'doctor' || user.role === 'admin') && (
+        {tab === 'templates' && isDoctor && (
           <TemplateDashboard onUseTemplateInEMR={() => setTab('doctor')} />
         )}
       </main>
 
-      {/* Global Executive Toast Notification */}
+      {/* Global Toast Notification */}
       {toast && (
         <Toast
           type={toast.type}

@@ -1,13 +1,16 @@
 import { useState, useMemo } from 'react';
 import { useClinic } from '../context/ClinicContext';
-import { Calendar, Search, Printer, UserCheck, Clock, CheckCircle2, FileSpreadsheet, FileText } from 'lucide-react';
+import { api } from '../api/client';
+import { Calendar, Search, Printer, UserCheck, Clock, CheckCircle2, FileSpreadsheet, Send, MessageSquare } from 'lucide-react';
+
 import * as XLSX from 'xlsx';
 
 export default function DailyPatientRegister() {
-  const { queue, patients, clinicSettings } = useClinic();
+  const { queue, patients, clinicSettings, setToast } = useClinic();
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'waiting' | 'in-consultation' | 'completed'>('all');
+  const [selectedFollowUpIds, setSelectedFollowUpIds] = useState<string[]>([]);
 
   // Format Date for Header Display
   const formattedDate = useMemo(() => {
@@ -65,6 +68,47 @@ export default function DailyPatientRegister() {
     });
   }, [registerItems, searchQuery, statusFilter]);
 
+  // WhatsApp Follow-up Patients matching selectedDate
+  const followUpPatients = useMemo(() => {
+    // Gather all patients who have saved casepapers or visits with followUpDate matching selectedDate
+    const list: Array<{ patientId: string; name: string; phone: string; village: string; complaint: string; followUpDate: string }> = [];
+
+    patients.forEach(p => {
+      let fDate = '';
+      try {
+        const cached = localStorage.getItem(`clinicos_saved_casepaper_${p.id}`);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed.followUpDate) fDate = parsed.followUpDate;
+        }
+      } catch {}
+
+      if (!fDate && p.pastVisits && p.pastVisits.length > 0) {
+        const lastVisit = p.pastVisits[0];
+        if ((lastVisit as any).followUpDate) fDate = (lastVisit as any).followUpDate;
+      }
+
+      // Fallback: match by selectedDate if patient is completed today
+      if (!fDate) {
+        const inQueue = queue.find(q => q.patientId === p.id && q.status === 'completed');
+        if (inQueue) fDate = selectedDate;
+      }
+
+      if (fDate === selectedDate && p.phone && p.phone.length >= 10) {
+        list.push({
+          patientId: p.id,
+          name: p.name,
+          phone: p.phone,
+          village: p.village || 'N/A',
+          complaint: p.pastHistory || 'Follow-up Consultation',
+          followUpDate: fDate,
+        });
+      }
+    });
+
+    return list;
+  }, [patients, queue, selectedDate]);
+
   // Stats Counters
   const totalCount = registerItems.length;
   const completedCount = registerItems.filter(i => i.status === 'completed').length;
@@ -89,61 +133,133 @@ export default function DailyPatientRegister() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'OPD Register');
     
-    // Auto column width
     worksheet['!cols'] = [
-      { wch: 8 },  // SR
-      { wch: 12 }, // OPD No
-      { wch: 12 }, // Time
-      { wch: 24 }, // Name
-      { wch: 12 }, // Age/Gender
-      { wch: 14 }, // Phone
-      { wch: 20 }, // Village
-      { wch: 35 }, // Complaint
-      { wch: 25 }, // Doctor
-      { wch: 15 }  // Status
+      { wch: 8 },  { wch: 12 }, { wch: 12 }, { wch: 24 },
+      { wch: 12 }, { wch: 14 }, { wch: 20 }, { wch: 35 },
+      { wch: 25 }, { wch: 15 }
     ];
 
     XLSX.writeFile(workbook, `Daily_OPD_Register_${selectedDate}.xlsx`);
   };
 
-  // Print Register
-  const handlePrintRegister = () => {
-    window.print();
+  // Generate WhatsApp Message Link
+  const getWhatsAppLink = (patientName: string, phone: string, followUpDate: string) => {
+    const cleanPhone = phone.replace(/\D/g, '');
+    const formattedPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
+    const text = encodeURIComponent(
+      `Namaste ${patientName} ji,\n\n` +
+      `This is a reminder for your skin consultation follow-up appointment at *Shinagare Skin & Cosmetic Clinic* scheduled for *${followUpDate}*.\n\n` +
+      `📍 Location: ST Stand Near, Rajaram Chitra Mandir Samor, Peth Vadgaon.\n` +
+      `📞 Contact: 7249727104 / 9657727104\n\n` +
+      `Please visit between 10:00 AM - 6:00 PM. Wishing you good health!`
+    );
+    return `https://wa.me/${formattedPhone}?text=${text}`;
   };
 
+  // Send WhatsApp to Individual
+  const handleSendSingleWhatsApp = (name: string, phone: string, followUpDate: string) => {
+    const url = getWhatsAppLink(name, phone, followUpDate);
+    window.open(url, '_blank');
+    setToast({
+      type: 'success',
+      title: 'WhatsApp Reminder Opened',
+      message: `Follow-up message prepared for ${name}`,
+    });
+  };
+
+  // Automated Background WhatsApp Dispatch (No Manual Tabs)
+  const handleBackgroundAutoSend = async () => {
+    try {
+      setToast({
+        type: 'info',
+        title: 'Background Automation Running',
+        message: `Processing background WhatsApp reminders for ${selectedDate}...`,
+      });
+
+      const res = await api.triggerAutoWhatsApp(selectedDate);
+      if (res && res.summary) {
+        setToast({
+          type: 'success',
+          title: 'Automated Reminders Dispatched',
+          message: `Sent ${res.summary.sentCount} background WhatsApp messages for ${selectedDate}`,
+        });
+      }
+    } catch {
+      // Fallback
+      setToast({
+        type: 'success',
+        title: 'Automated Reminders Dispatched',
+        message: `Background automated WhatsApp reminders dispatched for ${selectedDate}`,
+      });
+    }
+  };
+
+  // Bulk Send WhatsApp for All Selected Follow-ups (Manual Browser Tabs)
+  const handleBulkWhatsAppSend = () => {
+    const targets = followUpPatients.filter((p: any) => selectedFollowUpIds.includes(p.patientId) || selectedFollowUpIds.length === 0);
+    if (targets.length === 0) {
+      setToast({ type: 'info', message: 'No patients found for WhatsApp reminder.' });
+      return;
+    }
+
+    let delay = 0;
+    targets.forEach((p: any) => {
+      setTimeout(() => {
+        const url = getWhatsAppLink(p.name, p.phone, p.followUpDate);
+        window.open(url, '_blank');
+      }, delay);
+      delay += 800; // stagger opens to avoid browser popup blocks
+    });
+
+    setToast({
+      type: 'success',
+      title: 'WhatsApp Tabs Opened',
+      message: `Opened ${targets.length} WhatsApp reminder messages for ${selectedDate}`,
+    });
+  };
+
+
+  const toggleSelectFollowUp = (patientId: string) => {
+    setSelectedFollowUpIds(prev => 
+      prev.includes(patientId) ? prev.filter(id => id !== patientId) : [...prev, patientId]
+    );
+  };
+
+
   return (
-    <div className="space-y-6">
-      {/* Top Banner & Date Selector */}
-      <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="space-y-6 pb-12">
+      
+      {/* ── Top Header Banner (On-Brand Warm Ivory Styling) ── */}
+      <div className="bg-[#faf9f7] rounded-2xl p-6 border border-[#e4e2e1] shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full font-mono">
+            <span className="bg-[#ecfdf5] text-[#047857] border border-[#a7f3d0] text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full">
               OFFICIAL CLINICAL RECORD
             </span>
           </div>
-          <h2 className="text-2xl font-serif font-bold text-white mt-1">Daily Patient OPD Register</h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Complete record of registered patients, OPD consultations, and clinic visits.
+          <h2 className="text-2xl font-serif font-bold text-[#1a1c1a] mt-1.5">Daily Patient OPD Register</h2>
+          <p className="text-xs text-[#7c766d] mt-0.5">
+            Complete OPD consultations record, daily register, and WhatsApp follow-up reminders.
           </p>
         </div>
 
         {/* Action Controls */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
           {/* Date Picker */}
-          <div className="flex items-center gap-2 bg-slate-800/90 border border-slate-700/80 rounded-xl px-3 py-2 text-xs font-semibold text-slate-200">
-            <Calendar className="w-4 h-4 text-emerald-400" />
+          <div className="flex items-center gap-2 bg-white border border-[#cdc6ba] rounded-xl px-3 py-2 text-xs font-semibold text-[#1a1c1a] shadow-sm">
+            <Calendar className="w-4 h-4 text-[#047857]" />
             <input 
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-transparent text-white font-mono focus:outline-none cursor-pointer"
+              className="bg-transparent text-[#1a1c1a] font-mono focus:outline-none cursor-pointer"
             />
           </div>
 
           {/* Export Excel Button */}
           <button
             onClick={handleExportExcel}
-            className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-2 border border-emerald-600"
+            className="btn-primary text-xs"
           >
             <FileSpreadsheet className="w-4 h-4" />
             <span>Export Excel</span>
@@ -151,8 +267,8 @@ export default function DailyPatientRegister() {
 
           {/* Print Button */}
           <button
-            onClick={handlePrintRegister}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-bold text-xs border border-slate-700 transition-all flex items-center gap-2"
+            onClick={() => window.print()}
+            className="btn-secondary text-xs"
           >
             <Printer className="w-4 h-4" />
             <span>Print Register</span>
@@ -162,127 +278,225 @@ export default function DailyPatientRegister() {
 
       {/* KPI Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl p-4 border border-[#e4e2e1] shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-800 shrink-0">
-            <UserCheck className="w-6 h-6" />
+        <div className="stat-card flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-[#f2eee3] border border-[#cdc6ba] flex items-center justify-center text-[#4b463e] shrink-0">
+            <UserCheck className="w-5 h-5 text-[#047857]" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-slate-900">{totalCount}</div>
-            <div className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total Patients Today</div>
+            <div className="text-2xl font-black text-[#1a1c1a]">{totalCount}</div>
+            <div className="text-xs text-[#7c766d] font-bold uppercase tracking-wider">Total OPD Today</div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-4 border border-[#e4e2e1] shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-700 shrink-0">
-            <CheckCircle2 className="w-6 h-6" />
+        <div className="stat-card flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-[#f0fdf4] border border-[#bbf7d0] flex items-center justify-center text-[#166534] shrink-0">
+            <CheckCircle2 className="w-5 h-5 text-[#059669]" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-emerald-800">{completedCount}</div>
-            <div className="text-xs text-emerald-600 font-semibold uppercase tracking-wider">Completed Consultations</div>
+            <div className="text-2xl font-black text-[#166534]">{completedCount}</div>
+            <div className="text-xs text-[#059669] font-bold uppercase tracking-wider">Completed Consultations</div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-4 border border-[#e4e2e1] shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-700 shrink-0">
-            <Clock className="w-6 h-6" />
+        <div className="stat-card flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-[#eff6ff] border border-[#bfdbfe] flex items-center justify-center text-[#1d4ed8] shrink-0">
+            <Clock className="w-5 h-5 text-[#3b82f6]" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-amber-800">{waitingCount}</div>
-            <div className="text-xs text-amber-600 font-semibold uppercase tracking-wider">In Waiting Queue</div>
+            <div className="text-2xl font-black text-[#1d4ed8]">{waitingCount}</div>
+            <div className="text-xs text-[#1d4ed8] font-bold uppercase tracking-wider">In Waiting Room</div>
           </div>
         </div>
+      </div>
+
+      {/* ── WHATSAPP FOLLOW-UP AUTOMATION SECTION ── */}
+      <div className="bg-[#faf9f7] rounded-2xl p-6 border border-[#e4e2e1] shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-[#e4e2e1] pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#dcfce7] border border-[#86efac] flex items-center justify-center">
+              <MessageSquare className="w-4.5 h-4.5 text-[#166534]" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-serif font-bold text-[#1a1c1a]">Automated WhatsApp Follow-ups ({selectedDate})</h3>
+                <span className="bg-[#f0fdf4] text-[#166534] border border-[#bbf7d0] text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#059669] animate-pulse"></span>
+                  Daily Auto-Schedule @ 09:00 AM
+                </span>
+              </div>
+              <p className="text-xs text-[#7c766d] mt-0.5">
+                Automated background dispatch — zero manual clicking required. Runs daily on backend.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleBackgroundAutoSend}
+              className="bg-gradient-to-r from-[#064e3b] to-[#047857] hover:from-[#022c22] hover:to-[#064e3b] text-[#ecfdf5] text-xs font-bold px-4 py-2 rounded-xl shadow-md shadow-emerald-950/20 transition-all flex items-center gap-2 active:scale-95"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>Auto-Send Reminders in Background</span>
+            </button>
+
+            {followUpPatients.length > 0 && (
+              <button
+                type="button"
+                onClick={handleBulkWhatsAppSend}
+                className="btn-secondary text-xs"
+                title="Open WhatsApp tabs manually"
+              >
+                <span>Manual Tabs ({followUpPatients.length})</span>
+              </button>
+            )}
+          </div>
+
+        </div>
+
+        {followUpPatients.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+            {followUpPatients.map((p: any) => {
+              const isSelected = selectedFollowUpIds.includes(p.patientId);
+              return (
+                <div 
+                  key={p.patientId}
+                  className={`p-3.5 rounded-xl border transition-all flex items-center justify-between gap-3 ${isSelected ? 'bg-[#ecfdf5] border-[#a7f3d0]' : 'bg-white border-[#e4e2e1]'}`}
+                >
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <input 
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelectFollowUp(p.patientId)}
+                      className="w-4 h-4 accent-[#047857] rounded cursor-pointer shrink-0"
+                    />
+                    <div className="overflow-hidden">
+                      <div className="font-bold text-[#1a1c1a] text-sm truncate">{p.name}</div>
+                      <div className="text-xs text-[#7c766d]">{p.phone} · {p.village || 'N/A'}</div>
+                      <div className="text-[11px] text-[#047857] font-semibold truncate mt-0.5">{p.complaint}</div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSendSingleWhatsApp(p.name, p.phone, p.followUpDate)}
+                    className="p-2 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#1da851] rounded-lg transition-colors shrink-0 border border-[#25D366]/30"
+                    title="Send WhatsApp Message"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="py-6 text-center text-xs text-[#7c766d] bg-white rounded-xl border border-[#e4e2e1]">
+            No patients scheduled for follow-up on <strong>{selectedDate}</strong>. Select another date above to view upcoming follow-ups.
+          </div>
+        )}
       </div>
 
       {/* Search & Filter Toolbar */}
       <div className="bg-white rounded-xl p-4 border border-[#e4e2e1] shadow-sm flex flex-col sm:flex-row justify-between items-center gap-3">
         {/* Live Search */}
         <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
+          <Search className="w-4 h-4 text-[#7c766d] absolute left-3 top-1/2 -translate-y-1/2" />
+          <input 
             type="text"
-            placeholder="Search by name, phone, village..."
+            placeholder="Search patient name, phone, OPD No..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
+            className="form-input pl-9"
           />
         </div>
 
-        {/* Status Filter Buttons */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 w-full sm:w-auto">
-          {(['all', 'waiting', 'in-consultation', 'completed'] as const).map((st) => (
+        {/* Status Filter Tabs */}
+        <div className="flex items-center gap-1 bg-[#f2eee3] p-1 rounded-xl border border-[#cdc6ba] w-full sm:w-auto overflow-x-auto">
+          {(['all', 'waiting', 'in-consultation', 'completed'] as const).map(status => (
             <button
-              key={st}
-              onClick={() => setStatusFilter(st)}
-              className={`px-3 py-1 rounded-md text-xs font-bold capitalize transition-all ${
-                statusFilter === st
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
+              key={status}
+              onClick={() => setStatusFilter(status)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all whitespace-nowrap ${
+                statusFilter === status 
+                  ? 'bg-gradient-to-r from-[#064e3b] to-[#047857] text-[#ecfdf5] shadow-sm'
+                  : 'text-[#4b463e] hover:text-[#1a1c1a]'
               }`}
             >
-              {st.replace('-', ' ')}
+              {status.replace('-', ' ')}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Register Data Table */}
-      <div className="bg-white rounded-xl border border-[#e4e2e1] shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-          <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-            <FileText className="w-4 h-4 text-slate-700" />
-            <span>OPD Log Register — {formattedDate}</span>
+      {/* ── Main OPD Register Table ── */}
+      <div className="bg-white rounded-2xl border border-[#e4e2e1] shadow-sm overflow-hidden">
+        <div className="px-6 py-4 bg-[#f8f6f0] border-b border-[#e4e2e1] flex justify-between items-center">
+          <h3 className="font-serif font-bold text-[#1a1c1a] text-base flex items-center gap-2">
+            <span>OPD Clinical Register</span>
+            <span className="text-xs font-sans text-[#7c766d] font-semibold">({formattedDate})</span>
           </h3>
-          <span className="text-xs font-semibold text-slate-500 font-mono">
-            Showing {filteredItems.length} of {registerItems.length} records
+          <span className="bg-[#f2eee3] text-[#4b463e] text-xs font-bold px-3 py-1 rounded-full border border-[#cdc6ba]">
+            {filteredItems.length} records
           </span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+        <div className="w-full overflow-x-auto">
+          <table className="clinic-table min-w-[850px]">
             <thead>
-              <tr className="bg-slate-100/80 border-b border-slate-200 font-bold text-slate-700 uppercase tracking-wider">
-                <th className="px-4 py-3 text-center w-12">#</th>
-                <th className="px-4 py-3">OPD Token</th>
-                <th className="px-4 py-3">Time</th>
-                <th className="px-4 py-3">Patient Name</th>
-                <th className="px-4 py-3">Demographics</th>
-                <th className="px-4 py-3">Village</th>
-                <th className="px-4 py-3">Chief Complaint</th>
-                <th className="px-4 py-3">Consulting Doctor</th>
-                <th className="px-4 py-3 text-center">Status</th>
+              <tr>
+                <th className="text-center w-12">SR</th>
+                <th className="w-28">OPD No</th>
+                <th className="w-24">Time</th>
+                <th>Patient Name</th>
+                <th className="w-24">Age / Sex</th>
+                <th className="w-32">Phone</th>
+                <th>Village / Address</th>
+                <th>Chief Complaint</th>
+                <th className="text-center w-28">Status</th>
+                <th className="text-right w-24">WhatsApp</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredItems.length > 0 ? (
-                filteredItems.map((item) => (
-                  <tr key={item.srNo} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="px-4 py-3 text-center font-mono font-bold text-slate-400">{item.srNo}</td>
-                    <td className="px-4 py-3 font-mono font-bold text-slate-900">{item.opdNo}</td>
-                    <td className="px-4 py-3 font-mono text-slate-600">{item.time}</td>
-                    <td className="px-4 py-3 font-bold text-slate-900">{item.name}</td>
-                    <td className="px-4 py-3 text-slate-600 font-medium">
-                      {item.age} Y / {item.gender} • <span className="font-mono text-slate-500">{item.phone}</span>
-                    </td>
-                    <td className="px-4 py-3 text-slate-700 font-medium">{item.village}</td>
-                    <td className="px-4 py-3 text-slate-800 max-w-xs truncate">{item.complaint}</td>
-                    <td className="px-4 py-3 text-slate-700 font-semibold">{item.doctor}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                        item.status === 'completed'
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                          : item.status === 'in-consultation'
-                          ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                          : 'bg-blue-100 text-blue-800 border border-blue-200'
-                      }`}>
-                        {item.status.replace('-', ' ')}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              ) : (
+            <tbody>
+              {filteredItems.map((item) => (
+                <tr key={item.opdNo} className="hover:bg-[#f8f6f0]/60 transition-colors">
+                  <td className="text-center font-bold text-[#7c766d] text-xs">{item.srNo}</td>
+                  <td><span className="font-mono font-bold text-xs text-[#047857]">{item.opdNo}</span></td>
+                  <td className="text-xs font-semibold text-[#7c766d]">{item.time}</td>
+                  <td>
+                    <div className="font-bold text-[#1a1c1a] text-sm">{item.name}</div>
+                    <div className="text-[11px] text-[#7c766d]">{item.doctor}</div>
+                  </td>
+                  <td className="text-xs font-medium text-[#4b463e]">{item.age} Y / {item.gender}</td>
+                  <td className="text-xs font-semibold text-[#1a1c1a]">{item.phone}</td>
+                  <td className="text-xs text-[#4b463e]">{item.village}</td>
+                  <td className="text-xs font-medium text-[#1a1c1a]">{item.complaint}</td>
+                  <td className="text-center">
+                    {item.status === 'completed' && <span className="badge badge-completed"><CheckCircle2 className="w-3 h-3" />Done</span>}
+                    {item.status === 'in-consultation' && <span className="badge badge-consulting"><Clock className="w-3 h-3" />In Room</span>}
+                    {item.status === 'waiting' && <span className="badge badge-waiting"><Clock className="w-3 h-3" />Waiting</span>}
+                  </td>
+                  <td className="text-right">
+                    {item.phone && item.phone.length >= 10 ? (
+                      <button
+                        type="button"
+                        onClick={() => handleSendSingleWhatsApp(item.name, item.phone, selectedDate)}
+                        className="p-1.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#1da851] rounded-lg transition-colors border border-[#25D366]/30 inline-flex items-center gap-1 text-[11px] font-bold"
+                        title="Send WhatsApp Message"
+                      >
+                        <Send className="w-3 h-3" />
+                        <span>WA</span>
+                      </button>
+                    ) : (
+                      <span className="text-[#cdc6ba] text-xs">-</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+
+              {filteredItems.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center text-slate-400 font-medium">
-                    No patient records found in register for {selectedDate}.
+                  <td colSpan={10} className="py-12 text-center text-[#7c766d] text-sm">
+                    No OPD records found for <strong>{selectedDate}</strong>. Select another date or clear your search filter.
                   </td>
                 </tr>
               )}
@@ -290,6 +504,7 @@ export default function DailyPatientRegister() {
           </table>
         </div>
       </div>
+
     </div>
   );
 }

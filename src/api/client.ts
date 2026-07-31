@@ -65,4 +65,10 @@ export const api = {
   // Clinic Settings
   getClinicSettings: () => apiRequest<any>('/clinic/settings'),
   updateClinicSettings: (settings: any) => apiRequest<any>('/clinic/settings', { method: 'PUT', body: JSON.stringify(settings) }),
+
+  // WhatsApp Background Automation
+  getWhatsAppStatus: () => apiRequest<any>('/whatsapp/status'),
+  triggerAutoWhatsApp: (date?: string) => apiRequest<any>('/whatsapp/trigger-auto-send', { method: 'POST', body: JSON.stringify({ date }) }),
+  updateWhatsAppSettings: (autoScheduleEnabled: boolean) => apiRequest<any>('/whatsapp/settings', { method: 'POST', body: JSON.stringify({ autoScheduleEnabled }) }),
 };
+
