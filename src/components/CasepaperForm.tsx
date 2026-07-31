@@ -419,12 +419,13 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
             {/* Medicine Search */}
             <div className="relative mb-4">
               <div className="relative">
-                <Search className="w-4 h-4 text-[#7c766d] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Search className="w-4 h-4 text-[#7c766d] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
                 <input 
                   ref={searchInputRef}
                   type="text" 
                   placeholder={`Search medicines by name, brand, strength...`}
-                  className="form-input pl-9"
+                  className="form-input"
+                  style={{ paddingLeft: '2.5rem' }}
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);

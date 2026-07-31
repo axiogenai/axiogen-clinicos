@@ -213,76 +213,92 @@ function MainApp() {
       
       {/* ── Frosted Glass Header ── */}
       <header className="app-header bg-white/90 backdrop-blur-md border-b border-[#e4e2e1] shadow-sm sticky top-0 z-40 no-print">
-        <div className="w-full px-5 sm:px-8 h-[60px] flex items-center justify-between gap-4">
+        <div className="w-full px-4 sm:px-8 min-h-[60px] py-2 sm:py-0 flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-4">
           
-          {/* Brand Mark */}
-          <div className="flex items-center gap-3 shrink-0">
-            <img
-              src="/logo-symbol.png"
-              alt="Shinagare Clinic Emblem"
-              className="w-8 h-8 object-contain drop-shadow-sm"
-            />
-            <div className="hidden sm:block">
-              <div className="flex items-center gap-2">
-                <span className="text-[17px] font-serif font-bold text-[#1a1c1a] tracking-tight leading-none">ClinicOS</span>
-                <span className="bg-[#f2eee3] text-[#4b463e] text-[9px] font-black px-1.5 py-0.5 rounded border border-[#cdc6ba] tracking-wide">PRO EMR</span>
+          <div className="w-full sm:w-auto flex items-center justify-between gap-3">
+            {/* Brand Mark */}
+            <div className="flex items-center gap-2.5 shrink-0">
+              <img
+                src="/logo-symbol.png"
+                alt="Shinagare Clinic Emblem"
+                className="w-8 h-8 object-contain drop-shadow-sm"
+              />
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-base sm:text-[17px] font-serif font-bold text-[#1a1c1a] tracking-tight leading-none">ClinicOS</span>
+                  <span className="bg-[#f2eee3] text-[#4b463e] text-[9px] font-black px-1.5 py-0.5 rounded border border-[#cdc6ba] tracking-wide">PRO EMR</span>
+                </div>
+                <div className="text-[10px] text-[#7c766d] font-medium mt-0.5 leading-none">Shinagare Skin & Cosmetic Clinic</div>
               </div>
-              <div className="text-[10px] text-[#7c766d] font-medium mt-0.5 leading-none">Shinagare Skin & Cosmetic Clinic</div>
+            </div>
+
+            {/* Mobile User Badge + Logout */}
+            <div className="flex sm:hidden items-center gap-2 shrink-0">
+              <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs ${isDoctor ? 'bg-[#ecfdf5] border-[#a7f3d0]' : 'bg-[#f0f9ff] border-[#bae6fd]'}`}>
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-[9px] ${isDoctor ? 'bg-gradient-to-br from-[#064e3b] to-[#047857]' : 'bg-gradient-to-br from-[#1d4ed8] to-[#3b82f6]'}`}>
+                  {user.name.charAt(0)}
+                </div>
+                <span className={`font-bold text-[11px] ${isDoctor ? 'text-[#064e3b]' : 'text-[#1d4ed8]'}`}>{user.name.split(' ')[0]}</span>
+              </div>
+
+              <button
+                onClick={logout}
+                title="Sign Out"
+                className="p-1.5 text-[#7c766d] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-200"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
           {/* Role-Based Nav Tabs */}
           {isDoctor && (
-            <nav className="flex items-center gap-1 bg-[#f2eee3]/80 p-1 rounded-xl border border-[#e4e2e1] overflow-x-auto max-w-full no-scrollbar">
+            <nav className="w-full sm:w-auto flex items-center justify-center gap-1 bg-[#f2eee3]/80 p-1 rounded-xl border border-[#e4e2e1] no-scrollbar">
               <button
                 onClick={() => setTab('doctor')}
-                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 flex-1 sm:flex-initial whitespace-nowrap ${
                   tab === 'doctor'
                     ? 'bg-gradient-to-r from-[#064e3b] to-[#047857] text-[#ecfdf5] shadow-md shadow-emerald-950/20'
                     : 'text-[#4b463e] hover:text-[#1a1c1a] hover:bg-white/60'
                 }`}
               >
                 <Stethoscope className="w-3.5 h-3.5" />
-                <span className="hidden xs:inline">Doctor Workspace</span>
-                <span className="xs:hidden">Workspace</span>
+                <span>Workspace</span>
               </button>
 
               <button
                 onClick={() => setTab('register')}
-                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 flex-1 sm:flex-initial whitespace-nowrap ${
                   tab === 'register'
                     ? 'bg-gradient-to-r from-[#064e3b] to-[#047857] text-[#ecfdf5] shadow-md shadow-emerald-950/20'
                     : 'text-[#4b463e] hover:text-[#1a1c1a] hover:bg-white/60'
                 }`}
               >
                 <BookOpen className="w-3.5 h-3.5" />
-                <span className="hidden xs:inline">Daily OPD Register</span>
-                <span className="xs:hidden">Register</span>
+                <span>Register</span>
               </button>
 
               <button
                 onClick={() => setTab('templates')}
-                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 flex-1 sm:flex-initial whitespace-nowrap ${
                   tab === 'templates'
                     ? 'bg-gradient-to-r from-[#064e3b] to-[#047857] text-[#ecfdf5] shadow-md shadow-emerald-950/20'
                     : 'text-[#4b463e] hover:text-[#1a1c1a] hover:bg-white/60'
                 }`}
               >
                 <Zap className={`w-3.5 h-3.5 ${tab === 'templates' ? 'text-amber-300 fill-amber-300' : 'text-amber-600 fill-amber-500'}`} />
-                <span className="hidden xs:inline">Template Builder</span>
-                <span className="xs:hidden">Templates</span>
+                <span>Templates</span>
               </button>
             </nav>
           )}
 
-
-          {/* User Badge + Logout */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Desktop User Badge + Logout */}
+          <div className="hidden sm:flex items-center gap-2 shrink-0">
             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs ${isDoctor ? 'bg-[#ecfdf5] border-[#a7f3d0]' : 'bg-[#f0f9ff] border-[#bae6fd]'}`}>
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-[10px] ${isDoctor ? 'bg-gradient-to-br from-[#064e3b] to-[#047857]' : 'bg-gradient-to-br from-[#1d4ed8] to-[#3b82f6]'}`}>
                 {user.name.charAt(0)}
               </div>
-              <div className="hidden sm:block text-left">
+              <div className="text-left">
                 <div className={`font-bold leading-none ${isDoctor ? 'text-[#064e3b]' : 'text-[#1d4ed8]'}`}>{user.name}</div>
                 <div className="text-[9px] font-extrabold text-[#7c766d] uppercase tracking-wide mt-0.5">
                   {user.role === 'doctor' ? 'Consultant' : user.role === 'admin' ? 'Admin' : 'Receptionist'}

@@ -56,21 +56,21 @@ export default function QueueStatistics({ queue }: Props) {
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
       {stats.map((stat) => {
         const Icon = stat.icon;
         return (
-          <div key={stat.label} className={`stat-card ${stat.accent}`}>
-            <div className="flex items-start justify-between mb-2">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[#7c766d]">{stat.label}</p>
-              <div className={`p-1.5 rounded-lg ${stat.valueBg}`}>
-                <Icon className={`w-3.5 h-3.5 ${stat.iconColor}`} />
+          <div key={stat.label} className={`stat-card ${stat.accent} p-3 sm:p-4 overflow-hidden`}>
+            <div className="flex items-start justify-between gap-1 mb-1.5 min-w-0">
+              <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#7c766d] truncate">{stat.label}</p>
+              <div className={`p-1 sm:p-1.5 rounded-lg ${stat.valueBg} shrink-0`}>
+                <Icon className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${stat.iconColor}`} />
               </div>
             </div>
-            <p className={`text-3xl font-black tracking-tight ${stat.valueColor} leading-none mb-1.5`}>
+            <p className={`text-2xl sm:text-3xl font-black tracking-tight ${stat.valueColor} leading-none mb-1`}>
               {stat.value}
             </p>
-            <p className="text-[11px] text-[#7c766d] font-medium">{stat.subLabel}</p>
+            <p className="text-[10px] sm:text-[11px] text-[#7c766d] font-medium truncate">{stat.subLabel}</p>
             {/* Progress bar */}
             {stat.label === 'Completed' && total > 0 && (
               <div className="mt-2 h-1 bg-[#e8e2d2] rounded-full overflow-hidden">

@@ -81,7 +81,115 @@ export default function QueueList({
       </div>
 
       {/* Fixed Table with Pixel-Perfect Column Lock */}
-      <div className="w-full overflow-x-auto">
+      {/* Mobile Stacked Card View (No Horizontal Scrollbar) */}
+      <div className="block md:hidden divide-y divide-[#e4e2e1]">
+        {sortedQueue.map((item, index) => {
+          const patient = getPatient(item.patientId);
+          const name = item.name || patient?.name || 'Unknown';
+          const age = item.age || patient?.age;
+          const gender = item.gender || patient?.gender;
+          const phone = item.phone || patient?.phone || 'N/A';
+          const village = item.village || patient?.village || 'N/A';
+
+          const isWaiting = item.status === 'waiting';
+          const isConsulting = item.status === 'in-consultation';
+
+          return (
+            <div key={item.queueId} className="p-4 space-y-3 bg-[#faf9f6]">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="w-6 h-6 rounded-full bg-[#f2eee3] border border-[#cdc6ba] text-[#7c766d] font-mono text-[10px] font-bold inline-flex items-center justify-center shrink-0">
+                    {index + 1}
+                  </span>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#f2eee3] to-[#e8e2d2] border border-[#cdc6ba] flex items-center justify-center shrink-0">
+                    <span className="text-[11px] font-extrabold text-[#4b463e]">{name.charAt(0)}</span>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-bold text-[#1a1c1a] text-sm truncate">{name}</div>
+                    {age && <div className="text-[11px] text-[#7c766d]">{age}y · {gender === 'M' ? 'Male' : 'Female'}</div>}
+                  </div>
+                </div>
+                <div className="shrink-0">{getStatusBadge(item.status)}</div>
+              </div>
+
+              <div className="bg-[#f8f6f0] p-2.5 rounded-xl border border-[#e4e2e1] text-xs text-[#4b463e] space-y-1.5">
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <div className="flex items-center gap-1 truncate">
+                    <Phone className="w-3 h-3 text-[#047857] shrink-0" />
+                    <span className="truncate">{phone}</span>
+                  </div>
+                  <div className="flex items-center gap-1 truncate">
+                    <MapPin className="w-3 h-3 text-[#7c766d] shrink-0" />
+                    <span className="truncate">{village}</span>
+                  </div>
+                </div>
+                <div>
+                  <span className="font-semibold text-[#1a1c1a]">Complaint: </span>
+                  <span>{item.complaint}</span>
+                </div>
+                {item.notes && <div className="text-[11px] italic text-[#7c766d]">{item.notes}</div>}
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-xs text-[#7c766d] font-medium">{item.timeAdded}</span>
+                <div className="flex items-center gap-1.5">
+                  {isWaiting && (
+                    <button
+                      type="button"
+                      onClick={() => onStatusChange(item.queueId, 'in-consultation')}
+                      className="bg-gradient-to-r from-[#064e3b] to-[#047857] text-[#ecfdf5] text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1"
+                    >
+                      <span>Send In</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  )}
+                  {isConsulting && (
+                    <button
+                      type="button"
+                      onClick={() => onStatusChange(item.queueId, 'completed')}
+                      className="bg-[#f0fdf4] text-[#166534] border border-[#bbf7d0] text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1"
+                    >
+                      <Check className="w-3 h-3" />
+                      <span>Done</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => onViewDetails(item)}
+                    className="bg-[#f8f6f0] text-[#4b463e] text-xs font-bold px-2.5 py-1.5 rounded-xl border border-[#e4e2e1]"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onRemove(item.queueId)}
+                    className="bg-[#fff1f2] text-[#e11d48] p-1.5 rounded-xl border border-[#fecdd3]"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {queue.length === 0 && (
+          <div className="px-6 py-12 text-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#f2eee3] border border-[#e4e2e1] flex items-center justify-center">
+                <Clock className="w-6 h-6 text-[#cdc6ba]" />
+              </div>
+              <div>
+                <p className="text-[#4b463e] font-semibold text-sm">No patients in today's queue yet</p>
+                <p className="text-[#7c766d] text-xs mt-1">Click "+ Add Patient to Queue" to get started</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block w-full overflow-x-auto">
         <table className="clinic-table min-w-[900px]">
           <colgroup>
             <col style={{ width: '44px' }} />

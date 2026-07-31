@@ -33,6 +33,15 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Hide scrollbars for clean mobile appearance */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 h1, h2, h3, .font-heading {
   font-family: var(--font-serif);
 }
@@ -262,7 +271,7 @@ textarea.form-input {
   vertical-align: middle;
 }
 
-/* ── Strict 1-Page A4 Print Media Rules ── */
+/* ── Print Media Rules ── */
 @media print {
   * {
     -webkit-print-color-adjust: exact !important;
@@ -271,10 +280,15 @@ textarea.form-input {
 
   @page {
     size: A4 portrait;
-    margin: 0mm !important;
+    margin: 5mm !important;
   }
 
-  html, body {
+  .app-header, nav, button, input, select, textarea, .no-print {
+    display: none !important;
+  }
+
+  /* When printing Prescription (.print-page exists) */
+  body:has(.print-page) {
     width: 210mm !important;
     height: 297mm !important;
     max-height: 297mm !important;
@@ -284,12 +298,8 @@ textarea.form-input {
     background: white !important;
   }
 
-  .app-header, nav, button, input, select, textarea, .no-print {
-    display: none !important;
-  }
-
-  /* Reset outer container positioning during print */
-  .fixed.inset-0 {
+  /* Outer container reset for prescription */
+  .fixed.inset-0:has(.print-page) {
     position: static !important;
     background: transparent !important;
     padding: 0 !important;
@@ -329,9 +339,12 @@ textarea.form-input {
     overflow: hidden !important;
   }
 
-  .print-template-root img {
+  /* OPD Register Print Styles */
+  .opd-register-print {
     display: block !important;
-    max-width: 100% !important;
+    width: 100% !important;
+    background: white !important;
+    color: black !important;
   }
 }
 

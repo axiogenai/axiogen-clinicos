@@ -38,8 +38,8 @@ export const api = {
   deletePatient: (id: string) => apiRequest<any>(`/patients/${id}`, { method: 'DELETE' }),
 
   // Queue
-  getQueue: () => apiRequest<any[]>('/queue'),
-  getQueueStats: () => apiRequest<any>('/queue/stats'),
+  getQueue: (date?: string) => apiRequest<any[]>(`/queue${date ? `?date=${date}` : ''}`),
+  getQueueStats: (date?: string) => apiRequest<any>(`/queue/stats${date ? `?date=${date}` : ''}`),
   addToQueue: (queueItem: any) => apiRequest<any>('/queue', { method: 'POST', body: JSON.stringify(queueItem) }),
   updateQueueStatus: (queueId: string, status: string) => apiRequest<any>(`/queue/${queueId}`, { method: 'PUT', body: JSON.stringify({ status }) }),
   removeFromQueue: (queueId: string) => apiRequest<any>(`/queue/${queueId}`, { method: 'DELETE' }),
