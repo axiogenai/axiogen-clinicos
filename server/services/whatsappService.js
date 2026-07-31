@@ -10,7 +10,7 @@ const sentLog = new Set();
 /**
  * Formats WhatsApp text message for a patient follow-up reminder
  */
-function buildReminderMessage(patientName, followUpDate, doctorName = 'Dr. Priyanka Shinagare') {
+function buildReminderMessage(patientName, followUpDate, doctorName = 'Dr. Pramod Shinagare') {
   return (
     `Namaste ${patientName} ji,\n\n` +
     `This is an automated reminder for your skin consultation follow-up appointment at *Shinagare Skin & Cosmetic Clinic* (${doctorName}) scheduled for *${followUpDate}*.\n\n` +
@@ -191,7 +191,7 @@ async function autoBackupDailyQueue(targetDate = null) {
       'Contact Phone': item.phone || '',
       'Address': item.village || '',
       'Chief Complaint': item.complaint || '',
-      'Consulting Doctor': 'Dr. Priyanka Shinagare',
+      'Consulting Doctor': 'Dr. Pramod Shinagare',
       'Status': (item.status || '').toUpperCase()
     }));
 
