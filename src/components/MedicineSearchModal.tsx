@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { X, Search, ArrowRight, Plus } from 'lucide-react';
 import type { Medicine } from '../data/medicines';
 import type { TemplateMedicine } from '../data/templates';
@@ -27,13 +27,30 @@ export default function MedicineSearchModal({ medicines, onAdd, onClose }: Medic
     if (searchInputRef.current) searchInputRef.current.focus();
   }, []);
 
-  const filtered = search.trim() === ''
-    ? []
-    : medicines.filter((m) =>
-        m.name.toLowerCase().includes(search.toLowerCase()) ||
-        m.strength.toLowerCase().includes(search.toLowerCase()) ||
-        m.form.toLowerCase().includes(search.toLowerCase())
-      );
+  const filtered = useMemo(() => {
+    if (search.trim() === '') return [];
+    const lowerQuery = search.toLowerCase().trim();
+    
+    const matches = medicines.filter((m) =>
+      (m.name || '').toLowerCase().includes(lowerQuery) ||
+      (m.strength || '').toLowerCase().includes(lowerQuery)
+    );
+
+    // Sort matching results: startsWith prioritizes name
+    matches.sort((a, b) => {
+      const aName = (a.name || '').toLowerCase();
+      const bName = (b.name || '').toLowerCase();
+
+      const aNameStarts = aName.startsWith(lowerQuery);
+      const bNameStarts = bName.startsWith(lowerQuery);
+      if (aNameStarts && !bNameStarts) return -1;
+      if (!aNameStarts && bNameStarts) return 1;
+
+      return aName.localeCompare(bName);
+    });
+
+    return matches;
+  }, [search, medicines]);
 
   const handleSelectMed = (med: Medicine) => {
     setSelectedMed(med);

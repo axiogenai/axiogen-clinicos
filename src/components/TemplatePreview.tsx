@@ -1,5 +1,6 @@
 import { Star, FlaskConical, ArrowLeft, ArrowRight } from 'lucide-react';
 import type { CaseTemplate, TemplateMedicine } from '../data/templates';
+import { toMarathiFrequency, toMarathiDuration } from './PrintTemplate';
 
 interface TemplatePreviewProps {
   template: CaseTemplate;
@@ -67,8 +68,8 @@ export default function TemplatePreview({ template, onBack, onUseInEMR }: Templa
                     <td className="p-3 text-center font-mono text-gray-400">{idx + 1}</td>
                     <td className="p-3 font-bold text-gray-900">{med.medicineName || med.medicineId}</td>
                     <td className="p-3 font-medium text-indigo-700">{med.dosage}</td>
-                    <td className="p-3 font-medium text-gray-800">{med.frequency}</td>
-                    <td className="p-3 font-medium text-gray-800">{med.duration}</td>
+                    <td className="p-3 font-medium text-gray-800">{toMarathiFrequency(med.frequency)}</td>
+                    <td className="p-3 font-medium text-gray-800">{toMarathiDuration(med.duration)}</td>
                   </tr>
                 ))}
               </tbody>

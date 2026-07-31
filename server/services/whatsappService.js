@@ -1,5 +1,8 @@
-const { CasePaper, Patient } = require('../models');
+const { CasePaper, Patient, Queue } = require('../models');
 const { Op } = require('sequelize');
+const XLSX = require('xlsx');
+const fs = require('fs');
+const path = require('path');
 
 // Sent message log store to prevent duplicate reminders
 const sentLog = new Set();
@@ -164,7 +167,64 @@ async function dispatchWhatsAppMessage(phone, messageText) {
 
 
 /**
- * Start Background Cron Scheduler (Runs every morning at 09:00 AM)
+ * Daily OPD Register Auto-Backup to server local folder
+ */
+async function autoBackupDailyQueue(targetDate = null) {
+  const dateStr = targetDate || new Date().toISOString().split('T')[0];
+  try {
+    const queueItems = await Queue.findAll({
+      where: { date: dateStr },
+      order: [['created_at', 'ASC']]
+    });
+
+    if (queueItems.length === 0) {
+      console.log(`[AUTO BACKUP] No OPD queue records found for ${dateStr}. Skipping backup.`);
+      return;
+    }
+
+    const exportData = queueItems.map((item, index) => ({
+      'Sr. No.': index + 1,
+      'OPD No': item.queueId || `OPD-${String(index + 1).padStart(3, '0')}`,
+      'Time': item.timeAdded || '09:00 AM',
+      'Patient Name': item.name || '',
+      'Age/Gender': `${item.age || '-'} Y / ${item.gender || 'M'}`,
+      'Contact Phone': item.phone || '',
+      'Address': item.village || '',
+      'Chief Complaint': item.complaint || '',
+      'Consulting Doctor': 'Dr. Priyanka Shinagare',
+      'Status': (item.status || '').toUpperCase()
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'OPD Register');
+
+    worksheet['!cols'] = [
+      { wch: 8 },  { wch: 12 }, { wch: 12 }, { wch: 24 },
+      { wch: 12 }, { wch: 14 }, { wch: 20 }, { wch: 35 },
+      { wch: 25 }, { wch: 15 }
+    ];
+
+    const userHome = process.env.USERPROFILE || process.env.HOME || path.join(__dirname, '..');
+    const backupDir = path.join(userHome, 'ClinicOS_Backups');
+    
+    if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
+    }
+
+    const filePath = path.join(backupDir, `Daily_OPD_Register_${dateStr}.xlsx`);
+    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    fs.writeFileSync(filePath, excelBuffer);
+
+    console.log(`💾 [AUTO BACKUP] Background backup saved today's register to: ${filePath}`);
+  } catch (err) {
+    console.error('❌ Error during background queue auto-backup:', err);
+  }
+}
+
+
+/**
+ * Start Background Cron Scheduler (Runs every morning at 09:00 AM and night at 11:00 PM)
  */
 function initBackgroundScheduler() {
   const checkIntervalMs = 60 * 60 * 1000; // Check hourly
@@ -175,6 +235,11 @@ function initBackgroundScheduler() {
       console.log('⏰ Triggering Daily Automated Background WhatsApp Reminders...');
       const summary = await processBackgroundFollowUps();
       console.log(`✅ Background WhatsApp Reminders Complete: Sent ${summary.sentCount}/${summary.totalEligible}`);
+    }
+    // Run backup at 11:00 PM (23:00) local time
+    if (now.getHours() === 23) {
+      console.log('⏰ Triggering Daily Automated Background Register Backup...');
+      await autoBackupDailyQueue();
     }
   }, checkIntervalMs);
 }

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useClinic } from '../context/ClinicContext';
 import { api } from '../api/client';
-import { Calendar, Search, Printer, UserCheck, Clock, CheckCircle2, FileSpreadsheet, Send, MessageSquare } from 'lucide-react';
+import { Calendar, Search, Printer, UserCheck, Clock, CheckCircle2, FileSpreadsheet, Send, MessageSquare, Save } from 'lucide-react';
 
 import * as XLSX from 'xlsx';
 
@@ -160,6 +160,71 @@ export default function DailyPatientRegister() {
     XLSX.writeFile(workbook, `Daily_OPD_Register_${selectedDate}.xlsx`);
   };
 
+  // Automated Day-End backup trigger at 9:30 PM (21:30)
+  useEffect(() => {
+    const backupHour = 21;
+    const backupMinute = 30;
+
+    const checkBackupTime = () => {
+      const now = new Date();
+      if (now.getHours() === backupHour && now.getMinutes() === backupMinute) {
+        if (filteredItems.length > 0) {
+          api.autoBackupQueue(selectedDate, filteredItems)
+            .then((res: any) => {
+              console.log(`[AUTO BACKUP] Client-triggered daily backup saved to: ${res.path}`);
+              setToast({
+                type: 'success',
+                title: 'Automated Day-End Backup',
+                message: `Today's register has been automatically backed up to server: ${res.path}`,
+              });
+            })
+            .catch((err) => {
+              console.error('[AUTO BACKUP] Client-triggered daily backup failed:', err);
+            });
+        }
+      }
+    };
+
+    const interval = setInterval(checkBackupTime, 60 * 1000); // Check every minute
+    return () => clearInterval(interval);
+  }, [filteredItems, selectedDate, setToast]);
+
+  // Close Session & End Day (Excel Download, Server Backup, and Print Dialog)
+  const handleEndDaySession = async () => {
+    if (filteredItems.length === 0) {
+      setToast({
+        type: 'info',
+        title: 'Empty Register',
+        message: 'No patients in the register to export today.',
+      });
+      return;
+    }
+
+    // 1. Excel local download
+    handleExportExcel();
+
+    // 2. Trigger auto-backup to server folder
+    try {
+      const response: any = await api.autoBackupQueue(selectedDate, filteredItems);
+      setToast({
+        type: 'success',
+        title: 'Daily Register Backed Up',
+        message: `Saved Excel backup to: ${response.path}`,
+      });
+    } catch (err: any) {
+      setToast({
+        type: 'error',
+        title: 'Backup Failed',
+        message: err.message || 'Could not save daily register to server backups folder.',
+      });
+    }
+
+    // 3. Print Dialog
+    setTimeout(() => {
+      window.print();
+    }, 500);
+  };
+
   // Generate WhatsApp Message Link
   const getWhatsAppLink = (patientName: string, phone: string, followUpDate: string) => {
     const cleanPhone = phone.replace(/\D/g, '');
@@ -243,7 +308,7 @@ export default function DailyPatientRegister() {
       <div className="space-y-6 pb-12 no-print">
       
       {/* ── Top Header Banner (On-Brand Warm Ivory Styling) ── */}
-      <div className="bg-[#faf9f7] rounded-2xl p-6 border border-[#e4e2e1] shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="bg-[#faf9f6] rounded-2xl p-6 border border-[#e4e2e1] shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
             <span className="bg-[#ecfdf5] text-[#047857] border border-[#a7f3d0] text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full">
@@ -272,7 +337,7 @@ export default function DailyPatientRegister() {
           {/* Export Excel Button */}
           <button
             onClick={handleExportExcel}
-            className="btn-primary text-xs"
+            className="btn-secondary text-xs"
           >
             <FileSpreadsheet className="w-4 h-4" />
             <span>Export Excel</span>
@@ -285,6 +350,15 @@ export default function DailyPatientRegister() {
           >
             <Printer className="w-4 h-4" />
             <span>Print Register</span>
+          </button>
+
+          {/* End Day & Save Button */}
+          <button
+            onClick={handleEndDaySession}
+            className="bg-gradient-to-r from-red-800 to-rose-700 hover:from-red-950 text-[#ecfdf5] text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-1.5 active:scale-95 border border-red-900 cursor-pointer"
+          >
+            <Save className="w-4 h-4" />
+            <span>End Day & Save</span>
           </button>
         </div>
       </div>
@@ -323,7 +397,7 @@ export default function DailyPatientRegister() {
       </div>
 
       {/* ── WHATSAPP FOLLOW-UP AUTOMATION SECTION ── */}
-      <div className="bg-[#faf9f7] rounded-2xl border border-[#e4e2e1] shadow-sm overflow-hidden transition-all">
+      <div className="bg-[#faf9f6] rounded-2xl border border-[#e4e2e1] shadow-sm overflow-hidden transition-all">
         {/* Banner Header */}
         <div className="p-4 sm:p-5 bg-[#f8f6f0] border-b border-[#e4e2e1] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div className="flex items-center gap-3 min-w-0">
@@ -380,7 +454,7 @@ export default function DailyPatientRegister() {
 
                 <div className="max-h-64 overflow-y-auto divide-y divide-[#e4e2e1] border border-[#e4e2e1] rounded-xl no-scrollbar">
                   {followUpPatients.map((p: any) => (
-                    <div key={p.patientId} className="px-3.5 py-2.5 flex items-center justify-between gap-3 hover:bg-[#faf9f7] transition-colors">
+                    <div key={p.patientId} className="px-3.5 py-2.5 flex items-center justify-between gap-3 hover:bg-[#faf9f6] transition-colors">
                       <div className="min-w-0">
                         <div className="font-bold text-[#1a1c1a] text-xs truncate">{p.name}</div>
                         <div className="text-[11px] text-[#7c766d] truncate">{p.phone} · {p.village || 'N/A'} · {p.complaint}</div>
@@ -517,7 +591,7 @@ export default function DailyPatientRegister() {
                 <th>Patient Name</th>
                 <th className="w-24">Age / Sex</th>
                 <th className="w-32">Phone</th>
-                <th>Village / Address</th>
+                <th>Address</th>
                 <th>Chief Complaint</th>
                 <th className="text-center w-28">Status</th>
                 <th className="text-right w-24">WhatsApp</th>
@@ -600,7 +674,7 @@ export default function DailyPatientRegister() {
               <th className="p-1.5 border border-slate-400">PATIENT NAME</th>
               <th className="p-1.5 border border-slate-400 w-20">AGE/SEX</th>
               <th className="p-1.5 border border-slate-400 w-28">PHONE</th>
-              <th className="p-1.5 border border-slate-400">VILLAGE / ADDRESS</th>
+              <th className="p-1.5 border border-slate-400">ADDRESS</th>
               <th className="p-1.5 border border-slate-400">CHIEF COMPLAINT</th>
               <th className="p-1.5 border border-slate-400 text-center w-20">STATUS</th>
             </tr>

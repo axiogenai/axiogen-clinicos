@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Sparkles, Pill, FlaskConical, Lightbulb, Calendar, ArrowLeft, Printer, Trash2, Database, CheckCircle2, Search, Plus } from 'lucide-react';
 import type { Patient } from '../data/patients';
 import { medicines as initialLocalMedicines } from '../data/medicines';
@@ -39,12 +39,22 @@ const COUNSELLING = [
 export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCasePaper, onPrintPreview, onBack }: CasepaperFormProps) {
   const { templates, queue, updateQueueStatus, setToast } = useClinic();
   const [searchQuery, setSearchQuery] = useState('');
+  const [templateSearchQuery, setTemplateSearchQuery] = useState('');
   const [dbMedicines, setDbMedicines] = useState<any[]>(initialLocalMedicines);
   const [filteredMedicines, setFilteredMedicines] = useState<any[]>(initialLocalMedicines);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [isMedicineImportOpen, setIsMedicineImportOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const filteredTemplates = useMemo(() => {
+    if (!templateSearchQuery.trim()) return templates;
+    const query = templateSearchQuery.toLowerCase().trim();
+    return templates.filter(t => 
+      t.name.toLowerCase().includes(query) || 
+      t.description?.toLowerCase().includes(query)
+    );
+  }, [templates, templateSearchQuery]);
 
   // Fetch and normalize medicines from backend API
   const loadMedicines = async () => {
@@ -73,21 +83,39 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     loadMedicines();
   }, []);
 
-  // Real-time search matching name, brand, strength, form, category, product ID
+  // Real-time search matching name, brand, strength, prioritizing starting characters
   useEffect(() => {
     if (searchQuery.trim() === '') {
       setFilteredMedicines(dbMedicines);
     } else {
-      const lowerQuery = searchQuery.toLowerCase();
+      const lowerQuery = searchQuery.toLowerCase().trim();
       const matches = dbMedicines.filter((m) => {
         const nameMatch = (m.name || '').toLowerCase().includes(lowerQuery);
         const brandMatch = (m.brand || '').toLowerCase().includes(lowerQuery);
         const strengthMatch = (m.strength || '').toLowerCase().includes(lowerQuery);
-        const formMatch = (m.form || '').toLowerCase().includes(lowerQuery);
-        const categoryMatch = (m.category || '').toLowerCase().includes(lowerQuery);
-        const idMatch = (m.id || '').toLowerCase().includes(lowerQuery);
-        return nameMatch || brandMatch || strengthMatch || formMatch || categoryMatch || idMatch;
+        return nameMatch || brandMatch || strengthMatch;
       });
+
+      // Sort matching results: startsWith prioritizes name, then brand
+      matches.sort((a, b) => {
+        const aName = (a.name || '').toLowerCase();
+        const bName = (b.name || '').toLowerCase();
+        const aBrand = (a.brand || '').toLowerCase();
+        const bBrand = (b.brand || '').toLowerCase();
+
+        const aNameStarts = aName.startsWith(lowerQuery);
+        const bNameStarts = bName.startsWith(lowerQuery);
+        if (aNameStarts && !bNameStarts) return -1;
+        if (!aNameStarts && bNameStarts) return 1;
+
+        const aBrandStarts = aBrand.startsWith(lowerQuery);
+        const bBrandStarts = bBrand.startsWith(lowerQuery);
+        if (aBrandStarts && !bBrandStarts) return -1;
+        if (!aBrandStarts && bBrandStarts) return 1;
+
+        return aName.localeCompare(bName);
+      });
+
       setFilteredMedicines(matches);
     }
     setHighlightedIndex(-1);
@@ -384,22 +412,40 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
           
           {/* ── Prescription Templates ── */}
           {templates.length > 0 && (
-            <div className="section-card">
-              <h3 className="font-serif font-bold text-[#1a1c1a] mb-3 text-sm flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#047857]" />
-                Quick Templates
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {templates.map(t => (
-                  <button 
-                    key={t.id}
-                    type="button"
-                    onClick={() => applyTemplate(t.id)}
-                    className={`pill-btn ${casePaper.templateId === t.id ? 'pill-btn-active' : ''}`}
-                  >
-                    {t.name}
-                  </button>
-                ))}
+            <div className="section-card space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-serif font-bold text-[#1a1c1a] text-sm flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[#047857]" />
+                  <span>Quick Templates ({filteredTemplates.length})</span>
+                </h3>
+                <div className="relative w-48 sm:w-56">
+                  <Search className="w-3.5 h-3.5 text-[#7c766d] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Search templates..."
+                    value={templateSearchQuery}
+                    onChange={(e) => setTemplateSearchQuery(e.target.value)}
+                    style={{ paddingLeft: '30px' }}
+                    className="form-input form-input-sm py-1 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto pt-1">
+                {filteredTemplates.length > 0 ? (
+                  filteredTemplates.map(t => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => applyTemplate(t.id)}
+                      className={`pill-btn ${casePaper.templateId === t.id ? 'pill-btn-active' : ''}`}
+                    >
+                      {t.name}
+                    </button>
+                  ))
+                ) : (
+                  <p className="text-xs text-[#7c766d] italic py-1">No templates found matching "{templateSearchQuery}"</p>
+                )}
               </div>
             </div>
           )}
@@ -478,8 +524,8 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
             ) : (
               <div className="space-y-2">
                 {/* Column Header Row */}
-                <div className="grid gap-2 px-2 pb-1 border-b border-[#e4e2e1]" style={{ gridTemplateColumns: '1.5rem 1fr 5.5rem 8rem 5.5rem 1.75rem' }}>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#7c766d]">#</span>
+                <div className="grid gap-2 px-2 pb-1 border-b border-[#e4e2e1]" style={{ gridTemplateColumns: '3rem 1fr 5.5rem 8rem 5.5rem 1.75rem' }}>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#7c766d]">Sr. No.</span>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[#7c766d]">Medicine</span>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[#7c766d]">Dosage</span>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[#7c766d]">Frequency</span>
@@ -491,7 +537,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                   <div
                     key={index}
                     className="grid gap-2 items-center bg-white border border-[#e4e2e1] rounded-xl px-2 py-2 hover:border-[#cdc6ba] hover:shadow-sm transition-all group"
-                    style={{ gridTemplateColumns: '1.5rem 1fr 5.5rem 8rem 5.5rem 1.75rem' }}
+                    style={{ gridTemplateColumns: '3rem 1fr 5.5rem 8rem 5.5rem 1.75rem' }}
                   >
                     <span className="w-5 h-5 rounded-full bg-[#f2eee3] text-[#7c766d] text-[9px] font-bold flex items-center justify-center shrink-0">
                       {index + 1}

@@ -1,4 +1,4 @@
-import { Users, Clock, Stethoscope, CheckCircle2, ArrowRight, FileText } from 'lucide-react';
+import { Users, Clock, Stethoscope, CheckCircle2, ArrowRight, FileText, Phone, MapPin } from 'lucide-react';
 import type { Patient, QueueItem } from '../data/patients';
 
 interface QueueViewProps {
@@ -84,9 +84,6 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                     <span className="w-6 h-6 rounded-full bg-[#f2eee3] border border-[#cdc6ba] text-[#7c766d] font-mono text-[10px] font-bold inline-flex items-center justify-center shrink-0">
                       {index + 1}
                     </span>
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#f2eee3] to-[#e8e2d2] border border-[#cdc6ba] flex items-center justify-center shrink-0">
-                      <span className="text-[11px] font-extrabold text-[#4b463e]">{patient.name.charAt(0)}</span>
-                    </div>
                     <div className="min-w-0">
                       <div className="font-bold text-[#1a1c1a] text-sm truncate">{patient.name}</div>
                       <div className="text-[11px] text-[#7c766d]">{patient.age}y · {patient.gender === 'M' ? 'Male' : 'Female'}</div>
@@ -164,24 +161,16 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
 
         {/* Desktop Table View */}
         <div className="hidden md:block w-full overflow-x-auto">
-          <table className="clinic-table min-w-[720px]">
-            <colgroup>
-              <col style={{ width: '44px' }} />
-              <col style={{ width: '50px' }} />
-              <col style={{ width: '22%' }} />
-              <col style={{ width: '32%' }} />
-              <col style={{ width: '14%' }} />
-              <col style={{ width: '16%' }} />
-            </colgroup>
-
+          <table className="clinic-table w-full min-w-[750px]">
             <thead>
               <tr>
-                <th className="text-center">#</th>
-                <th className="text-center">Time</th>
-                <th>Patient</th>
-                <th>Chief Complaint</th>
-                <th className="text-center">Status</th>
-                <th className="text-right">Action</th>
+                <th className="text-center w-12">Sr. No.</th>
+                <th className="text-center w-28">Time</th>
+                <th className="text-left w-64">Patient</th>
+                <th className="text-left w-56">Contact & Location</th>
+                <th className="text-center">Chief Complaint</th>
+                <th className="text-center w-36">Status</th>
+                <th className="text-right w-44">Action</th>
               </tr>
             </thead>
 
@@ -198,70 +187,77 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                   <tr 
                     key={item.queueId} 
                     onClick={() => onSelectPatient(item, patient)}
-                    className="cursor-pointer group"
+                    className="cursor-pointer group hover:bg-[#f8f6f0]/60 transition-colors"
                   >
-                    <td className="text-center">
-                      <span className="w-6 h-6 rounded-full bg-[#f2eee3] border border-[#cdc6ba] text-[#7c766d] font-mono text-[10px] font-bold inline-flex items-center justify-center">
-                        {index + 1}
-                      </span>
+                    <td className="text-center font-mono font-semibold text-xs text-[#7c766d]">
+                      {index + 1}
                     </td>
                     <td className="text-center">
-                      <span className="text-[#7c766d] font-semibold text-xs">{item.timeAdded}</span>
+                      <span className="text-[#7c766d] font-semibold text-xs whitespace-nowrap">{item.timeAdded}</span>
                     </td>
-                    <td>
-                      <div className="flex items-center gap-2.5 overflow-hidden">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#f2eee3] to-[#e8e2d2] border border-[#cdc6ba] flex items-center justify-center shrink-0">
-                          <span className="text-[11px] font-extrabold text-[#4b463e]">{patient.name.charAt(0)}</span>
+                    <td className="text-left">
+                      <div className="flex flex-col text-left">
+                        <div className="font-bold text-[#1a1c1a] text-sm truncate group-hover:text-[#047857] transition-colors">
+                          {patient.name}
                         </div>
-                        <div className="overflow-hidden">
-                          <div className="font-bold text-[#1a1c1a] text-sm truncate group-hover:text-[#047857] transition-colors">
-                            {patient.name}
-                          </div>
-                          <div className="text-[11px] text-[#7c766d]">{patient.age}y · {patient.gender === 'M' ? 'Male' : 'Female'}</div>
-                        </div>
+                        <div className="text-[11px] text-[#7c766d] truncate">{patient.age}y · {patient.gender === 'M' ? 'Male' : 'Female'}</div>
                       </div>
                     </td>
-                    <td title={item.complaint}>
-                      <span className="text-[#4b463e] text-sm font-medium truncate block">{item.complaint}</span>
+                    <td className="text-left">
+                      <div className="flex items-center gap-1.5 font-semibold text-[#1a1c1a] text-xs truncate mb-0.5">
+                        <Phone className="w-3 h-3 text-[#047857] shrink-0" />
+                        <span className="truncate">{item.phone || patient.phone || 'N/A'}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[#7c766d] text-xs truncate">
+                        <MapPin className="w-3 h-3 shrink-0" />
+                        <span className="truncate">{item.village || patient.village || 'N/A'}</span>
+                      </div>
                     </td>
-                    <td className="text-center whitespace-nowrap">
-                      {isWaiting && (
-                        <span className="badge badge-waiting">
-                          <Clock className="w-3 h-3" />Waiting
-                        </span>
-                      )}
-                      {isConsulting && (
-                        <span className="badge badge-consulting">
-                          <Stethoscope className="w-3 h-3" />In Room
-                        </span>
-                      )}
-                      {isCompleted && (
-                        <span className="badge badge-completed">
-                          <CheckCircle2 className="w-3 h-3" />Done
-                        </span>
-                      )}
+                    <td className="text-center" title={item.complaint || 'No complaint listed'}>
+                      <span className="text-[#4b463e] text-sm font-medium truncate block text-center">{item.complaint || '—'}</span>
                     </td>
-                    <td className="text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                      {(isWaiting || isConsulting) ? (
-                        <button
-                          type="button"
-                          onClick={() => onSelectPatient(item, patient)}
-                          className="btn-primary ml-auto"
-                        >
-                          <Stethoscope className="w-3.5 h-3.5" />
-                          <span>Consult</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => onSelectPatient(item, patient)}
-                          className="inline-flex items-center gap-1.5 ml-auto bg-[#f8f6f0] hover:bg-[#f2eee3] text-[#4b463e] border border-[#e4e2e1] hover:border-[#cdc6ba] px-3 py-1.5 rounded-xl font-bold text-xs transition-all shadow-sm"
-                        >
-                          <FileText className="w-3.5 h-3.5 text-[#7c766d]" />
-                          <span>Open EMR</span>
-                        </button>
-                      )}
+                    <td className="text-center">
+                      <div className="flex justify-center">
+                        {isWaiting && (
+                          <span className="badge badge-waiting">
+                            <Clock className="w-3 h-3" />Waiting
+                          </span>
+                        )}
+                        {isConsulting && (
+                          <span className="badge badge-consulting">
+                            <Stethoscope className="w-3 h-3" />In Room
+                          </span>
+                        )}
+                        {isCompleted && (
+                          <span className="badge badge-completed">
+                            <CheckCircle2 className="w-3 h-3" />Done
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex justify-end">
+                        {(isWaiting || isConsulting) ? (
+                          <button
+                            type="button"
+                            onClick={() => onSelectPatient(item, patient)}
+                            className="btn-primary"
+                          >
+                            <Stethoscope className="w-3.5 h-3.5" />
+                            <span>Consult</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => onSelectPatient(item, patient)}
+                            className="inline-flex items-center gap-1.5 bg-[#f8f6f0] hover:bg-[#f2eee3] text-[#4b463e] border border-[#e4e2e1] hover:border-[#cdc6ba] px-3 py-1.5 rounded-xl font-bold text-xs transition-all shadow-sm"
+                          >
+                            <FileText className="w-3.5 h-3.5 text-[#7c766d]" />
+                            <span>Open EMR</span>
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

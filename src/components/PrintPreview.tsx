@@ -20,6 +20,7 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
 
   const { clinicSettings, updateClinicSettings, setToast } = useClinic();
   const [zoom, setZoom] = useState(55);
+  const [hideHeader, setHideHeader] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const barRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -115,6 +116,16 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
             </button>
           </div>
 
+          {/* Pre-printed Pad / Letterhead Toggle */}
+          <button 
+            type="button" 
+            onClick={() => setHideHeader(!hideHeader)} 
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${hideHeader ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-white text-[#4b463e] border-[#cdc6ba]'}`}
+            title="Toggle between full print with logo vs pre-printed physical clinic letterhead pad"
+          >
+            {hideHeader ? '📄 Pre-printed Pad (Header Hidden)' : '📑 Print Full Header'}
+          </button>
+
           {/* Branding Settings Button */}
           <button 
             type="button" 
@@ -178,7 +189,7 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
               transformOrigin: 'top left' 
             }}
           >
-            <PrintTemplate patient={patient} casePaper={casePaper} clinicSettings={clinicSettings} />
+            <PrintTemplate patient={patient} casePaper={casePaper} clinicSettings={clinicSettings} hideHeader={hideHeader} />
           </div>
         </div>
       </div>

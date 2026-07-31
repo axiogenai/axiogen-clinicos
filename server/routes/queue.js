@@ -7,6 +7,7 @@ router.use(verifyToken);
 
 router.get('/', queueController.getQueue);
 router.get('/stats', queueController.getQueueStats);
+router.post('/auto-backup', queueController.autoBackupQueue);
 router.post('/', queueController.addToQueue);
 router.put('/:id', queueController.updateQueueStatus);
 router.delete('/:id', queueController.removeFromQueue);

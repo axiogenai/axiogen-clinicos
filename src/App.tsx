@@ -208,7 +208,7 @@ function MainApp() {
   const isDoctor = user.role === 'doctor' || user.role === 'admin';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#faf9f7] via-[#f8f6f2] to-[#f4f2eb] text-[#1a1c1a] font-sans antialiased">
+    <div className="min-h-screen bg-gradient-to-br from-[#faf9f6] via-[#f8f6f2] to-[#f4f2eb] text-[#1a1c1a] font-sans antialiased">
 
       
       {/* ── Frosted Glass Header ── */}
@@ -235,9 +235,6 @@ function MainApp() {
             {/* Mobile User Badge + Logout */}
             <div className="flex sm:hidden items-center gap-2 shrink-0">
               <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs ${isDoctor ? 'bg-[#ecfdf5] border-[#a7f3d0]' : 'bg-[#f0f9ff] border-[#bae6fd]'}`}>
-                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-[9px] ${isDoctor ? 'bg-gradient-to-br from-[#064e3b] to-[#047857]' : 'bg-gradient-to-br from-[#1d4ed8] to-[#3b82f6]'}`}>
-                  {user.name.charAt(0)}
-                </div>
                 <span className={`font-bold text-[11px] ${isDoctor ? 'text-[#064e3b]' : 'text-[#1d4ed8]'}`}>{user.name.split(' ')[0]}</span>
               </div>
 
@@ -295,14 +292,9 @@ function MainApp() {
           {/* Desktop User Badge + Logout */}
           <div className="hidden sm:flex items-center gap-2 shrink-0">
             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs ${isDoctor ? 'bg-[#ecfdf5] border-[#a7f3d0]' : 'bg-[#f0f9ff] border-[#bae6fd]'}`}>
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-[10px] ${isDoctor ? 'bg-gradient-to-br from-[#064e3b] to-[#047857]' : 'bg-gradient-to-br from-[#1d4ed8] to-[#3b82f6]'}`}>
-                {user.name.charAt(0)}
-              </div>
-              <div className="text-left">
-                <div className={`font-bold leading-none ${isDoctor ? 'text-[#064e3b]' : 'text-[#1d4ed8]'}`}>{user.name}</div>
-                <div className="text-[9px] font-extrabold text-[#7c766d] uppercase tracking-wide mt-0.5">
-                  {user.role === 'doctor' ? 'Consultant' : user.role === 'admin' ? 'Admin' : 'Receptionist'}
-                </div>
+              <div>
+                <div className={`font-bold text-xs ${isDoctor ? 'text-[#064e3b]' : 'text-[#1d4ed8]'}`}>{user.name}</div>
+                <div className="text-[10px] text-[#7c766d] uppercase font-bold tracking-wider">{user.role === 'doctor' ? 'Consultant' : user.role === 'admin' ? 'Admin' : 'Receptionist'}</div>
               </div>
             </div>
 

@@ -68,14 +68,14 @@ export default function QueueList({
     <div className="bg-[#faf9f6] rounded-2xl shadow-sm border border-[#e4e2e1] overflow-hidden">
       
       {/* Table Header Banner */}
-      <div className="px-6 py-4 border-b border-[#e4e2e1] bg-[#f8f6f0] flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h2 className="text-base font-serif font-bold text-[#1a1c1a]">Today's Live Patient Queue</h2>
-          <span className="bg-[#f2eee3] text-[#4b463e] text-[11px] font-bold px-3 py-0.5 rounded-full border border-[#cdc6ba]">
+      <div className="px-6 py-4 border-b border-[#e4e2e1] bg-[#f8f6f0] flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <h2 className="text-base font-serif font-bold text-[#1a1c1a] truncate">Today's Live Patient Queue</h2>
+          <span className="bg-[#f2eee3] text-[#4b463e] text-[11px] font-bold px-3 py-0.5 rounded-full border border-[#cdc6ba] shrink-0">
             {queue.length} patients
           </span>
         </div>
-        <span className="text-[11px] text-[#7c766d] font-medium hidden sm:inline-block bg-[#f2eee3] px-3 py-1 rounded-lg border border-[#e4e2e1]">
+        <span className="text-[11px] text-[#7c766d] font-medium hidden sm:inline-block bg-[#f2eee3] px-3 py-1 rounded-lg border border-[#e4e2e1] shrink-0">
           Waiting → first
         </span>
       </div>
@@ -101,9 +101,6 @@ export default function QueueList({
                   <span className="w-6 h-6 rounded-full bg-[#f2eee3] border border-[#cdc6ba] text-[#7c766d] font-mono text-[10px] font-bold inline-flex items-center justify-center shrink-0">
                     {index + 1}
                   </span>
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#f2eee3] to-[#e8e2d2] border border-[#cdc6ba] flex items-center justify-center shrink-0">
-                    <span className="text-[11px] font-extrabold text-[#4b463e]">{name.charAt(0)}</span>
-                  </div>
                   <div className="min-w-0">
                     <div className="font-bold text-[#1a1c1a] text-sm truncate">{name}</div>
                     {age && <div className="text-[11px] text-[#7c766d]">{age}y · {gender === 'M' ? 'Male' : 'Female'}</div>}
@@ -125,7 +122,7 @@ export default function QueueList({
                 </div>
                 <div>
                   <span className="font-semibold text-[#1a1c1a]">Complaint: </span>
-                  <span>{item.complaint}</span>
+                  <span>{item.complaint || '—'}</span>
                 </div>
                 {item.notes && <div className="text-[11px] italic text-[#7c766d]">{item.notes}</div>}
               </div>
@@ -190,26 +187,16 @@ export default function QueueList({
 
       {/* Desktop Table View */}
       <div className="hidden md:block w-full overflow-x-auto">
-        <table className="clinic-table min-w-[900px]">
-          <colgroup>
-            <col style={{ width: '44px' }} />
-            <col style={{ width: '20%' }} />
-            <col style={{ width: '18%' }} />
-            <col style={{ width: '22%' }} />
-            <col style={{ width: '80px' }} />
-            <col style={{ width: '120px' }} />
-            <col style={{ width: '200px' }} />
-          </colgroup>
-          
+        <table className="clinic-table w-full min-w-[850px]">
           <thead>
             <tr>
-              <th className="text-center">#</th>
-              <th>Patient Details</th>
-              <th>Contact & Location</th>
-              <th>Chief Complaint</th>
-              <th>Time</th>
-              <th className="text-center">Status</th>
-              <th className="text-right">Actions</th>
+              <th className="text-center w-12">Sr. No.</th>
+              <th className="text-left w-64">Patient Details</th>
+              <th className="text-left w-56">Contact & Location</th>
+              <th className="text-center">Chief Complaint</th>
+              <th className="text-center w-28">Time</th>
+              <th className="text-center w-36">Status</th>
+              <th className="text-right w-44">Actions</th>
             </tr>
           </thead>
 
@@ -229,33 +216,26 @@ export default function QueueList({
                 <tr key={item.queueId} className="group">
                   
                   {/* # Index */}
-                  <td className="text-center">
-                    <span className="w-6 h-6 rounded-full bg-[#f2eee3] border border-[#cdc6ba] text-[#7c766d] font-mono text-[10px] font-bold inline-flex items-center justify-center">
-                      {index + 1}
-                    </span>
+                  <td className="text-center font-mono font-semibold text-xs text-[#7c766d]">
+                    {index + 1}
                   </td>
                   
                   {/* Patient Name & Demographics */}
-                  <td>
-                    <div className="flex items-center gap-2.5 overflow-hidden">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#f2eee3] to-[#e8e2d2] border border-[#cdc6ba] flex items-center justify-center shrink-0">
-                        <span className="text-[11px] font-extrabold text-[#4b463e]">{name.charAt(0)}</span>
+                  <td className="text-left">
+                    <div className="flex flex-col text-left">
+                      <div className="font-bold text-[#1a1c1a] text-sm truncate group-hover:text-[#047857] transition-colors">
+                        {name}
                       </div>
-                      <div className="overflow-hidden">
-                        <div className="font-bold text-[#1a1c1a] text-sm truncate group-hover:text-[#047857] transition-colors">
-                          {name}
+                      {age && (
+                        <div className="text-[11px] text-[#7c766d] font-medium truncate">
+                          {age}y · {gender === 'M' ? 'Male' : 'Female'}
                         </div>
-                        {age && (
-                          <div className="text-[11px] text-[#7c766d] font-medium">
-                            {age}y · {gender === 'M' ? 'Male' : 'Female'}
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
                   </td>
 
                   {/* Phone & Village */}
-                  <td>
+                  <td className="text-left">
                     <div className="flex items-center gap-1.5 font-semibold text-[#1a1c1a] text-xs truncate mb-0.5">
                       <Phone className="w-3 h-3 text-[#047857] shrink-0" />
                       <span className="truncate">{phone}</span>
@@ -267,9 +247,9 @@ export default function QueueList({
                   </td>
 
                   {/* Complaint & Notes */}
-                  <td title={item.complaint}>
-                    <div className="font-medium text-[#4b463e] text-xs truncate">
-                      {item.complaint}
+                  <td className="text-center" title={item.complaint || 'No complaint listed'}>
+                    <div className="font-medium text-[#4b463e] text-xs truncate text-center">
+                      {item.complaint || '—'}
                     </div>
                     {item.notes && (
                       <div className="text-[11px] text-[#7c766d] truncate mt-0.5 italic">
@@ -279,8 +259,8 @@ export default function QueueList({
                   </td>
 
                   {/* Time Added */}
-                  <td>
-                    <span className="text-[#4b463e] font-semibold text-xs">{item.timeAdded}</span>
+                  <td className="text-center">
+                    <span className="text-[#4b463e] font-semibold text-xs whitespace-nowrap">{item.timeAdded}</span>
                   </td>
 
                   {/* Status Badge */}

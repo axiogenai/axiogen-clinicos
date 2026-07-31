@@ -27,7 +27,7 @@
 /* ── Global Styles ── */
 body {
   font-family: var(--font-sans);
-  background-color: #faf9f7;
+  background-color: #faf9f6;
   color: #1a1c1a;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -259,6 +259,12 @@ textarea.form-input {
   color: #7c766d;
   white-space: nowrap;
 }
+.clinic-table thead th.text-center {
+  text-align: center;
+}
+.clinic-table thead th.text-right {
+  text-align: right;
+}
 .clinic-table tbody tr {
   border-bottom: 1px solid rgba(228, 226, 225, 0.5);
   transition: background-color 0.1s;
@@ -280,7 +286,7 @@ textarea.form-input {
 
   @page {
     size: A4 portrait;
-    margin: 5mm !important;
+    margin: 0mm !important;
   }
 
   .app-header, nav, button, input, select, textarea, .no-print {
@@ -298,23 +304,9 @@ textarea.form-input {
     background: white !important;
   }
 
-  /* Outer container reset for prescription */
-  .fixed.inset-0:has(.print-page) {
-    position: static !important;
-    background: transparent !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    width: 210mm !important;
-    height: 297mm !important;
-    display: block !important;
-  }
-
-  .print-page, .print-page * {
-    visibility: visible !important;
-  }
-
+  /* Force print-page to cover 100% A4 sheet with zero outer margin/bg */
   .print-page {
-    position: absolute !important;
+    position: fixed !important;
     left: 0 !important;
     top: 0 !important;
     width: 210mm !important;
@@ -329,7 +321,7 @@ textarea.form-input {
     background: white !important;
     color: #000 !important;
     overflow: hidden !important;
-    z-index: 999999 !important;
+    z-index: 9999999 !important;
   }
 
   .rx-paper-root {

@@ -32,7 +32,6 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
       if (!formData.phone.trim() || !/^\d{10}$/.test(formData.phone)) newErrors.phone = 'Valid 10-digit phone number required';
       if (!formData.village.trim()) newErrors.village = 'Village/Town is required';
     }
-    if (!formData.chiefComplaint.trim()) newErrors.chiefComplaint = 'Chief complaint is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -127,7 +126,7 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
                 <div>
                   <label className="form-label">Age <span className="text-red-500">*</span></label>
                   <input 
-                    type="number" 
+                     type="number" 
                     className={`form-input ${errors.age ? 'error' : ''}`}
                     placeholder="Years"
                     value={formData.age} 
@@ -202,15 +201,14 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
         <div className="space-y-4 pt-4 border-t border-[#e4e2e1]">
           <p className="form-label text-[#047857]">— Today's Visit —</p>
           <div>
-            <label className="form-label">Chief Complaint <span className="text-red-500">*</span></label>
+            <label className="form-label">Chief Complaint (Optional)</label>
             <input 
               type="text" 
-              className={`form-input ${errors.chiefComplaint ? 'error' : ''}`}
+              className="form-input"
               placeholder="e.g. Itching and rash on arms for 5 days" 
               value={formData.chiefComplaint} 
               onChange={e => setFormData({...formData, chiefComplaint: e.target.value})} 
             />
-            {errors.chiefComplaint && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.chiefComplaint}</p>}
           </div>
 
           <div>

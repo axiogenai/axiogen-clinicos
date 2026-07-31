@@ -76,21 +76,22 @@ exports.createCasePaper = async (req, res, next) => {
       status: status || 'completed'
     });
 
-    // Mark matching queue item status as completed
-    if (queueId) {
-      let q = await Queue.findByPk(queueId);
-      if (!q) {
-        q = await Queue.findOne({
-          where: { [Op.or]: [{ queueId }, { patientId: targetPatientId }] }
-        });
+    // Mark matching queue item status as completed in database
+    const dateStr = casePaperDate || new Date().toISOString().split('T')[0];
+    await Queue.update(
+      { status: 'completed' },
+      {
+        where: {
+          clinicId,
+          date: dateStr,
+          [Op.or]: [
+            queueId ? { queueId } : null,
+            targetPatientId ? { patientId: targetPatientId } : null,
+            req.body.patientName ? { name: req.body.patientName } : null
+          ].filter(Boolean)
+        }
       }
-      if (q) await q.update({ status: 'completed' });
-    } else {
-      const q = await Queue.findOne({
-        where: { clinicId, patientId: targetPatientId, status: { [Op.ne]: 'completed' } }
-      });
-      if (q) await q.update({ status: 'completed' });
-    }
+    );
 
     try {
       await AuditLog.create({

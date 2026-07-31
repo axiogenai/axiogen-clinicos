@@ -6,9 +6,96 @@ interface PrintTemplateProps {
   patient: Patient;
   casePaper: CasePaper;
   clinicSettings: ClinicSettings;
+  hideHeader?: boolean;
 }
 
-export default function PrintTemplate({ patient, casePaper, clinicSettings }: PrintTemplateProps) {
+// Automatic Marathi translation helpers for Frequency & Duration on Print
+export const toMarathiFrequency = (freq?: string): string => {
+  if (!freq) return '-';
+  let str = freq.trim();
+
+  // 1. Remove duplicate (HS) if text already contains Marathi 'रात्री झोपताना'
+  if (/रात्री\s*झोपताना/i.test(str)) {
+    str = str.replace(/\(\s*hs\s*\)/gi, '').replace(/\bhs\b/gi, '').trim();
+  }
+
+  // 2. Translate Latin Abbreviations in parentheses
+  str = str
+    .replace(/\(\s*bd\s*\)/gi, '(दिवसातून २ वेळा)')
+    .replace(/\(\s*od\s*\)/gi, '(दिवसातून १ वेळ)')
+    .replace(/\(\s*hs\s*\)/gi, '(रात्री झोपताना)')
+    .replace(/\(\s*tds\s*\)/gi, '(दिवसातून ३ वेळा)')
+    .replace(/\(\s*sos\s*\)/gi, '(गरज भासल्यास)');
+
+  // 3. Exact match shortcuts for simple codes
+  const lower = str.toLowerCase();
+  if (lower === '1-0-0' || lower === '0-1-0' || lower === '0-0-1' || lower === 'once daily' || lower === 'once a day' || lower === 'od') {
+    return `${str} (दिवसातून १ वेळ)`;
+  }
+  if (lower === '1-0-1' || lower === 'twice daily' || lower === 'twice a day' || lower === 'bd') {
+    return '1-0-1 (दिवसातून २ वेळा - सकाळी व रात्री)';
+  }
+  if (lower === '1-1-1' || lower === 'thrice daily' || lower === 'thrice a day' || lower === 'tds') {
+    return '1-1-1 (दिवसातून ३ वेळा - सकाळी, दुपारी व रात्री)';
+  }
+
+  // 4. Comprehensive phrase replacements (longest phrases first)
+  str = str
+    .replace(/use during morning bath daily/gi, 'रोज सकाळी आंघोळीच्या वेळी वापरावे')
+    .replace(/during morning bath daily/gi, 'रोज सकाळी आंघोळीच्या वेळी')
+    .replace(/during morning bath/gi, 'सकाळी आंघोळीच्या वेळी')
+    .replace(/morning bath/gi, 'सकाळी आंघोळीच्या वेळी')
+    .replace(/nightly application/gi, 'दररोज रात्री लावावे')
+    .replace(/clean & dry area/gi, 'स्वच्छ व वाळलेल्या जागेवर')
+    .replace(/clean and dry area/gi, 'स्वच्छ व वाळलेल्या जागेवर')
+    .replace(/on affected area/gi, 'बाधित त्वचेवर')
+    .replace(/affected area/gi, 'बाधित जागेवर')
+    .replace(/before food/gi, 'जेवणाआधी')
+    .replace(/after food/gi, 'जेवणानंतर')
+    .replace(/before meals/gi, 'जेवणाआधी')
+    .replace(/after meals/gi, 'जेवणानंतर')
+    .replace(/after meal/gi, 'जेवणानंतर')
+    .replace(/once daily/gi, 'दिवसातून १ वेळ')
+    .replace(/twice daily/gi, 'दिवसातून २ वेळा')
+    .replace(/thrice daily/gi, 'दिवसातून ३ वेळा')
+    .replace(/at bedtime/gi, 'रात्री झोपताना')
+    .replace(/every morning/gi, 'रोज सकाळी')
+    .replace(/once a week/gi, 'आठवड्यातून एकदा')
+    .replace(/alternate day/gi, 'एक दिवस आड')
+    .replace(/as needed/gi, 'गरज भासल्यास')
+    .replace(/apply/gi, 'लावावे')
+    .replace(/application/gi, 'लावावे')
+    .replace(/use/gi, 'वापरावे')
+    .replace(/daily/gi, 'दररोज')
+    .replace(/nightly/gi, 'दररोज रात्री');
+
+  return str;
+};
+
+export const toMarathiDuration = (dur?: string): string => {
+  if (!dur) return '-';
+  const d = dur.trim();
+
+  // Convert digits to Marathi Devanagari numerals (0-9 -> ०-९)
+  const toDevanagariDigits = (str: string) => {
+    const map: Record<string, string> = {
+      '0': '०', '1': '१', '2': '२', '3': '३', '4': '४',
+      '5': '५', '6': '६', '7': '७', '8': '८', '9': '९'
+    };
+    return str.replace(/[0-9]/g, m => map[m] || m);
+  };
+
+  const translated = d
+    .replace(/days?/gi, 'दिवस')
+    .replace(/weeks?/gi, 'आठवडे')
+    .replace(/months?/gi, 'महिने')
+    .replace(/years?/gi, 'वर्षे')
+    .replace(/continuous|till next visit/gi, 'पुढील भेटीपर्यंत');
+
+  return toDevanagariDigits(translated);
+};
+
+export default function PrintTemplate({ patient, casePaper, clinicSettings, hideHeader = false }: PrintTemplateProps) {
   const formatDate = (dateString?: string) => {
     if (!dateString) return '__________';
     try {
@@ -82,7 +169,15 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings }: Pr
       {/* ══════════════════════════════════════════════════════ */}
       {/* SHARED HEADER SECTION (EXACT MATCH TO BOTH TEMPLATES)  */}
       {/* ══════════════════════════════════════════════════════ */}
-      <div className="clinic-print-header" style={{ paddingTop: '10mm', marginBottom: '4px' }}>
+      <div 
+        className="clinic-print-header" 
+        style={{ 
+          paddingTop: '10mm', 
+          marginBottom: '4px',
+          visibility: hideHeader ? 'hidden' : 'visible',
+          height: hideHeader ? '35mm' : 'auto',
+        }}
+      >
         {/* Title Row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '6px' }}>
           {clinicSettings.logoUrl ? (
@@ -312,8 +407,8 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings }: Pr
                         <td style={{ border: '1px solid #333', padding: '4px 6px', textAlign: 'center', fontFamily: 'monospace', fontSize: '11.5px' }}>{index + 1}</td>
                         <td style={{ border: '1px solid #333', padding: '4px 10px', fontWeight: 700, color: '#111' }}>{med.name}</td>
                         <td style={{ border: '1px solid #333', padding: '4px 10px', color: '#333' }}>{med.dosage}</td>
-                        <td style={{ border: '1px solid #333', padding: '4px 10px', fontWeight: 600, color: '#222' }}>{med.frequency}</td>
-                        <td style={{ border: '1px solid #333', padding: '4px 10px', color: '#333' }}>{med.duration}</td>
+                        <td style={{ border: '1px solid #333', padding: '4px 10px', fontWeight: 600, color: '#222' }}>{toMarathiFrequency(med.frequency)}</td>
+                        <td style={{ border: '1px solid #333', padding: '4px 10px', color: '#333' }}>{toMarathiDuration(med.duration)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -360,14 +455,14 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings }: Pr
               overflow: 'hidden',
             }}
           >
-            {/* ─── LEFT SIDEBAR (32%) ─── */}
+            {/* ─── LEFT SIDEBAR (22%) ─── */}
             <aside
               style={{
-                width: '32%',
+                width: '22%',
                 borderRight: '3px double #a53b3b',
-                padding: '8px 10px',
+                padding: '6px 8px',
                 fontFamily: "'Inter', sans-serif",
-                fontSize: '10.5px',
+                fontSize: '10px',
                 fontWeight: 500,
                 boxSizing: 'border-box',
                 overflow: 'hidden',
@@ -550,8 +645,8 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings }: Pr
               </div>
             </aside>
 
-            {/* ─── RIGHT MAIN AREA (Rx + Medicines) (68%) ─── */}
-            <main style={{ width: '68%', padding: '10px 12px', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
+            {/* ─── RIGHT MAIN AREA (Rx + Medicines) (78%) ─── */}
+            <main style={{ width: '78%', padding: '10px 14px', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
               <div>
                 {/* Top Rx Title & Caduceus Emblem Row */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', paddingRight: '4px' }}>
@@ -585,22 +680,22 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings }: Pr
                     <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #333', fontSize: '11.5px' }}>
                       <thead>
                         <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #333', fontWeight: 700 }}>
-                          <th style={{ border: '1px solid #333', padding: '3px 6px', textAlign: 'center', width: '28px' }}>#</th>
-                          <th style={{ border: '1px solid #333', padding: '3px 8px', textAlign: 'left' }}>Medicine Name</th>
-                          <th style={{ border: '1px solid #333', padding: '3px 8px', textAlign: 'left', width: '75px' }}>Dosage</th>
-                          <th style={{ border: '1px solid #333', padding: '3px 8px', textAlign: 'left', width: '110px' }}>Frequency</th>
-                          <th style={{ border: '1px solid #333', padding: '3px 8px', textAlign: 'left', width: '70px' }}>Duration</th>
+                          <th style={{ border: '1px solid #333', padding: '5px 6px', textAlign: 'center', width: '48px' }}>Sr. No.</th>
+                          <th style={{ border: '1px solid #333', padding: '5px 8px', textAlign: 'left' }}>Medicine Name</th>
+                          <th style={{ border: '1px solid #333', padding: '5px 8px', textAlign: 'left', width: '75px' }}>Dosage</th>
+                          <th style={{ border: '1px solid #333', padding: '5px 8px', textAlign: 'left', width: '200px' }}>Frequency</th>
+                          <th style={{ border: '1px solid #333', padding: '5px 8px', textAlign: 'left', width: '75px' }}>Duration</th>
                         </tr>
                       </thead>
                       <tbody>
                         {casePaper.medicines &&
                           casePaper.medicines.map((med, index) => (
-                            <tr key={index} style={{ borderBottom: '1px solid #333', height: '24px' }}>
-                              <td style={{ border: '1px solid #333', padding: '3px 6px', textAlign: 'center', fontFamily: 'monospace', fontSize: '11px' }}>{index + 1}</td>
-                              <td style={{ border: '1px solid #333', padding: '3px 8px', fontWeight: 700, color: '#111' }}>{med.name}</td>
-                              <td style={{ border: '1px solid #333', padding: '3px 8px', color: '#333' }}>{med.dosage}</td>
-                              <td style={{ border: '1px solid #333', padding: '3px 8px', fontWeight: 600, color: '#222' }}>{med.frequency}</td>
-                              <td style={{ border: '1px solid #333', padding: '3px 8px', color: '#333' }}>{med.duration}</td>
+                            <tr key={index} style={{ borderBottom: '1px solid #333' }}>
+                              <td style={{ border: '1px solid #333', padding: '6px 6px', textAlign: 'center', fontFamily: 'monospace', fontSize: '11px' }}>{index + 1}</td>
+                              <td style={{ border: '1px solid #333', padding: '6px 8px', fontWeight: 700, color: '#111', lineHeight: '1.3' }}>{med.name}</td>
+                              <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#333', lineHeight: '1.3' }}>{med.dosage}</td>
+                              <td style={{ border: '1px solid #333', padding: '6px 8px', fontWeight: 600, color: '#222', lineHeight: '1.3' }}>{toMarathiFrequency(med.frequency)}</td>
+                              <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#333', lineHeight: '1.3' }}>{toMarathiDuration(med.duration)}</td>
                             </tr>
                           ))}
                         {Array.from({ length: emptyCount }).map((_, i) => (
