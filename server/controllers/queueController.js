@@ -4,8 +4,9 @@ const { Op } = require('sequelize');
 exports.getQueue = async (req, res, next) => {
   try {
     const clinicId = req.user?.clinicId || 1;
+    const date = req.query.date || new Date().toISOString().split('T')[0];
     const queue = await Queue.findAll({
-      where: { clinicId },
+      where: { clinicId, date },
       order: [['created_at', 'ASC']]
     });
     res.json(queue);
@@ -74,8 +75,9 @@ exports.updateQueueStatus = async (req, res, next) => {
 
     if (!item) {
       const clinicId = req.user?.clinicId || 1;
+      const date = new Date().toISOString().split('T')[0];
       item = await Queue.findOne({
-        where: { clinicId, status: { [Op.ne]: 'completed' } },
+        where: { clinicId, date, status: { [Op.ne]: 'completed' } },
         order: [['created_at', 'ASC']]
       });
     }
@@ -117,7 +119,8 @@ exports.removeFromQueue = async (req, res, next) => {
 exports.getQueueStats = async (req, res, next) => {
   try {
     const clinicId = req.user?.clinicId || 1;
-    const all = await Queue.findAll({ where: { clinicId } });
+    const date = req.query.date || new Date().toISOString().split('T')[0];
+    const all = await Queue.findAll({ where: { clinicId, date } });
     
     const stats = {
       total: all.length,
