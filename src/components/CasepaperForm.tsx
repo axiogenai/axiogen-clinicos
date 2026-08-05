@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Pill, FlaskConical, Lightbulb, Calendar, ArrowLeft, Printer, Trash2, Database, CheckCircle2, Search, Plus, X } from 'lucide-react';
+import { Pill, FlaskConical, Lightbulb, Calendar, ArrowLeft, Printer, Trash2, Database, CheckCircle2, Search, Plus, X, ChevronDown } from 'lucide-react';
 import type { Patient } from '../data/patients';
 import { medicines as initialLocalMedicines } from '../data/medicines';
 import { useClinic } from '../context/ClinicContext';
@@ -695,7 +695,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                       <X className="w-3.5 h-3.5" />
                     </button>
                   ) : (
-                    <span className="mr-2.5 text-[#7c766d] pointer-events-none text-[10px] shrink-0">▾</span>
+                    <ChevronDown className="w-5 h-5 text-[#4b463e] mr-2 shrink-0 pointer-events-none stroke-[2.5]" />
                   )}
                 </div>
 
