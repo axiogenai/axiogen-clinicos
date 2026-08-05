@@ -139,40 +139,63 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // Real-time SSE subscription — instantly reloads queue when receptionist adds/removes a patient
+  // Lightweight queue-only reload for SSE events (fast, no full re-render)
+  const loadQueueOnly = useCallback(async () => {
+    try {
+      const dbQueue = await api.getQueue();
+      setQueue(dbQueue);
+    } catch {}
+  }, []);
+
+  // Real-time SSE subscription — instantly reloads ONLY queue when changes happen
   useEffect(() => {
     if (!token) return;
 
-    // Initial full load
+    // Initial full load (once)
     loadFromDatabase();
 
     // Connect to SSE stream for instant queue push updates
     const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
     const sseToken = localStorage.getItem('clinicos_jwt_token');
-    const evtSource = new EventSource(`${apiBase}/queue/events?token=${sseToken}`);
+    let evtSource: EventSource | null = null;
+    let sseConnected = false;
 
-    evtSource.onmessage = (e) => {
-      try {
-        const msg = JSON.parse(e.data);
-        if (msg.type === 'queue_update') {
-          loadFromDatabase();
-        }
-      } catch {}
-    };
+    try {
+      evtSource = new EventSource(`${apiBase}/queue/events?token=${sseToken}`);
 
-    evtSource.onerror = () => {
-      // SSE dropped — fall back to 10s polling
-      evtSource.close();
-    };
+      evtSource.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          if (msg.type === 'queue_update') {
+            loadQueueOnly(); // Only reload queue — not patients, templates, settings
+          }
+          if (msg.type === 'connected') {
+            sseConnected = true;
+          }
+        } catch {}
+      };
 
-    // Fallback: 10s polling in case SSE drops
-    const interval = setInterval(loadFromDatabase, 10000);
+      evtSource.onerror = () => {
+        sseConnected = false;
+        evtSource?.close();
+        evtSource = null;
+      };
+    } catch {
+      // SSE not supported or blocked
+    }
+
+    // Light background sync every 60s (only if SSE dropped)
+    const interval = setInterval(() => {
+      if (!sseConnected) {
+        loadQueueOnly();
+      }
+    }, 60000);
 
     return () => {
-      evtSource.close();
+      evtSource?.close();
       clearInterval(interval);
     };
-  }, [token, loadFromDatabase]);
+  }, [token, loadFromDatabase, loadQueueOnly]);
 
   // Removed sync to localStorage to prevent stale data
 
