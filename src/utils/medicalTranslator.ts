@@ -103,9 +103,9 @@ const MEDICAL_DICTIONARY: Record<string, Record<PrintLanguage, string>> = {
     english: 'Once daily',
   },
   'hs': {
-    marathi: 'रात्री झोपताना १ गोळी',
-    hindi: 'रात को सोते समय १ गोली',
-    kannada: 'ರಾತ್ರಿ ಮಲಗುವಾಗ ೧ ಮಾತ್ರೆ',
+    marathi: 'रात्री झोपताना',
+    hindi: 'रात को सोते समय',
+    kannada: 'ರಾತ್ರಿ ಮಲಗುವಾಗ',
     english: 'At bedtime',
   },
   'tds': {

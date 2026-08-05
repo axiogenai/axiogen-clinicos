@@ -21,7 +21,7 @@ const MEDICAL_DICTIONARY = {
   'bd': { marathi: 'सकाळी १ व रात्री १ (दिवसातून २ वेळा)', hindi: 'सुबह १ और रात १', kannada: 'ಬೆಳಿಗ್ಗೆ ೧ ಮತ್ತು ರಾತ್ರಿ ೧', english: 'Twice daily' },
   'bid': { marathi: 'सकाळी १ व रात्री १ (दिवसातून २ वेळा)', hindi: 'सुबह १ और रात १', kannada: 'ಬೆಳಿಗ್ಗೆ ೧ आणि ರಾತ್ರಿ ೧', english: 'Twice daily' },
   'od': { marathi: 'दिवसातून एकदा (सकाळी)', hindi: 'दिन में एक बार (सुबह)', kannada: 'ದಿನಕ್ಕೆ ಒಂದು ಬಾರಿ', english: 'Once daily' },
-  'hs': { marathi: 'रात्री झोपताना १ गोळी', hindi: 'रात को सोते समय १ गोली', kannada: 'ರಾತ್ರಿ ಮಲಗುವಾಗ ೧ ಮಾತ್ರೆ', english: 'At bedtime' },
+  'hs': { marathi: 'रात्री झोपताना', hindi: 'रात को सोते समय', kannada: 'ರಾತ್ರಿ ಮಲಗುವಾಗ', english: 'At bedtime' },
   'tds': { marathi: 'सकाळी १, दुपारी १ व रात्री १ (दिवसातून ३ वेळा)', hindi: 'सुबह १, दोपहर १ और रात १', kannada: 'ಬೆಳಿಗ್ಗೆ ೧, ಮಧ್ಯಾಹ್ನ ೧ ಮತ್ತು ರಾತ್ರಿ ೧', english: 'Thrice daily' },
   'tid': { marathi: 'सकाळी १, दुपारी १ व रात्री १ (दिवसातून ३ वेळा)', hindi: 'सुबह १, दोपहर १ और रात १', kannada: 'ಬೆಳಿಗ್ಗೆ ೧, ಮಧ್ಯಾಹ್ನ ೧ आणि ರಾತ್ರಿ ೧', english: 'Thrice daily' },
   'sos': { marathi: 'त्रास झाल्यास / गरज वाटल्यास घ्यावी', hindi: 'ज़रूरत पड़ने पर लें', kannada: 'ಅಗತ್ಯವಿದ್ದಾಗ ಮಾತ್ರ', english: 'As needed' },
