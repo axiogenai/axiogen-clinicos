@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
@@ -21,10 +22,21 @@ const { initBackgroundScheduler } = require('./services/whatsappService');
 const app = express();
 
 // Middlewares
+app.use(compression()); // Gzip all responses - reduces payload size by 70-80%
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Cache static/read-heavy endpoints for 30s to reduce repeated DB hits
+app.use('/api/medicines', (req, res, next) => {
+  if (req.method === 'GET') res.set('Cache-Control', 'public, max-age=30');
+  next();
+});
+app.use('/api/templates', (req, res, next) => {
+  if (req.method === 'GET') res.set('Cache-Control', 'public, max-age=30');
+  next();
+});
 
 // Rate Limiters
 const apiLimiter = rateLimit({
