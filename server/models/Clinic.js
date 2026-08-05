@@ -9,7 +9,8 @@ const Clinic = sequelize.define('Clinic', {
   },
   nameEn: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: true,
+    defaultValue: 'Clinics'
   },
   nameHi: {
     type: DataTypes.STRING,
@@ -21,11 +22,11 @@ const Clinic = sequelize.define('Clinic', {
   },
   address: {
     type: DataTypes.TEXT,
-    allowNull: false
+    allowNull: true
   },
   phone: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: true
   },
   openingHours: {
     type: DataTypes.STRING,
