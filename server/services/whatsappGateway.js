@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const pino = require('pino');
 
-const AUTH_FOLDER = path.join(__dirname, '..', 'whatsapp_auth_info');
+const AUTH_FOLDER = process.env.WHATSAPP_AUTH_PATH || path.join(__dirname, '..', 'whatsapp_auth_info');
 
 let sock = null;
 let qrCodeDataUrl = '';
