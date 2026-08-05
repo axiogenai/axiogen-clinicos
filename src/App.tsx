@@ -230,11 +230,9 @@ function MainApp() {
           <div className="w-full sm:w-auto flex items-center justify-between gap-3">
             {/* Brand Mark */}
             <div className="flex items-center gap-2.5 shrink-0">
-              <img
-                src="/logo-symbol.png"
-                alt="Shinagare Clinic Emblem"
-                className="w-8 h-8 object-contain drop-shadow-sm"
-              />
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#064e3b] to-[#047857] flex items-center justify-center text-white shadow-md shadow-emerald-900/20 shrink-0">
+                <Stethoscope className="w-4.5 h-4.5 text-emerald-100" />
+              </div>
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-base sm:text-[17px] font-serif font-bold text-[#1a1c1a] tracking-tight leading-none">ClinicOS</span>
