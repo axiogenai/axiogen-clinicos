@@ -3,7 +3,7 @@ const { Op } = require('sequelize');
 
 exports.getMedicines = async (req, res, next) => {
   try {
-    const medicines = await Medicine.findAll({ order: [['name', 'ASC']] });
+    const medicines = await Medicine.findAll({ order: [['name', 'ASC']], limit: 500 });
     res.json(medicines);
   } catch (err) {
     next(err);
