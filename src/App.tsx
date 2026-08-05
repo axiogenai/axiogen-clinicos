@@ -15,6 +15,8 @@ import LoginView from './components/LoginView';
 import Toast from './components/Toast';
 import WhatsAppGatewayModal from './components/WhatsAppGatewayModal';
 
+import logoImg from './assets/logo-symbol.png';
+
 type TabState = 'receptionist' | 'doctor' | 'templates' | 'register';
 type DoctorViewState = 'queue' | 'form' | 'print';
 
@@ -230,9 +232,11 @@ function MainApp() {
           <div className="w-full sm:w-auto flex items-center justify-between gap-3">
             {/* Brand Mark */}
             <div className="flex items-center gap-2.5 shrink-0">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#064e3b] to-[#047857] flex items-center justify-center text-white shadow-md shadow-emerald-900/20 shrink-0">
-                <Stethoscope className="w-4.5 h-4.5 text-emerald-100" />
-              </div>
+              <img
+                src={logoImg}
+                alt="Shinagare Skin & Cosmetic Clinic Logo"
+                className="h-9 w-auto object-contain shrink-0 drop-shadow-sm"
+              />
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-base sm:text-[17px] font-serif font-bold text-[#1a1c1a] tracking-tight leading-none">ClinicOS</span>
