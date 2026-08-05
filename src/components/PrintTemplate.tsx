@@ -3,6 +3,7 @@ import type { Patient } from '../data/patients';
 import type { CasePaper } from '../types';
 import type { ClinicSettings } from '../data/clinicSettings';
 import { calculateMedicineCount } from '../utils/countCalculator';
+import { translateMedicalText, cleanFrequencyString } from '../utils/medicalTranslator';
 import { api } from '../api/client';
 
 export type PrintLanguage = 'marathi' | 'english' | 'hindi' | 'kannada';
@@ -74,28 +75,11 @@ export const translateDuration = (dur?: string, lang: PrintLanguage = 'marathi')
 };
 
 export const cleanFrequencyForPrint = (freq?: string): string => {
-  if (!freq) return '';
-  return freq
-    .replace(/^(cream टेपरिंग:|cream tapering:|tab tapering:|गोळी टेपरिंग:)\s*/gi, '')
-    .trim();
+  return cleanFrequencyString(freq);
 };
 
 export const translateFrequency = (freq?: string, _medName?: string, lang: PrintLanguage = 'marathi'): string => {
-  if (!freq) return '-';
-  let str = cleanFrequencyForPrint(freq);
-  if (lang === 'marathi') {
-    str = str.replace(/कॅप्सूल|टॅब्लेट|tablet|cap/gi, 'गोळी');
-    // Clean up common bad translation hallucinations
-    str = str
-      .replace(/दिनाला\s*एकवेळा/gi, 'दिवसातून एकदा')
-      .replace(/दिनाला\s*दोनवेळा/gi, 'दिवसातून दोनदा')
-      .replace(/दिनाला\s*तीनवेळा/gi, 'दिवसातून तीनदा')
-      .replace(/दिनाला\s*चारवेळा/gi, 'दिवसातून चारवेळा')
-      .replace(/दिवसातून\s*एकवेळा/gi, 'दिवसातून एकदा')
-      .replace(/दिवसातून\s*दोनवेळा/gi, 'दिवसातून दोनदा')
-      .replace(/दिवसातून\s*तीनवेळा/gi, 'दिवसातून तीनदा');
-  }
-  return str;
+  return translateMedicalText(freq, lang);
 };
 
 const groqMemoryCache = new Map<string, string>();
@@ -113,8 +97,8 @@ export const GroqTranslatedCell: React.FC<{
     ? (cleanFreq && cleanFreq !== '-' ? `${cleanFreq} - ${cleanNotes}` : cleanNotes)
     : cleanFreq;
 
-  const fallbackText = translateFrequency(cleanFreq, medName, lang);
-  const fallbackWithNotes = cleanNotes ? `${fallbackText}\n(${cleanNotes})` : fallbackText;
+  const fallbackText = translateMedicalText(fullTextToTranslate, lang);
+  const fallbackWithNotes = fallbackText;
 
   // Check if text is already in Devanagari script (Marathi/Hindi)
   const isDevanagari = (text: string) => /[\u0900-\u097F]/.test(text);
