@@ -1,5 +1,6 @@
 const { Queue, Patient, AuditLog } = require('../models');
 const { Op } = require('sequelize');
+const { broadcastQueueUpdate } = require('../services/sseService');
 
 const autoPurgeOldQueueItems = async (clinicId = 1) => {
   try {
@@ -75,6 +76,7 @@ exports.addToQueue = async (req, res, next) => {
     });
 
     res.status(201).json(queueItem);
+    broadcastQueueUpdate(); // Push real-time update to all connected browsers
   } catch (err) {
     next(err);
   }
@@ -100,6 +102,7 @@ exports.updateQueueStatus = async (req, res, next) => {
 
     console.log(`✅ [QUEUE STATUS UPDATED] Updated ${updatedCount} queue items matching '${id}' to status: '${status}'`);
     res.json({ success: true, updatedCount, status });
+    broadcastQueueUpdate(); // Push real-time update to all connected browsers
   } catch (err) {
     next(err);
   }
@@ -125,6 +128,7 @@ exports.removeFromQueue = async (req, res, next) => {
 
     await item.destroy();
     res.json({ message: 'Removed from queue' });
+    broadcastQueueUpdate(); // Push real-time update to all connected browsers
   } catch (err) {
     next(err);
   }

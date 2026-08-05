@@ -139,12 +139,39 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  // Real-time SSE subscription — instantly reloads queue when receptionist adds/removes a patient
   useEffect(() => {
-    if (token) {
-      loadFromDatabase();
-      const interval = setInterval(loadFromDatabase, 30000); // 30s auto-polling
-      return () => clearInterval(interval);
-    }
+    if (!token) return;
+
+    // Initial full load
+    loadFromDatabase();
+
+    // Connect to SSE stream for instant queue push updates
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const sseToken = localStorage.getItem('clinicos_jwt_token');
+    const evtSource = new EventSource(`${apiBase}/queue/events?token=${sseToken}`);
+
+    evtSource.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'queue_update') {
+          loadFromDatabase();
+        }
+      } catch {}
+    };
+
+    evtSource.onerror = () => {
+      // SSE dropped — fall back to 10s polling
+      evtSource.close();
+    };
+
+    // Fallback: 10s polling in case SSE drops
+    const interval = setInterval(loadFromDatabase, 10000);
+
+    return () => {
+      evtSource.close();
+      clearInterval(interval);
+    };
   }, [token, loadFromDatabase]);
 
   // Removed sync to localStorage to prevent stale data
