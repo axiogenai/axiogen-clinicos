@@ -7,16 +7,38 @@ const path = require('path');
 // Sent message log store to prevent duplicate reminders
 const sentLog = new Set();
 
+function formatWhatsAppDate(dateStr) {
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const day = String(d.getDate()).padStart(2, '0');
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const month = monthNames[d.getMonth()];
+    const year = d.getFullYear();
+    return `${day} ${month} ${year}`;
+  } catch (e) {
+    return dateStr;
+  }
+}
+
 /**
  * Formats WhatsApp text message for a patient follow-up reminder
  */
 function buildReminderMessage(patientName, followUpDate, doctorName = 'Dr. Pramod Shinagare') {
+  const formattedDate = formatWhatsAppDate(followUpDate);
+  const pName = (patientName || 'Patient').trim();
+
   return (
-    `Namaste ${patientName} ji,\n\n` +
-    `This is an automated reminder for your skin consultation follow-up appointment at *Shinagare Skin & Cosmetic Clinic* (${doctorName}) scheduled for *${followUpDate}*.\n\n` +
-    `📍 Location: ST Stand Near, Rajaram Chitra Mandir Samor, Peth Vadgaon.\n` +
-    `📞 Contact: 7249727104 / 9657727104\n\n` +
-    `Please visit between 10:00 AM - 6:00 PM. Wishing you good health!`
+    `*Namaste ${pName} Ji,*\n\n` +
+    `Your *skin consultation follow-up appointment* at *Shinagare Skin & Cosmetic Clinic* with *${doctorName}* is scheduled for *${formattedDate}*.\n\n` +
+    `*📍 Clinic Address:*\n` +
+    `ST Stand Near, Rajaram Chitra Mandir Samor, Peth Vadgaon\n\n` +
+    `*🕙 Consultation Hours:*\n` +
+    `10:00 AM – 6:00 PM\n\n` +
+    `*📞 Contact:*\n` +
+    `7249727104 / 9657727104\n\n` +
+    `We kindly request you to visit the clinic during the consultation hours. If you need any assistance or wish to reschedule, please contact us using the numbers above.\n\n` +
+    `Thank you for choosing Shinagare Skin & Cosmetic Clinic. We look forward to serving you and wish you good health.`
   );
 }
 
@@ -34,21 +56,42 @@ async function processBackgroundFollowUps(targetDate = null) {
   };
 
   try {
-    // 1. Fetch all casepapers matching targetDate
+    // 1. Fetch casepapers matching targetDate
     const casePapers = await CasePaper.findAll({
-      where: {
-        followUpDate: dateStr,
-      },
+      where: { followUpDate: dateStr },
     });
 
-    results.totalEligible = casePapers.length;
+    // 2. Batch-fetch all patients in ONE query (avoid N+1)
+    const allPatients = await Patient.findAll();
+    const patientById = new Map(allPatients.map(p => [p.id, p]));
+
+    // 3. Collect eligible patient IDs
+    const eligiblePatientMap = new Map();
 
     for (const cp of casePapers) {
-      const patient = await Patient.findByPk(cp.patientId);
+      const p = patientById.get(cp.patientId);
+      if (p) eligiblePatientMap.set(p.id, p);
+    }
+
+    // Also check pastVisits on patients
+    for (const p of allPatients) {
+      if (p.pastVisits && Array.isArray(p.pastVisits)) {
+        const hasMatchingVisit = p.pastVisits.some((v) => v.followUpDate === dateStr);
+        if (hasMatchingVisit) {
+          eligiblePatientMap.set(p.id, p);
+        }
+      }
+    }
+
+    const targetPatients = Array.from(eligiblePatientMap.values());
+    results.totalEligible = targetPatients.length;
+
+    // 4. Send messages — with a small 300ms delay between sends to avoid rate-limiting
+    for (const patient of targetPatients) {
       if (!patient || !patient.phone || patient.phone.length < 10) {
         results.skippedCount++;
         results.details.push({
-          patientId: cp.patientId,
+          patientId: patient?.id,
           status: 'skipped',
           reason: 'No valid phone number',
         });
@@ -89,6 +132,9 @@ async function processBackgroundFollowUps(targetDate = null) {
           timestamp: new Date().toISOString(),
         });
       }
+
+      // Small delay between sends to avoid WhatsApp rate limiting
+      await new Promise(r => setTimeout(r, 300));
     }
   } catch (err) {
     console.error('❌ Error in processBackgroundFollowUps:', err);
@@ -97,18 +143,33 @@ async function processBackgroundFollowUps(targetDate = null) {
   return results;
 }
 
+
 /**
  * Dispatch message via WhatsApp API Gateway
  */
 /**
  * Dispatch message via Official Meta WhatsApp Cloud API (or Gateway fallback)
  */
+const { sendWhatsAppMessage, getGatewayStatus } = require('./whatsappGateway');
+
 async function dispatchWhatsAppMessage(phone, messageText) {
   try {
     const cleanPhone = phone.replace(/\D/g, '');
     const formattedPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
 
-    // 1. Official Meta WhatsApp Cloud API Integration
+    // 1. WhatsApp Baileys Web Gateway (Option 3 - 100% Free QR Code Gateway)
+    const gateway = getGatewayStatus();
+    if (gateway.status === 'connected') {
+      try {
+        await sendWhatsAppMessage(formattedPhone, messageText);
+        console.log(`✅ [WHATSAPP QR GATEWAY] Automated reminder sent to +${formattedPhone}`);
+        return true;
+      } catch (gatewayErr) {
+        console.error(`❌ WhatsApp Baileys Gateway Error (+${formattedPhone}):`, gatewayErr);
+      }
+    }
+
+    // 2. Official Meta WhatsApp Cloud API Integration
     const metaToken = process.env.META_WHATSAPP_TOKEN || process.env.WHATSAPP_API_TOKEN;
     const metaPhoneId = process.env.META_PHONE_NUMBER_ID;
 
@@ -224,27 +285,57 @@ async function autoBackupDailyQueue(targetDate = null) {
 
 
 /**
- * Start Background Cron Scheduler (Runs every morning at 09:00 AM and night at 11:00 PM)
+ * Start Background Cron Scheduler (Runs every morning at 09:00 AM)
  */
 function initBackgroundScheduler() {
-  const checkIntervalMs = 60 * 60 * 1000; // Check hourly
-  setInterval(async () => {
+  let lastReminderDate = '';
+  let lastBackupDate = '';
+
+  const checkIntervalMs = 5 * 60 * 1000; // Check every 5 minutes
+
+  const runChecks = async () => {
     const now = new Date();
-    // Run at 09:00 AM local time
-    if (now.getHours() === 9) {
+    const todayStr = now.toISOString().split('T')[0];
+    const currentHour = now.getHours();
+
+    // Run follow-up reminders at 9 AM (or if missed and it's still morning < 12)
+    if (currentHour >= 9 && currentHour < 12 && lastReminderDate !== todayStr) {
+      lastReminderDate = todayStr;
       console.log('⏰ Triggering Daily Automated Background WhatsApp Reminders...');
-      const summary = await processBackgroundFollowUps();
-      console.log(`✅ Background WhatsApp Reminders Complete: Sent ${summary.sentCount}/${summary.totalEligible}`);
+      try {
+        const summary = await processBackgroundFollowUps();
+        console.log(`✅ Background WhatsApp Reminders Complete: Sent ${summary.sentCount}/${summary.totalEligible}`);
+      } catch (err) {
+        console.error('❌ Scheduler reminder error:', err);
+      }
     }
-    // Run backup at 11:00 PM (23:00) local time
-    if (now.getHours() === 23) {
-      console.log('⏰ Triggering Daily Automated Background Register Backup...');
+
+    // Run backup at 11 PM
+    if (currentHour === 23 && lastBackupDate !== todayStr) {
+      lastBackupDate = todayStr;
+      console.log('⏰ Triggering Daily Automated Background Register Backup & 7-Day Purge...');
       await autoBackupDailyQueue();
+      try {
+        const { Queue } = require('../models');
+        const { Op } = require('sequelize');
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - 7);
+        const cutoffStr = cutoffDate.toISOString().split('T')[0];
+        const deleted = await Queue.destroy({ where: { date: { [Op.lt]: cutoffStr } } });
+        if (deleted > 0) console.log(`🧹 Deleted ${deleted} OPD queue records older than 7 days (${cutoffStr}).`);
+      } catch (err) {
+        console.error('❌ Error during 7-day queue auto-purge:', err);
+      }
     }
-  }, checkIntervalMs);
+  };
+
+  // Run immediately on start, then every 5 minutes
+  runChecks();
+  setInterval(runChecks, checkIntervalMs);
 }
 
 module.exports = {
+  buildReminderMessage,
   processBackgroundFollowUps,
   dispatchWhatsAppMessage,
   initBackgroundScheduler,

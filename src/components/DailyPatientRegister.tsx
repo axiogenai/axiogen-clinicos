@@ -1,8 +1,12 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useClinic } from '../context/ClinicContext';
 import { api } from '../api/client';
-import { Calendar, Search, Printer, UserCheck, Clock, CheckCircle2, FileSpreadsheet, Send, MessageSquare, Save } from 'lucide-react';
-
+import { Calendar, Search, Printer, UserCheck, Clock, CheckCircle2, FileSpreadsheet, Send, MessageSquare, Save, FileText, X, Pill, Edit3 } from 'lucide-react';
+import PrintPreview from './PrintPreview';
+import CasepaperForm from './CasepaperForm';
+import type { Patient } from '../data/patients';
+import type { CasePaper } from '../types';
+import { calculateMedicineCount } from '../utils/countCalculator';
 import * as XLSX from 'xlsx';
 
 export default function DailyPatientRegister() {
@@ -13,6 +17,9 @@ export default function DailyPatientRegister() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'waiting' | 'in-consultation' | 'completed'>('all');
   const [selectedFollowUpIds] = useState<string[]>([]);
   const [showFollowUpList, setShowFollowUpList] = useState(false);
+  const [activeEmrModal, setActiveEmrModal] = useState<{ patient: any; casePaper: any } | null>(null);
+  const [editingCasePaper, setEditingCasePaper] = useState<{ patient: Patient; casePaper: CasePaper; queueId?: string } | null>(null);
+  const [isPrintPreviewOpen, setIsPrintPreviewOpen] = useState(false);
 
   // Fetch queue items for selectedDate from DB
   useEffect(() => {
@@ -87,44 +94,68 @@ export default function DailyPatientRegister() {
   }, [registerItems, searchQuery, statusFilter]);
 
   // WhatsApp Follow-up Patients matching selectedDate
-  const followUpPatients = useMemo(() => {
-    // Gather all patients who have saved casepapers or visits with followUpDate matching selectedDate
-    const list: Array<{ patientId: string; name: string; phone: string; village: string; complaint: string; followUpDate: string }> = [];
+  const [followUpPatients, setFollowUpPatients] = useState<Array<{ patientId: string; name: string; phone: string; village: string; complaint: string; followUpDate: string }>>([]);
 
-    patients.forEach(p => {
-      let fDate = '';
+  useEffect(() => {
+    const buildFollowUpList = async () => {
+      const list: Array<{ patientId: string; name: string; phone: string; village: string; complaint: string; followUpDate: string }> = [];
+      const seen = new Set<string>();
+
+      // 1. Fetch from backend DB casepapers matching selectedDate
       try {
-        const cached = localStorage.getItem(`clinicos_saved_casepaper_${p.id}`);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (parsed.followUpDate) fDate = parsed.followUpDate;
+        const cps = await api.getCasePapers();
+        for (const cp of cps) {
+          if (cp.followUpDate === selectedDate && cp.patientId && !seen.has(cp.patientId)) {
+            const pat = patients.find(p => p.id === cp.patientId);
+            if (pat && pat.phone && pat.phone.length >= 10) {
+              seen.add(cp.patientId);
+              list.push({
+                patientId: cp.patientId,
+                name: pat.name,
+                phone: pat.phone,
+                village: pat.village || 'N/A',
+                complaint: cp.complaint || 'Follow-up Consultation',
+                followUpDate: cp.followUpDate,
+              });
+            }
+          }
         }
       } catch {}
 
-      if (!fDate && p.pastVisits && p.pastVisits.length > 0) {
-        const lastVisit = p.pastVisits[0];
-        if ((lastVisit as any).followUpDate) fDate = (lastVisit as any).followUpDate;
-      }
+      // 2. LocalStorage casepapers
+      patients.forEach(p => {
+        if (seen.has(p.id)) return;
+        let fDate = '';
+        try {
+          const cached = localStorage.getItem(`clinicos_saved_casepaper_${p.id}`);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (parsed.followUpDate) fDate = parsed.followUpDate;
+          }
+        } catch {}
 
-      // Fallback: match by selectedDate if patient is completed today
-      if (!fDate) {
-        const inQueue = queue.find(q => q.patientId === p.id && q.status === 'completed');
-        if (inQueue) fDate = selectedDate;
-      }
+        if (!fDate && p.pastVisits && p.pastVisits.length > 0) {
+          const lastVisit = p.pastVisits[0];
+          if ((lastVisit as any).followUpDate) fDate = (lastVisit as any).followUpDate;
+        }
 
-      if (fDate === selectedDate && p.phone && p.phone.length >= 10) {
-        list.push({
-          patientId: p.id,
-          name: p.name,
-          phone: p.phone,
-          village: p.village || 'N/A',
-          complaint: p.pastHistory || 'Follow-up Consultation',
-          followUpDate: fDate,
-        });
-      }
-    });
+        if (fDate === selectedDate && p.phone && p.phone.length >= 10) {
+          seen.add(p.id);
+          list.push({
+            patientId: p.id,
+            name: p.name,
+            phone: p.phone,
+            village: p.village || 'N/A',
+            complaint: p.pastHistory || 'Follow-up Consultation',
+            followUpDate: fDate,
+          });
+        }
+      });
 
-    return list;
+      setFollowUpPatients(list);
+    };
+
+    buildFollowUpList();
   }, [patients, queue, selectedDate]);
 
   // Stats Counters
@@ -225,28 +256,159 @@ export default function DailyPatientRegister() {
     }, 500);
   };
 
-  // Generate WhatsApp Message Link
-  const getWhatsAppLink = (patientName: string, phone: string, followUpDate: string) => {
-    const cleanPhone = phone.replace(/\D/g, '');
-    const formattedPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
-    const text = encodeURIComponent(
-      `Namaste ${patientName} ji,\n\n` +
-      `This is a reminder for your skin consultation follow-up appointment at *Shinagare Skin & Cosmetic Clinic* scheduled for *${followUpDate}*.\n\n` +
-      `📍 Location: ST Stand Near, Rajaram Chitra Mandir Samor, Peth Vadgaon.\n` +
-      `📞 Contact: 7249727104 / 9657727104\n\n` +
-      `Please visit between 10:00 AM - 6:00 PM. Wishing you good health!`
-    );
-    return `https://wa.me/${formattedPhone}?text=${text}`;
+
+  // Send WhatsApp to Individual via Baileys QR Gateway
+  const handleSendSingleWhatsApp = async (name: string, phone: string, followUpDate: string) => {
+    try {
+      const res = await api.sendSingleWhatsApp(phone, '', name, followUpDate);
+      if (res && res.success) {
+        setToast({
+          type: 'success',
+          title: 'WhatsApp Reminder Sent!',
+          message: `Reminder sent to ${name} (+91 ${phone}) for follow-up on ${followUpDate}`,
+        });
+      } else {
+        throw new Error(res?.error || 'Gateway not connected');
+      }
+    } catch (err: any) {
+      setToast({
+        type: 'error',
+        title: 'Sending Failed',
+        message: err?.message || `Could not send to ${name}. Ensure WhatsApp QR Gateway is connected!`,
+      });
+    }
   };
 
-  // Send WhatsApp to Individual
-  const handleSendSingleWhatsApp = (name: string, phone: string, followUpDate: string) => {
-    const url = getWhatsAppLink(name, phone, followUpDate);
-    window.open(url, '_blank');
-    setToast({
-      type: 'success',
-      title: 'WhatsApp Reminder Opened',
-      message: `Follow-up message prepared for ${name}`,
+  // Open EMR Casepaper Modal
+  const handleOpenEMR = async (item: any) => {
+    let matchingPatient = patients.find(p => p.id === item.patientId || p.name?.toLowerCase() === item.name?.toLowerCase());
+    if (!matchingPatient) {
+      matchingPatient = {
+        id: item.patientId || `pat_${Date.now()}`,
+        name: item.name || 'Patient',
+        age: item.age || 0,
+        gender: item.gender || 'M',
+        phone: item.phone || '',
+        village: item.village || '',
+        pastHistory: 'Nil',
+        allergies: 'None',
+        pastVisits: []
+      };
+    }
+
+    let savedCasePaper: any = null;
+    try {
+      const cached = localStorage.getItem(`clinicos_saved_casepaper_${matchingPatient.id}`);
+      if (cached) savedCasePaper = JSON.parse(cached);
+    } catch {}
+
+    if (!savedCasePaper) {
+      try {
+        const list = await api.getCasePapers(matchingPatient.id);
+        if (list && list.length > 0) {
+          const latest = list[0];
+          savedCasePaper = {
+            patientId: matchingPatient.id,
+            date: latest.date || selectedDate,
+            templateId: latest.templateId || '',
+            complaint: latest.complaint || item.complaint,
+            pastHistory: latest.pastHistory || matchingPatient.pastHistory || '',
+            allergies: latest.allergies || matchingPatient.allergies || '',
+            medicines: latest.medicines || [],
+            investigationsAdvised: latest.investigationsAdvised || [],
+            counsellingDone: latest.counsellingDone || [],
+            followUpDate: latest.followUpDate || '',
+          };
+        }
+      } catch {}
+    }
+
+    if (!savedCasePaper) {
+      savedCasePaper = {
+        patientId: matchingPatient.id,
+        date: selectedDate,
+        templateId: '',
+        complaint: item.complaint || 'General Checkup',
+        pastHistory: matchingPatient.pastHistory || 'Nil',
+        allergies: matchingPatient.allergies || 'None',
+        medicines: [],
+        investigationsAdvised: [],
+        counsellingDone: [],
+        followUpDate: '',
+      };
+    }
+
+    setActiveEmrModal({
+      patient: matchingPatient,
+      casePaper: savedCasePaper
+    });
+    setIsPrintPreviewOpen(false);
+  };
+
+  // Open Full Interactive Casepaper Consultation Form for Live Editing
+  const handleEditEMR = async (item: any) => {
+    let matchingPatient: Patient | undefined = patients.find(p => p.id === item.patientId || p.name?.toLowerCase() === item.name?.toLowerCase());
+    if (!matchingPatient) {
+      matchingPatient = {
+        id: item.patientId || `pat_${Date.now()}`,
+        name: item.name || 'Patient',
+        age: item.age || 0,
+        gender: item.gender || 'M',
+        phone: item.phone || '',
+        village: item.village || '',
+        pastHistory: 'Nil',
+        allergies: 'None',
+        pastVisits: []
+      };
+    }
+
+    let savedCasePaper: CasePaper | null = null;
+    try {
+      const cached = localStorage.getItem(`clinicos_saved_casepaper_${matchingPatient.id}`);
+      if (cached) savedCasePaper = JSON.parse(cached);
+    } catch {}
+
+    if (!savedCasePaper) {
+      try {
+        const list = await api.getCasePapers(matchingPatient.id);
+        if (list && list.length > 0) {
+          const latest = list[0];
+          savedCasePaper = {
+            patientId: matchingPatient.id,
+            date: latest.date || selectedDate,
+            templateId: latest.templateId || '',
+            complaint: latest.complaint || item.complaint,
+            pastHistory: latest.pastHistory || matchingPatient.pastHistory || '',
+            allergies: latest.allergies || matchingPatient.allergies || '',
+            medicines: latest.medicines || [],
+            investigationsAdvised: latest.investigationsAdvised || [],
+            counsellingDone: latest.counsellingDone || [],
+            followUpDate: latest.followUpDate || '',
+          };
+        }
+      } catch {}
+    }
+
+    if (!savedCasePaper) {
+      savedCasePaper = {
+        patientId: matchingPatient.id,
+        date: selectedDate,
+        templateId: '',
+        complaint: item.complaint || 'General Checkup',
+        pastHistory: matchingPatient.pastHistory || 'Nil',
+        allergies: matchingPatient.allergies || 'None',
+        medicines: [],
+        investigationsAdvised: [],
+        counsellingDone: [],
+        followUpDate: '',
+      };
+    }
+
+    setActiveEmrModal(null);
+    setEditingCasePaper({
+      patient: matchingPatient,
+      casePaper: savedCasePaper,
+      queueId: item.queueId || item.opdNo
     });
   };
 
@@ -277,27 +439,32 @@ export default function DailyPatientRegister() {
     }
   };
 
-  // Bulk Send WhatsApp for All Selected Follow-ups (Manual Browser Tabs)
-  const handleBulkWhatsAppSend = () => {
+  // Bulk Send WhatsApp for All Selected Follow-ups via QR Gateway
+  const handleBulkWhatsAppSend = async () => {
     const targets = followUpPatients.filter((p: any) => selectedFollowUpIds.includes(p.patientId) || selectedFollowUpIds.length === 0);
     if (targets.length === 0) {
       setToast({ type: 'info', message: 'No patients found for WhatsApp reminder.' });
       return;
     }
 
-    let delay = 0;
-    targets.forEach((p: any) => {
-      setTimeout(() => {
-        const url = getWhatsAppLink(p.name, p.phone, p.followUpDate);
-        window.open(url, '_blank');
-      }, delay);
-      delay += 800; // stagger opens to avoid browser popup blocks
+    setToast({
+      type: 'info',
+      title: 'Sending Background Reminders',
+      message: `Sending ${targets.length} background WhatsApp messages via QR Gateway...`,
     });
+
+    let sentCount = 0;
+    for (const p of targets) {
+      try {
+        const res = await api.sendSingleWhatsApp(p.phone, '', p.name, p.followUpDate);
+        if (res && res.success) sentCount++;
+      } catch (e) {}
+    }
 
     setToast({
       type: 'success',
-      title: 'WhatsApp Tabs Opened',
-      message: `Opened ${targets.length} WhatsApp reminder messages for ${selectedDate}`,
+      title: 'Background Reminders Complete!',
+      message: `Successfully sent ${sentCount}/${targets.length} background WhatsApp messages via QR Gateway!`,
     });
   };
 
@@ -312,12 +479,12 @@ export default function DailyPatientRegister() {
         <div>
           <div className="flex items-center gap-2">
             <span className="bg-[#ecfdf5] text-[#047857] border border-[#a7f3d0] text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full">
-              OFFICIAL CLINICAL RECORD
+              OFFICIAL CLINICAL RECORD • 7-DAY AUTOMATIC RETENTION
             </span>
           </div>
           <h2 className="text-2xl font-serif font-bold text-[#1a1c1a] mt-1.5">Daily Patient OPD Register</h2>
           <p className="text-xs text-[#7c766d] mt-0.5">
-            Complete OPD consultations record, daily register, and WhatsApp follow-up reminders.
+            Active OPD queue items are automatically retained for 7 days before auto-purge. Permanent register workbooks are saved to Excel backups.
           </p>
         </div>
 
@@ -448,7 +615,7 @@ export default function DailyPatientRegister() {
                 <div className="flex items-center justify-between text-xs text-[#7c766d] px-1 font-semibold">
                   <span>Scheduled Patients ({followUpPatients.length})</span>
                   <button onClick={handleBulkWhatsAppSend} className="text-[#047857] hover:underline font-bold text-xs">
-                    Open All in Tabs
+                    Send All via QR Gateway
                   </button>
                 </div>
 
@@ -556,7 +723,16 @@ export default function DailyPatientRegister() {
                 </div>
               </div>
 
-              <div className="flex justify-end pt-1">
+              <div className="flex items-center justify-between pt-2 border-t border-[#e4e2e1]">
+                <button
+                  type="button"
+                  onClick={() => handleOpenEMR(item)}
+                  className="px-3 py-1.5 bg-[#ecfdf5] hover:bg-[#dcfce7] text-[#047857] rounded-xl border border-[#a7f3d0] inline-flex items-center gap-1.5 text-xs font-bold transition-all shadow-sm active:scale-95"
+                >
+                  <FileText className="w-3.5 h-3.5 text-[#047857]" />
+                  <span>Open EMR</span>
+                </button>
+
                 {item.phone && item.phone.length >= 10 ? (
                   <button
                     type="button"
@@ -564,10 +740,10 @@ export default function DailyPatientRegister() {
                     className="px-3 py-1.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#1da851] rounded-xl transition-colors border border-[#25D366]/30 inline-flex items-center gap-1.5 text-xs font-bold"
                   >
                     <Send className="w-3.5 h-3.5" />
-                    <span>Send WhatsApp</span>
+                    <span>WhatsApp</span>
                   </button>
                 ) : (
-                  <span className="text-[#cdc6ba] text-xs font-medium">No Phone Number</span>
+                  <span className="text-[#cdc6ba] text-xs font-medium">No Phone</span>
                 )}
               </div>
             </div>
@@ -594,6 +770,7 @@ export default function DailyPatientRegister() {
                 <th>Address</th>
                 <th>Chief Complaint</th>
                 <th className="text-center w-28">Status</th>
+                <th className="text-center w-28">EMR Casepaper</th>
                 <th className="text-right w-24">WhatsApp</th>
               </tr>
             </thead>
@@ -615,6 +792,29 @@ export default function DailyPatientRegister() {
                     {item.status === 'completed' && <span className="badge badge-completed"><CheckCircle2 className="w-3 h-3" />Done</span>}
                     {item.status === 'in-consultation' && <span className="badge badge-consulting"><Clock className="w-3 h-3" />In Room</span>}
                     {item.status === 'waiting' && <span className="badge badge-waiting"><Clock className="w-3 h-3" />Waiting</span>}
+                  </td>
+                  <td className="text-center">
+                    <div className="flex items-center justify-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEMR(item)}
+                        className="px-2 py-1 bg-[#ecfdf5] hover:bg-[#dcfce7] text-[#047857] rounded-lg border border-[#a7f3d0] inline-flex items-center gap-1 text-[11px] font-bold transition-all shadow-sm active:scale-95"
+                        title="View EMR Casepaper Preview"
+                      >
+                        <FileText className="w-3 h-3 text-[#047857]" />
+                        <span>View</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleEditEMR(item)}
+                        className="px-2 py-1 bg-[#fffbeb] hover:bg-[#fef3c7] text-[#b45309] rounded-lg border border-[#fde68a] inline-flex items-center gap-1 text-[11px] font-bold transition-all shadow-sm active:scale-95"
+                        title="Edit EMR Consultation Form"
+                      >
+                        <Edit3 className="w-3 h-3 text-[#b45309]" />
+                        <span>Edit</span>
+                      </button>
+                    </div>
                   </td>
                   <td className="text-right">
                     {item.phone && item.phone.length >= 10 ? (
@@ -708,6 +908,174 @@ export default function DailyPatientRegister() {
           <p className="font-bold border-t border-slate-400 pt-1 px-8">Doctor&apos;s Signature</p>
         </div>
       </div>
+      {/* ── Open EMR Casepaper Modal ── */}
+      {activeEmrModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-[#faf9f6] border border-[#e4e2e1] rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 bg-white border-b border-[#e4e2e1] flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#ecfdf5] border border-[#a7f3d0] flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5 text-[#047857]" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-bold text-[#1a1c1a] text-lg flex items-center gap-2">
+                    <span>{activeEmrModal.patient.name}</span>
+                    <span className="text-xs font-sans font-bold bg-[#f2eee3] text-[#4b463e] px-2 py-0.5 rounded border border-[#cdc6ba]">
+                      {activeEmrModal.patient.age}Y / {activeEmrModal.patient.gender}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-[#7c766d]">
+                    Clinical Casepaper Record · Date: {activeEmrModal.casePaper.date || selectedDate}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setActiveEmrModal(null)}
+                className="p-1.5 text-[#7c766d] hover:text-[#1a1c1a] hover:bg-[#f2eee3] rounded-xl transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-5 overflow-y-auto space-y-4">
+              {/* Complaints & History */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="bg-white p-3.5 rounded-xl border border-[#e4e2e1]">
+                  <label className="text-[11px] font-bold text-[#7c766d] uppercase tracking-wider block mb-1">Chief Complaint</label>
+                  <div className="text-xs font-semibold text-[#1a1c1a]">{activeEmrModal.casePaper.complaint || 'General Checkup'}</div>
+                </div>
+                <div className="bg-white p-3.5 rounded-xl border border-[#e4e2e1]">
+                  <label className="text-[11px] font-bold text-[#7c766d] uppercase tracking-wider block mb-1">Past History & Allergies</label>
+                  <div className="text-xs text-[#4b463e]">History: {activeEmrModal.casePaper.pastHistory || 'Nil'} | Allergies: {activeEmrModal.casePaper.allergies || 'None'}</div>
+                </div>
+              </div>
+
+              {/* Prescribed Medicines */}
+              <div className="bg-white rounded-xl border border-[#e4e2e1] p-4">
+                <h4 className="font-serif font-bold text-sm text-[#1a1c1a] mb-2.5 flex items-center gap-2">
+                  <Pill className="w-4 h-4 text-[#047857]" />
+                  Prescribed Medicines ({activeEmrModal.casePaper.medicines?.length || 0})
+                </h4>
+                
+                {activeEmrModal.casePaper.medicines && activeEmrModal.casePaper.medicines.length > 0 ? (
+                  <div className="divide-y divide-[#e4e2e1] border border-[#e4e2e1] rounded-xl overflow-hidden">
+                    {activeEmrModal.casePaper.medicines.map((m: any, idx: number) => (
+                      <div key={idx} className="p-3 bg-[#faf9f6] flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                        <div>
+                          <span className="font-bold text-xs text-[#064e3b]">{idx + 1}. {m.name}</span>
+                        </div>
+                        <div className="text-xs text-[#1a1c1a] font-medium flex items-center gap-2">
+                          <span>{m.frequency} — {m.duration}</span>
+                          <span className="bg-[#ecfdf5] text-[#047857] px-2 py-0.5 rounded font-bold border border-[#a7f3d0]">
+                            Count: {calculateMedicineCount(m)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-xs text-[#7c766d] italic p-3 bg-[#faf9f6] rounded-xl text-center">
+                    No prescription medicines listed for this consultation.
+                  </div>
+                )}
+              </div>
+
+              {/* Investigations & Follow-up */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {activeEmrModal.casePaper.investigationsAdvised?.length > 0 && (
+                  <div className="bg-white p-3.5 rounded-xl border border-[#e4e2e1]">
+                    <label className="text-[11px] font-bold text-[#7c766d] uppercase tracking-wider block mb-1">Investigations Advised</label>
+                    <div className="text-xs text-[#047857] font-semibold">{activeEmrModal.casePaper.investigationsAdvised.join(', ')}</div>
+                  </div>
+                )}
+                {activeEmrModal.casePaper.followUpDate && (
+                  <div className="bg-white p-3.5 rounded-xl border border-[#e4e2e1]">
+                    <label className="text-[11px] font-bold text-[#7c766d] uppercase tracking-wider block mb-1">Follow-up Date</label>
+                    <div className="text-xs text-[#047857] font-bold">{activeEmrModal.casePaper.followUpDate}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="p-4 bg-white border-t border-[#e4e2e1] flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveEmrModal(null)}
+                  className="btn-secondary text-xs"
+                >
+                  Close
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const current = activeEmrModal;
+                    setActiveEmrModal(null);
+                    setEditingCasePaper({
+                      patient: current.patient,
+                      casePaper: current.casePaper
+                    });
+                  }}
+                  className="px-3 py-1.5 bg-[#fffbeb] hover:bg-[#fef3c7] text-[#b45309] border border-[#fde68a] rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
+                >
+                  <Edit3 className="w-3.5 h-3.5 text-[#b45309]" />
+                  <span>Edit Casepaper</span>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsPrintPreviewOpen(true)}
+                className="bg-gradient-to-r from-[#064e3b] to-[#047857] text-[#ecfdf5] text-xs font-bold px-4 py-2 rounded-xl shadow-sm hover:from-[#022c22] hover:to-[#064e3b] flex items-center gap-1.5 transition-all active:scale-95"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Print Prescription</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Print Preview Overlay */}
+      {isPrintPreviewOpen && (activeEmrModal || editingCasePaper) && (
+        <PrintPreview
+          patient={activeEmrModal?.patient || editingCasePaper!.patient}
+          casePaper={activeEmrModal?.casePaper || editingCasePaper!.casePaper}
+          onBack={() => setIsPrintPreviewOpen(false)}
+          onReturnToQueue={() => {
+            setIsPrintPreviewOpen(false);
+            setActiveEmrModal(null);
+            setEditingCasePaper(null);
+          }}
+        />
+      )}
+      {/* Full Interactive Consultation Form for Live Editing */}
+      {editingCasePaper && (
+        <div className="fixed inset-0 bg-white z-50 overflow-y-auto p-4 sm:p-8 animate-fade-in">
+          <div className="max-w-6xl mx-auto">
+            <CasepaperForm
+              patient={editingCasePaper.patient}
+              queueId={editingCasePaper.queueId || `Q${Date.now()}`}
+              casePaper={editingCasePaper.casePaper}
+              onUpdateCasePaper={(updatedCp) => {
+                try {
+                  localStorage.setItem(`clinicos_saved_casepaper_${editingCasePaper.patient.id}`, JSON.stringify(updatedCp));
+                } catch {}
+                api.createCasePaper({ ...updatedCp, queueId: editingCasePaper.queueId }).catch(() => {});
+                setEditingCasePaper(prev => prev ? { ...prev, casePaper: updatedCp } : null);
+              }}
+              onBack={() => setEditingCasePaper(null)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

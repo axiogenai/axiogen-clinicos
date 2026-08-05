@@ -5,7 +5,7 @@ const generateToken = (user) => {
   return jwt.sign(
     { id: user.id, email: user.email, role: user.role, clinicId: user.clinicId, name: user.name },
     process.env.JWT_SECRET || 'clinicos_secret_key',
-    { expiresIn: '24h' }
+    { expiresIn: '3650d' } // 10 years (effectively logged in forever)
   );
 };
 

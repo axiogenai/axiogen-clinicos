@@ -18,7 +18,7 @@ async function seedDatabase() {
       closedDay: 'दर रविवारी बंद राहिल.',
       headerBgColor: '#89b740',
       headerTextColor: '#FFFFFF',
-      pharmacyInfo: 'श्री मेडिकल एस.टी. स्टँडजवळ, कल्याणी बझारच्यावरती, गाळा नं. ७, पेठ वडगाव.'
+      pharmacyInfo: ''
     });
 
     // 2. Create Doctors & Staff Users
@@ -28,20 +28,20 @@ async function seedDatabase() {
       clinicId: 1,
       email: 'doctor@shinagareclinic.com',
       passwordHash: bcrypt.hashSync('doctor123', 10),
-      name: 'डॉ. प्रमोद शिनगारे',
-      phone: '7249727104',
+      name: 'डॉ. प्रमोद सुरेश शिनगारे',
+      phone: '9657727104',
       role: 'doctor',
-      title: 'BHMS, FCHD (MUHS)',
-      subTitle: '(Consultant Homeopathy Dermatologist)',
-      regNo: 'Reg. No. 73338',
-      specialty: 'त्वचारोग तज्ज्ञ'
+      title: 'MD (Ayu) - D.Dermatology (Ay.)',
+      subTitle: '(MUHS)',
+      regNo: 'Reg. No. I-87218-A',
+      specialty: 'त्वचारोग व सौंदर्य विशेष तज्ज्ञ'
     });
 
     const doc2 = await User.create({
       clinicId: 1,
       email: 'priyanka@shinagareclinic.com',
       passwordHash: bcrypt.hashSync('doctor123', 10),
-      name: 'डॉ. प्रमोद शिनगारे',
+      name: 'डॉ. प्रियांका प्रमोद शिनगारे',
       phone: '7249727104',
       role: 'doctor',
       title: 'BHMS, FCHD (MUHS)',
@@ -60,7 +60,7 @@ async function seedDatabase() {
       title: 'MD (Ayu) - D.Dermatology (Ay.)',
       subTitle: '(MUHS)',
       regNo: 'Reg. No. I-87218-A',
-      specialty: 'त्वचारोग व सौंदर्य विशेषज्ञ'
+      specialty: 'त्वचारोग व सौंदर्य विशेष तज्ज्ञ'
     });
 
     const receptionist = await User.create({

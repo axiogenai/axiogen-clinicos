@@ -9,7 +9,7 @@ import ClinicSettingsModal from './ClinicSettingsModal';
 import type { Patient } from '../data/patients';
 import type { CasePaper } from '../types';
 
-interface PrintPreviewProps {
+interface ReprintPreviewProps {
   patient: Patient;
   casePaper: CasePaper;
   onBack: () => void;
@@ -26,16 +26,44 @@ const LANGS: { key: PrintLanguage; label: string }[] = [
   { key: 'kannada', label: 'ಕನ್ನಡ' },
 ];
 
-export default function PrintPreview({ patient, casePaper, onBack, onReturnToQueue }: PrintPreviewProps) {
+export default function ReprintPreview({ patient, casePaper, onBack, onReturnToQueue }: ReprintPreviewProps) {
   const { clinicSettings, updateClinicSettings, setToast } = useClinic();
   const [zoom, setZoom]                         = useState(55);
   const [hideHeader, setHideHeader]             = useState(false);
   const [printOnStationery, setPrintOnStationery] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<PrintLanguage>('marathi');
   const [isSettingsOpen, setIsSettingsOpen]     = useState(false);
-  const [drawerOpen, setDrawerOpen]             = useState(false); // mobile drawer
-  const barRef    = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLDivElement>(null);
+  const [drawerOpen, setDrawerOpen]             = useState(false);
+  const barRef      = useRef<HTMLDivElement>(null);
+  const canvasRef   = useRef<HTMLDivElement>(null);
+  const printPageRef = useRef<HTMLDivElement>(null);
+
+  const iframePrint = useCallback(() => {
+    const el = printPageRef.current;
+    if (!el) { window.print(); return; }
+    // Grab all stylesheets from the parent page
+    const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+      .map(s => s.outerHTML)
+      .join('\n');
+    const html = el.innerHTML;
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:210mm;height:297mm;border:0;visibility:hidden;';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) { document.body.removeChild(iframe); window.print(); return; }
+    doc.open();
+    doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8">${styles}<style>@page{size:A4 portrait;margin:0mm}body{margin:0;padding:0;background:#fff}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}</style></head><body><div class="rx-paper-root print-page" style="width:210mm;height:297mm;overflow:hidden;box-sizing:border-box;margin:0;padding:0;background:#fff">${html}</div></body></html>`);
+    doc.close();
+    // Wait for fonts/images to load then print
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } finally {
+        setTimeout(() => { try { document.body.removeChild(iframe); } catch {} }, 2000);
+      }
+    }, 600);
+  }, []);
 
   const fitToScreen = useCallback(() => {
     if (!canvasRef.current) return;
@@ -64,7 +92,6 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
   const scale  = zoom / 100;
   const isDerm = (clinicSettings.templateVariant || 'dermatology') === 'dermatology';
 
-  /* ── Desktop pill helper ── */
   const pill = (active: boolean, onClick: () => void, label: React.ReactNode, activeColor = 'bg-[#047857] text-white') => (
     <button type="button" onClick={onClick}
       className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all whitespace-nowrap border
@@ -75,7 +102,6 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
     </button>
   );
 
-  /* ── Mobile drawer pill ── */
   const drawerPill = (active: boolean, onClick: () => void, label: React.ReactNode) => (
     <button type="button" onClick={onClick}
       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 border
@@ -89,14 +115,11 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
   const sep = <div className="w-px h-4 bg-[#d6d3ce] shrink-0" />;
 
   return (
-    <div id="print-preview-root" className="fixed inset-0 z-50 bg-[#eeeae0] flex flex-col overflow-hidden">
+    <div id="reprint-preview-root" className="fixed inset-0 z-50 bg-[#eeeae0] flex flex-col overflow-hidden">
 
-      {/* ════════════════════════════════════════════════════
-          DESKTOP TOOLBAR  (hidden on mobile, shown md+)
-      ════════════════════════════════════════════════════ */}
+      {/* DESKTOP TOOLBAR */}
       <div ref={barRef} className="shrink-0 bg-white border-b border-[#e4e2e1] shadow-sm">
 
-        {/* ── DESKTOP Row 1 ── */}
         <div className="hidden md:flex items-center gap-2 px-4 h-12 border-b border-[#f0ede6]">
           <button type="button" onClick={onBack}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#f2eee3] border border-[#d6d3ce] text-[#4b463e] text-xs font-semibold hover:bg-[#e8e4da] transition-colors shrink-0">
@@ -124,14 +147,14 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
           <div className="flex-1" />
 
           <button type="button"
-            onClick={() => { setToast({ type: 'info', message: 'Select "Save as PDF" in the print dialog.' }); window.print(); }}
+            onClick={() => { setToast({ type: 'info', message: 'Select "Save as PDF" in the print dialog.' }); iframePrint(); }}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#f2eee3] border border-[#d6d3ce] text-[#4b463e] text-xs font-semibold hover:bg-[#e8e4da] transition-colors shrink-0">
             <FileText className="w-3.5 h-3.5 text-red-500" />
             Save PDF
           </button>
 
           <button type="button"
-            onClick={() => { window.print(); if (onReturnToQueue) setTimeout(onReturnToQueue, 600); else onBack(); }}
+            onClick={() => { iframePrint(); if (onReturnToQueue) setTimeout(onReturnToQueue, 2000); else setTimeout(onBack, 2000); }}
             className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[#047857] hover:bg-[#064e3b] text-white text-xs font-bold transition-colors shadow-sm shrink-0">
             <Printer className="w-3.5 h-3.5" />
             Print Prescription
@@ -145,7 +168,7 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
           )}
         </div>
 
-        {/* ── DESKTOP Row 2 — options pill bar ── */}
+        {/* DESKTOP Row 2 */}
         <div className="hidden md:flex items-center gap-2 px-4 h-10">
           <div className="inline-flex items-center gap-1 shrink-0">
             <Languages className="w-3 h-3 text-[#7c766d] shrink-0" />
@@ -172,20 +195,13 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
           </button>
         </div>
 
-        {/* ════════════════════════════════════════════════════
-            MOBILE TOOLBAR  (shown below md, hidden on desktop)
-        ════════════════════════════════════════════════════ */}
-
-        {/* ── Mobile Row 1 ── */}
+        {/* MOBILE TOOLBAR */}
         <div className="md:hidden flex items-center justify-between gap-2 px-3 py-2.5">
-
-          {/* Left: Back + Zoom */}
           <div className="flex items-center gap-2 min-w-0">
             <button type="button" onClick={onBack}
               className="p-2 rounded-xl bg-[#f2eee3] border border-[#cdc6ba] text-[#4b463e] hover:bg-[#e4e2e1] transition-colors shrink-0">
               <ArrowLeft className="w-4 h-4" />
             </button>
-
             <div className="inline-flex items-center gap-1 shrink-0 bg-[#f2eee3]/80 px-2 py-1.5 rounded-xl border border-[#e4e2e1]">
               <ZoomOut className="w-3.5 h-3.5 text-[#7c766d] cursor-pointer shrink-0"
                 onClick={() => setZoom(p => Math.max(20, p - 5))} />
@@ -197,16 +213,13 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
               <span className="font-mono text-[10px] text-[#047857] font-bold w-7 text-center shrink-0">{zoom}%</span>
             </div>
           </div>
-
-          {/* Right: Print + Options toggle */}
           <div className="flex items-center gap-2 shrink-0">
             <button type="button"
-              onClick={() => { window.print(); if (onReturnToQueue) setTimeout(onReturnToQueue, 600); else onBack(); }}
+              onClick={() => { iframePrint(); if (onReturnToQueue) setTimeout(onReturnToQueue, 2000); else setTimeout(onBack, 2000); }}
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#047857] hover:bg-[#064e3b] text-white text-xs font-bold transition-colors shadow shrink-0">
               <Printer className="w-4 h-4" />
               <span>Print</span>
             </button>
-
             <button type="button"
               onClick={() => setDrawerOpen(o => !o)}
               className={`p-2 rounded-xl border transition-colors shrink-0
@@ -216,7 +229,7 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
           </div>
         </div>
 
-        {/* ── Mobile Drawer ── */}
+        {/* Mobile Drawer */}
         {drawerOpen && (
           <div className="md:hidden border-t border-[#e4e2e1] px-3 pb-3 pt-2.5 space-y-3 bg-[#fafaf8]">
             <div>
@@ -234,28 +247,28 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
                 {drawerPill(!isDerm, () => updateClinicSettings({ ...clinicSettings, templateVariant: 'general' }, false), 'T2 — General')}
               </div>
             </div>
-             <div className="flex flex-wrap gap-1.5 pt-0.5 border-t border-[#e4e2e1]">
-               <button type="button" onClick={() => {
-                 const next = !printOnStationery;
-                 setPrintOnStationery(next);
-                 setHideHeader(next);
-               }}
-                 className={`px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center gap-1.5 transition-all
-                   ${printOnStationery ? 'bg-blue-100 text-blue-900 border-blue-300' : 'bg-white text-[#4b463e] border-[#cdc6ba]'}`}>
-                 {printOnStationery ? '📄 Pre-printed Pad' : '📑 Plain Paper'}
-               </button>
-               <button type="button" onClick={() => setHideHeader(h => !h)}
-                 className={`px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center gap-1.5 transition-all
-                   ${hideHeader ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-white text-[#4b463e] border-[#cdc6ba]'}`}>
-                 {hideHeader ? '📄 No Header' : '📑 Full Header'}
-               </button>
+            <div className="flex flex-wrap gap-1.5 pt-0.5 border-t border-[#e4e2e1]">
+              <button type="button" onClick={() => {
+                const next = !printOnStationery;
+                setPrintOnStationery(next);
+                setHideHeader(next);
+              }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center gap-1.5 transition-all
+                  ${printOnStationery ? 'bg-blue-100 text-blue-900 border-blue-300' : 'bg-white text-[#4b463e] border-[#cdc6ba]'}`}>
+                {printOnStationery ? '📄 Pre-printed Pad' : '📑 Plain Paper'}
+              </button>
+              <button type="button" onClick={() => setHideHeader(h => !h)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center gap-1.5 transition-all
+                  ${hideHeader ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-white text-[#4b463e] border-[#cdc6ba]'}`}>
+                {hideHeader ? '📄 No Header' : '📑 Full Header'}
+              </button>
               <button type="button" onClick={() => setIsSettingsOpen(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-[#cdc6ba] text-[#4b463e] hover:bg-[#f2eee3] transition-colors">
                 <Settings className="w-3.5 h-3.5 text-[#047857]" />
                 Branding
               </button>
               <button type="button"
-                onClick={() => { setToast({ type: 'info', message: 'Select "Save as PDF" in the print dialog.' }); window.print(); }}
+                onClick={() => { setToast({ type: 'info', message: 'Select "Save as PDF" in the print dialog.' }); iframePrint(); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-[#cdc6ba] text-red-700 hover:bg-red-50 transition-colors">
                 <FileText className="w-3.5 h-3.5" />
                 Save as PDF
@@ -271,7 +284,7 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
         )}
       </div>
 
-      {/* ════════════════ PREVIEW CANVAS ════════════════ */}
+      {/* PREVIEW CANVAS */}
       <div ref={canvasRef}
         className="flex-1 w-full flex items-start sm:items-center justify-center overflow-auto p-2">
         <div
@@ -279,6 +292,7 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
           style={{ width: A4_W * scale, height: A4_H * scale, flexShrink: 0 }}
         >
           <div
+            ref={printPageRef}
             className="print-page bg-white"
             style={{ width: A4_W, height: A4_H, transform: `scale(${scale})`, transformOrigin: 'top left' }}
           >

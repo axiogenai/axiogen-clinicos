@@ -39,7 +39,11 @@ if (dbUrl) {
       underscored: true
     }
   });
-  console.log('📦 Configured for Local SQLite Database');
+  // Enable WAL mode for high concurrency SQLite reads/writes
+  sequelize.query('PRAGMA journal_mode=WAL;').catch(err => {
+    console.error('⚠️ Failed to enable SQLite WAL mode:', err);
+  });
+  console.log('📦 Configured for Local SQLite Database (WAL Mode enabled)');
 }
 
 module.exports = sequelize;

@@ -83,7 +83,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
       const mockUser: UserSession = {
         id: 1,
         email: emailInput,
-        name: mockRole === 'doctor' ? 'डॉ. प्रियांका शिनगारे' : 'Sneha Kulkarni',
+        name: mockRole === 'doctor' ? 'डॉ. प्रमोद शिनगारे' : 'Sneha Kulkarni',
         role: mockRole,
         clinicId: 1
       };
@@ -131,7 +131,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
           openingHours: dbSettings.value.openingHours || prev.openingHours,
           closedDay: dbSettings.value.closedDay || prev.closedDay,
           headerBgColor: dbSettings.value.headerBgColor || prev.headerBgColor,
-          pharmacyInfo: dbSettings.value.pharmacyInfo || prev.pharmacyInfo,
+          pharmacyInfo: dbSettings.value.pharmacyInfo ?? prev.pharmacyInfo,
         }));
       }
     } catch {
@@ -166,7 +166,16 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
 
   const updateQueueStatus = useCallback((queueId: string, status: QueueItem['status']) => {
     setQueue((prev) =>
-      prev.map((item) => (item.queueId === queueId ? { ...item, status } : item))
+      prev.map((item) => {
+        if (
+          item.queueId === queueId ||
+          item.patientId === queueId ||
+          (item.name && item.name.toLowerCase() === queueId.toLowerCase())
+        ) {
+          return { ...item, status };
+        }
+        return item;
+      })
     );
     api.updateQueueStatus(queueId, status).catch(() => {});
   }, []);

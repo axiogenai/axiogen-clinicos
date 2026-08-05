@@ -77,13 +77,11 @@ exports.createCasePaper = async (req, res, next) => {
     });
 
     // Mark matching queue item status as completed in database
-    const dateStr = casePaperDate || new Date().toISOString().split('T')[0];
     await Queue.update(
       { status: 'completed' },
       {
         where: {
           clinicId,
-          date: dateStr,
           [Op.or]: [
             queueId ? { queueId } : null,
             targetPatientId ? { patientId: targetPatientId } : null,

@@ -1,75 +1,208 @@
+import { useState, useEffect } from 'react';
 import type { Patient } from '../data/patients';
 import type { CasePaper } from '../types';
 import type { ClinicSettings } from '../data/clinicSettings';
+import { calculateMedicineCount } from '../utils/countCalculator';
+import { api } from '../api/client';
+
+export type PrintLanguage = 'marathi' | 'english' | 'hindi' | 'kannada';
 
 interface PrintTemplateProps {
   patient: Patient;
   casePaper: CasePaper;
   clinicSettings: ClinicSettings;
   hideHeader?: boolean;
+  language?: PrintLanguage;
+  printOnStationery?: boolean;
 }
 
-// Automatic Marathi translation helpers for Frequency & Duration on Print
-export const toMarathiFrequency = (freq?: string): string => {
+export const getPatientLabels = (lang: PrintLanguage = 'marathi') => {
+  switch (lang) {
+    case 'english':
+      return { name: 'Patient Name :', date: 'Date :', village: 'Address :', age: 'Age / Sex :' };
+    case 'hindi':
+      return { name: 'मरीज का नाम :', date: 'दिनांक :', village: 'पता / गांव :', age: 'आयु / लिंग :' };
+    case 'kannada':
+      return { name: 'ರೋಗಿಯ ಹೆಸರು :', date: 'ದಿನಾಂಕ :', village: 'ಸ್ಥಳ :', age: 'ವಯಸ್ಸು / ಲಿಂಗ :' };
+    case 'marathi':
+    default:
+      return { name: 'पेशंटचे नाव :', date: 'दिनांक :', village: 'गाव :', age: 'वय / लिंग :' };
+  }
+};
+
+export const getTableHeaders = (lang: PrintLanguage = 'marathi') => {
+  switch (lang) {
+    case 'english':
+      return { srNo: 'Sr. No.', medName: 'Medicine Name', freq: 'Frequency & Instructions', duration: 'Duration', count: 'Count', advice: 'Counselling & Advice', investigation: 'Investigations Advised' };
+    case 'hindi':
+      return { srNo: 'Sr. No.', medName: 'दवा का नाम', freq: 'खुराक व निर्देश', duration: 'अवधि', count: 'कुल संख्या', advice: 'सलाह व परामर्श', investigation: 'जांच सलाह' };
+    case 'kannada':
+      return { srNo: 'Sr. No.', medName: 'ಔಷಧದ ಹೆಸರು', freq: 'ಪ್ರಮಾಣ ಮತ್ತು ಸೂಚನೆಗಳು', duration: 'ಅವಧಿ', count: 'ಒಟ್ಟು ಸಂಖ್ಯೆ', advice: 'ಸಲಹೆ ಮತ್ತು ಮಾರ್ಗದರ್ಶನ', investigation: 'ತನಿಖೆಗಳು' };
+    case 'marathi':
+    default:
+      return { srNo: 'Sr. No.', medName: 'औषधाचे नाव', freq: 'मात्रा (वारंवारता) व सूचना', duration: 'कालावधी', count: 'एकूण', advice: 'सल्ला व समुपदेशन', investigation: 'तपासण्या सलाह' };
+  }
+};
+
+export const translateDuration = (dur?: string, lang: PrintLanguage = 'marathi'): string => {
+  if (!dur) return '-';
+  const numMatch = dur.match(/\d+/);
+  const num = numMatch ? numMatch[0] : '';
+  const lower = dur.toLowerCase();
+
+  if (lang === 'english') return dur;
+
+  if (lang === 'hindi') {
+    if (lower.includes('day')) return `${num} दिन`;
+    if (lower.includes('week')) return `${num} हफ्ते`;
+    if (lower.includes('month')) return `${num} महीना`;
+    return dur;
+  }
+
+  if (lang === 'kannada') {
+    if (lower.includes('day')) return `${num} ದಿನಗಳು`;
+    if (lower.includes('week')) return `${num} ವಾರಗಳು`;
+    if (lower.includes('month')) return `${num} ತಿಂಗಳು`;
+    return dur;
+  }
+
+  // Marathi (default)
+  if (lower.includes('day')) return `${num} दिवस`;
+  if (lower.includes('week')) return `${num} आठवडे`;
+  if (lower.includes('month')) return `${num} महिना`;
+  return dur;
+};
+
+export const cleanFrequencyForPrint = (freq?: string): string => {
+  if (!freq) return '';
+  return freq
+    .replace(/^(cream टेपरिंग:|cream tapering:|tab tapering:|गोळी टेपरिंग:)\s*/gi, '')
+    .trim();
+};
+
+export const translateFrequency = (freq?: string, _medName?: string, lang: PrintLanguage = 'marathi'): string => {
   if (!freq) return '-';
-  let str = freq.trim();
-
-  // 1. Remove duplicate (HS) if text already contains Marathi 'रात्री झोपताना'
-  if (/रात्री\s*झोपताना/i.test(str)) {
-    str = str.replace(/\(\s*hs\s*\)/gi, '').replace(/\bhs\b/gi, '').trim();
+  let str = cleanFrequencyForPrint(freq);
+  if (lang === 'marathi') {
+    str = str.replace(/कॅप्सूल|टॅब्लेट|tablet|cap/gi, 'गोळी');
+    // Clean up common bad translation hallucinations
+    str = str
+      .replace(/दिनाला\s*एकवेळा/gi, 'दिवसातून एकदा')
+      .replace(/दिनाला\s*दोनवेळा/gi, 'दिवसातून दोनदा')
+      .replace(/दिनाला\s*तीनवेळा/gi, 'दिवसातून तीनदा')
+      .replace(/दिनाला\s*चारवेळा/gi, 'दिवसातून चारवेळा')
+      .replace(/दिवसातून\s*एकवेळा/gi, 'दिवसातून एकदा')
+      .replace(/दिवसातून\s*दोनवेळा/gi, 'दिवसातून दोनदा')
+      .replace(/दिवसातून\s*तीनवेळा/gi, 'दिवसातून तीनदा');
   }
-
-  // 2. Translate Latin Abbreviations in parentheses
-  str = str
-    .replace(/\(\s*bd\s*\)/gi, '(दिवसातून २ वेळा)')
-    .replace(/\(\s*od\s*\)/gi, '(दिवसातून १ वेळ)')
-    .replace(/\(\s*hs\s*\)/gi, '(रात्री झोपताना)')
-    .replace(/\(\s*tds\s*\)/gi, '(दिवसातून ३ वेळा)')
-    .replace(/\(\s*sos\s*\)/gi, '(गरज भासल्यास)');
-
-  // 3. Exact match shortcuts for simple codes
-  const lower = str.toLowerCase();
-  if (lower === '1-0-0' || lower === '0-1-0' || lower === '0-0-1' || lower === 'once daily' || lower === 'once a day' || lower === 'od') {
-    return `${str} (दिवसातून १ वेळ)`;
-  }
-  if (lower === '1-0-1' || lower === 'twice daily' || lower === 'twice a day' || lower === 'bd') {
-    return '1-0-1 (दिवसातून २ वेळा - सकाळी व रात्री)';
-  }
-  if (lower === '1-1-1' || lower === 'thrice daily' || lower === 'thrice a day' || lower === 'tds') {
-    return '1-1-1 (दिवसातून ३ वेळा - सकाळी, दुपारी व रात्री)';
-  }
-
-  // 4. Comprehensive phrase replacements (longest phrases first)
-  str = str
-    .replace(/use during morning bath daily/gi, 'रोज सकाळी आंघोळीच्या वेळी वापरावे')
-    .replace(/during morning bath daily/gi, 'रोज सकाळी आंघोळीच्या वेळी')
-    .replace(/during morning bath/gi, 'सकाळी आंघोळीच्या वेळी')
-    .replace(/morning bath/gi, 'सकाळी आंघोळीच्या वेळी')
-    .replace(/nightly application/gi, 'दररोज रात्री लावावे')
-    .replace(/clean & dry area/gi, 'स्वच्छ व वाळलेल्या जागेवर')
-    .replace(/clean and dry area/gi, 'स्वच्छ व वाळलेल्या जागेवर')
-    .replace(/on affected area/gi, 'बाधित त्वचेवर')
-    .replace(/affected area/gi, 'बाधित जागेवर')
-    .replace(/before food/gi, 'जेवणाआधी')
-    .replace(/after food/gi, 'जेवणानंतर')
-    .replace(/before meals/gi, 'जेवणाआधी')
-    .replace(/after meals/gi, 'जेवणानंतर')
-    .replace(/after meal/gi, 'जेवणानंतर')
-    .replace(/once daily/gi, 'दिवसातून १ वेळ')
-    .replace(/twice daily/gi, 'दिवसातून २ वेळा')
-    .replace(/thrice daily/gi, 'दिवसातून ३ वेळा')
-    .replace(/at bedtime/gi, 'रात्री झोपताना')
-    .replace(/every morning/gi, 'रोज सकाळी')
-    .replace(/once a week/gi, 'आठवड्यातून एकदा')
-    .replace(/alternate day/gi, 'एक दिवस आड')
-    .replace(/as needed/gi, 'गरज भासल्यास')
-    .replace(/apply/gi, 'लावावे')
-    .replace(/application/gi, 'लावावे')
-    .replace(/use/gi, 'वापरावे')
-    .replace(/daily/gi, 'दररोज')
-    .replace(/nightly/gi, 'दररोज रात्री');
-
   return str;
+};
+
+const groqMemoryCache = new Map<string, string>();
+
+export const GroqTranslatedCell: React.FC<{
+  freq?: string;
+  medName?: string;
+  lang: PrintLanguage;
+  notes?: string;
+}> = ({ freq, medName, lang, notes }) => {
+  const cleanFreq = cleanFrequencyForPrint(freq);
+  const cleanNotes = (notes || '').trim();
+
+  const fullTextToTranslate = cleanNotes
+    ? (cleanFreq && cleanFreq !== '-' ? `${cleanFreq} - ${cleanNotes}` : cleanNotes)
+    : cleanFreq;
+
+  const fallbackText = translateFrequency(cleanFreq, medName, lang);
+  const fallbackWithNotes = cleanNotes ? `${fallbackText}\n(${cleanNotes})` : fallbackText;
+
+  // Check if text is already in Devanagari script (Marathi/Hindi)
+  const isDevanagari = (text: string) => /[\u0900-\u097F]/.test(text);
+
+  const cacheKey = `${lang}:${fullTextToTranslate}:${medName || ''}`;
+  const marathiCacheKey = `marathi:${fullTextToTranslate}:${medName || ''}`;
+
+  const [translated, setTranslated] = useState<string>(() => {
+    if (lang === 'marathi' && isDevanagari(fullTextToTranslate)) {
+      return fullTextToTranslate;
+    }
+    return groqMemoryCache.get(cacheKey) || fallbackWithNotes;
+  });
+
+  const [marathiSubtext, setMarathiSubtext] = useState<string>(() => {
+    if (isDevanagari(fullTextToTranslate)) {
+      return fullTextToTranslate;
+    }
+    return groqMemoryCache.get(marathiCacheKey) || (cleanNotes ? `${cleanFreq} (${cleanNotes})` : cleanFreq);
+  });
+
+  useEffect(() => {
+    if (!fullTextToTranslate || fullTextToTranslate === '-') return;
+
+    // If target language is Marathi and the text is already Marathi, don't run AI translation
+    if (lang === 'marathi' && isDevanagari(fullTextToTranslate)) {
+      setTranslated(fullTextToTranslate);
+      return;
+    }
+
+    let isMounted = true;
+
+    // 1. Fetch Primary Target Language Translation
+    if (groqMemoryCache.has(cacheKey)) {
+      setTranslated(groqMemoryCache.get(cacheKey)!);
+    } else {
+      api.translateText(fullTextToTranslate, lang)
+        .then((res) => {
+          if (res && res.translatedText) {
+            const cleanedRes = cleanFrequencyForPrint(res.translatedText);
+            groqMemoryCache.set(cacheKey, cleanedRes);
+            if (isMounted) setTranslated(cleanedRes);
+          }
+        })
+        .catch(() => {});
+    }
+
+    // 2. Fetch Marathi Subtext Explanation if target language is non-Marathi
+    if (lang !== 'marathi') {
+      if (isDevanagari(fullTextToTranslate)) {
+        setMarathiSubtext(fullTextToTranslate);
+      } else if (groqMemoryCache.has(marathiCacheKey)) {
+        setMarathiSubtext(groqMemoryCache.get(marathiCacheKey)!);
+      } else {
+        api.translateText(fullTextToTranslate, 'marathi')
+          .then((res) => {
+            if (res && res.translatedText) {
+              const cleanedRes = cleanFrequencyForPrint(res.translatedText);
+              groqMemoryCache.set(marathiCacheKey, cleanedRes);
+              if (isMounted) setMarathiSubtext(cleanedRes);
+            }
+          })
+          .catch(() => {});
+      }
+    }
+
+    return () => { isMounted = false; };
+  }, [cacheKey, marathiCacheKey, fullTextToTranslate, lang]);
+
+
+  return (
+    <div style={{ whiteSpace: 'pre-line', lineHeight: '1.35' }}>
+      <div>{translated}</div>
+      {lang !== 'marathi' && marathiSubtext && (
+        <div style={{ fontSize: '10px', color: '#555', marginTop: '2px' }}>
+          {marathiSubtext}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export const renderFrequencyCell = (freq?: string, medName?: string, lang: PrintLanguage = 'marathi', notes?: string) => {
+  return <GroqTranslatedCell freq={freq} medName={medName} lang={lang} notes={notes} />;
+};
+
+export const toMarathiFrequency = (freq?: string, medName?: string): string => {
+  return translateFrequency(freq, medName, 'marathi');
 };
 
 export const toMarathiDuration = (dur?: string): string => {
@@ -95,11 +228,29 @@ export const toMarathiDuration = (dur?: string): string => {
   return toDevanagariDigits(translated);
 };
 
-export default function PrintTemplate({ patient, casePaper, clinicSettings, hideHeader = false }: PrintTemplateProps) {
+export default function PrintTemplate({ patient, casePaper, clinicSettings, hideHeader = false, language = 'marathi', printOnStationery = false }: PrintTemplateProps) {
+  const labels = getPatientLabels(language);
+  const headers = getTableHeaders(language);
   const formatDate = (dateString?: string) => {
     if (!dateString) return '__________';
     try {
-      return new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(dateString));
+      const parts = dateString.split('-');
+      let dateObj = new Date(dateString);
+      if (parts.length === 3) {
+        dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      }
+      const formatted = new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }).format(dateObj);
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      dateObj.setHours(0, 0, 0, 0);
+      const diffTime = dateObj.getTime() - today.getTime();
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays > 0) {
+        return `${diffDays} Days (${formatted})`;
+      }
+      return formatted;
     } catch (e) {
       return dateString;
     }
@@ -140,7 +291,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
     title: 'MD (Ayu) - D.Dermatology (Ay.)',
     subTitle: '(MUHS)',
     regNo: 'Reg. No. I-87218-A',
-    specialty: 'त्वचारोग व सौंदर्य विशेषज्ञ',
+    specialty: 'त्वचारोग व सौंदर्य विशेष तज्ज्ञ',
   };
 
   const isGeneralPad = templateVariant === 'general';
@@ -174,8 +325,8 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
         style={{ 
           paddingTop: '10mm', 
           marginBottom: '4px',
-          visibility: hideHeader ? 'hidden' : 'visible',
-          height: hideHeader ? '35mm' : 'auto',
+          visibility: (hideHeader || printOnStationery) ? 'hidden' : 'visible',
+          height: (hideHeader || printOnStationery) ? '40mm' : 'auto',
         }}
       >
         {/* Title Row */}
@@ -251,7 +402,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
             {doc1.title && <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#222' }}>{doc1.title}</div>}
             {doc1.subTitle && <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#222' }}>{doc1.subTitle}</div>}
             {doc1.regNo && <div style={{ fontSize: '9.5px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{doc1.regNo}</div>}
-            {doc1.specialty && <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '11px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{doc1.specialty}</div>}
+            {doc1.specialty && <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '11px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{(doc1.specialty || '').replace('विशेषज्ञ', 'विशेष तज्ज्ञ')}</div>}
           </div>
 
           {/* Timings (Center) */}
@@ -282,7 +433,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
             {doc2.title && <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#222' }}>{doc2.title}</div>}
             {doc2.subTitle && <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#222' }}>{doc2.subTitle}</div>}
             {doc2.regNo && <div style={{ fontSize: '9.5px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{doc2.regNo}</div>}
-            {doc2.specialty && <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '11px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{doc2.specialty}</div>}
+            {doc2.specialty && <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '11px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{(doc2.specialty || '').replace('विशेषज्ञ', 'विशेष तज्ज्ञ')}</div>}
           </div>
         </div>
 
@@ -308,7 +459,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
       <div
         style={{
           padding: '6px 12px',
-          borderBottom: '2px solid #a53b3b',
+          borderBottom: printOnStationery ? 'none' : '2px solid #a53b3b',
           position: 'relative',
           fontFamily: "'Mukta', sans-serif",
           fontSize: '13px',
@@ -317,14 +468,14 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
           <div style={{ width: '65%', display: 'flex', alignItems: 'baseline' }}>
-            <span style={{ marginRight: '5px', whiteSpace: 'nowrap' }}>पेशंटचे नाव :</span>
-            <span style={{ flex: 1, borderBottom: '1px solid #333', minHeight: '1.1em', paddingLeft: '6px', fontWeight: 700, color: '#111' }}>
+            <span style={{ marginRight: '5px', whiteSpace: 'nowrap', visibility: printOnStationery ? 'hidden' : 'visible' }}>{labels.name}</span>
+            <span style={{ flex: 1, borderBottom: printOnStationery ? 'none' : '1px solid #333', minHeight: '1.1em', paddingLeft: '6px', fontWeight: 700, color: '#111' }}>
               {patient.name}
             </span>
           </div>
           <div style={{ width: '30%', display: 'flex', alignItems: 'baseline' }}>
-            <span style={{ marginRight: '5px', whiteSpace: 'nowrap' }}>दिनांक :</span>
-            <span style={{ flex: 1, borderBottom: '1px solid #333', minHeight: '1.1em', paddingLeft: '6px', fontWeight: 700, color: '#111' }}>
+            <span style={{ marginRight: '5px', whiteSpace: 'nowrap', visibility: printOnStationery ? 'hidden' : 'visible' }}>{labels.date}</span>
+            <span style={{ flex: 1, borderBottom: printOnStationery ? 'none' : '1px solid #333', minHeight: '1.1em', paddingLeft: '6px', fontWeight: 700, color: '#111' }}>
               {formatDate(casePaper.date)}
             </span>
           </div>
@@ -332,14 +483,14 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
 
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <div style={{ width: '65%', display: 'flex', alignItems: 'baseline' }}>
-            <span style={{ marginRight: '5px', whiteSpace: 'nowrap' }}>गाव :</span>
-            <span style={{ flex: 1, borderBottom: '1px solid #333', minHeight: '1.1em', paddingLeft: '6px', fontWeight: 700, color: '#111' }}>
-              {patient.village || '___________'}
+            <span style={{ marginRight: '5px', whiteSpace: 'nowrap', visibility: printOnStationery ? 'hidden' : 'visible' }}>{labels.village}</span>
+            <span style={{ flex: 1, borderBottom: printOnStationery ? 'none' : '1px solid #333', minHeight: '1.1em', paddingLeft: '6px', fontWeight: 700, color: '#111' }}>
+              {patient.village || ''}
             </span>
           </div>
           <div style={{ width: '30%', display: 'flex', alignItems: 'baseline' }}>
-            <span style={{ marginRight: '5px', whiteSpace: 'nowrap' }}>वय :</span>
-            <span style={{ flex: 1, borderBottom: '1px solid #333', minHeight: '1.1em', paddingLeft: '6px', fontWeight: 700, color: '#111' }}>
+            <span style={{ marginRight: '5px', whiteSpace: 'nowrap', visibility: printOnStationery ? 'hidden' : 'visible' }}>{labels.age}</span>
+            <span style={{ flex: 1, borderBottom: printOnStationery ? 'none' : '1px solid #333', minHeight: '1.1em', paddingLeft: '6px', fontWeight: 700, color: '#111' }}>
               {patient.age} Yrs / {patient.gender}
             </span>
           </div>
@@ -356,7 +507,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               display: 'flex',
               flexDirection: 'column',
               flex: 1,
-              borderTop: '3px double #a53b3b',
+              borderTop: printOnStationery ? 'none' : '3px double #a53b3b',
               padding: '12px 20px',
               boxSizing: 'border-box',
               position: 'relative',
@@ -364,29 +515,31 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
             }}
           >
             {/* Top of Body: Logo and Date */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <svg width="50" height="50" viewBox="0 0 100 110" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="47.5" y="14" width="5" height="88" rx="2.5" fill="#2d773f" />
-                  <circle cx="50" cy="12" r="5" fill="#2d773f" />
-                  <path d="M 46 22 C 32 10, 15 15, 8 21 C 22 26, 36 27, 46 30 Z" fill="#2d773f" />
-                  <path d="M 45 27 C 32 20, 20 22, 12 27 C 24 30, 36 30, 45 32 Z" fill="#2d773f" />
-                  <path d="M 54 22 C 68 10, 85 15, 92 21 C 78 26, 64 27, 54 30 Z" fill="#2d773f" />
-                  <path d="M 55 27 C 68 20, 80 22, 88 27 C 76 30, 64 30, 55 32 Z" fill="#2d773f" />
-                  <ellipse cx="50" cy="38" rx="18" ry="7.5" stroke="#2d773f" strokeWidth="4.5" fill="none" />
-                  <ellipse cx="50" cy="54" rx="15" ry="7" stroke="#2d773f" strokeWidth="4.5" fill="none" />
-                  <ellipse cx="50" cy="69" rx="12" ry="6" stroke="#2d773f" strokeWidth="4" fill="none" />
-                  <ellipse cx="50" cy="82" rx="9" ry="5" stroke="#2d773f" strokeWidth="3.5" fill="none" />
-                  <ellipse cx="50" cy="93" rx="6" ry="3.5" stroke="#2d773f" strokeWidth="3" fill="none" />
-                  <path d="M 33 32 C 41 24, 46 24, 47.5 25.5" stroke="#2d773f" strokeWidth="4" strokeLinecap="round" fill="none" />
-                  <path d="M 67 32 C 59 24, 54 24, 52.5 25.5" stroke="#2d773f" strokeWidth="4" strokeLinecap="round" fill="none" />
-                </svg>
-              </div>
+            {!printOnStationery && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <svg width="50" height="50" viewBox="0 0 100 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="47.5" y="14" width="5" height="88" rx="2.5" fill="#2d773f" />
+                    <circle cx="50" cy="12" r="5" fill="#2d773f" />
+                    <path d="M 46 22 C 32 10, 15 15, 8 21 C 22 26, 36 27, 46 30 Z" fill="#2d773f" />
+                    <path d="M 45 27 C 32 20, 20 22, 12 27 C 24 30, 36 30, 45 32 Z" fill="#2d773f" />
+                    <path d="M 54 22 C 68 10, 85 15, 92 21 C 78 26, 64 27, 54 30 Z" fill="#2d773f" />
+                    <path d="M 55 27 C 68 20, 80 22, 88 27 C 76 30, 64 30, 55 32 Z" fill="#2d773f" />
+                    <ellipse cx="50" cy="38" rx="18" ry="7.5" stroke="#2d773f" strokeWidth="4.5" fill="none" />
+                    <ellipse cx="50" cy="54" rx="15" ry="7" stroke="#2d773f" strokeWidth="4.5" fill="none" />
+                    <ellipse cx="50" cy="69" rx="12" ry="6" stroke="#2d773f" strokeWidth="4" fill="none" />
+                    <ellipse cx="50" cy="82" rx="9" ry="5" stroke="#2d773f" strokeWidth="3.5" fill="none" />
+                    <ellipse cx="50" cy="93" rx="6" ry="3.5" stroke="#2d773f" strokeWidth="3" fill="none" />
+                    <path d="M 33 32 C 41 24, 46 24, 47.5 25.5" stroke="#2d773f" strokeWidth="4" strokeLinecap="round" fill="none" />
+                    <path d="M 67 32 C 59 24, 54 24, 52.5 25.5" stroke="#2d773f" strokeWidth="4" strokeLinecap="round" fill="none" />
+                  </svg>
+                </div>
 
-              <div style={{ fontWeight: 600, fontSize: '0.85rem', fontFamily: "'Inter', sans-serif", color: '#333', marginTop: '10px' }}>
-                Date : {formatDate(casePaper.date)}
+                <div style={{ fontWeight: 600, fontSize: '0.85rem', fontFamily: "'Inter', sans-serif", color: '#333', marginTop: '10px' }}>
+                  Date : {formatDate(casePaper.date)}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Medicines Rx Table */}
             <div style={{ marginTop: '10px', flex: 1 }}>
@@ -394,23 +547,28 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                 <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #333', fontSize: '12px' }}>
                   <thead>
                     <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #333', fontWeight: 700 }}>
-                      <th style={{ border: '1px solid #333', padding: '4px 6px', textAlign: 'center', width: '30px' }}>#</th>
-                      <th style={{ border: '1px solid #333', padding: '4px 10px', textAlign: 'left' }}>Medicine Name</th>
-                      <th style={{ border: '1px solid #333', padding: '4px 10px', textAlign: 'left', width: '85px' }}>Dosage</th>
-                      <th style={{ border: '1px solid #333', padding: '4px 10px', textAlign: 'left', width: '120px' }}>Frequency</th>
-                      <th style={{ border: '1px solid #333', padding: '4px 10px', textAlign: 'left', width: '80px' }}>Duration</th>
+                      <th style={{ border: '1px solid #333', padding: '4px 4px', textAlign: 'center', width: '45px' }}>{headers.srNo || 'Sr. No.'}</th>
+                      <th style={{ border: '1px solid #333', padding: '4px 10px', textAlign: 'left' }}>{headers.medName}</th>
+                      <th style={{ border: '1px solid #333', padding: '4px 10px', textAlign: 'left', width: '180px' }}>{headers.freq}</th>
+                      <th style={{ border: '1px solid #333', padding: '4px 10px', textAlign: 'left', width: '80px' }}>{headers.duration}</th>
+                      <th style={{ border: '1px solid #333', padding: '4px 6px', textAlign: 'center', width: '65px', color: '#93231f' }}>{headers.count}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {casePaper.medicines.map((med, index) => (
-                      <tr key={index} style={{ borderBottom: '1px solid #333', height: '26px' }}>
-                        <td style={{ border: '1px solid #333', padding: '4px 6px', textAlign: 'center', fontFamily: 'monospace', fontSize: '11.5px' }}>{index + 1}</td>
-                        <td style={{ border: '1px solid #333', padding: '4px 10px', fontWeight: 700, color: '#111' }}>{med.name}</td>
-                        <td style={{ border: '1px solid #333', padding: '4px 10px', color: '#333' }}>{med.dosage}</td>
-                        <td style={{ border: '1px solid #333', padding: '4px 10px', fontWeight: 600, color: '#222' }}>{toMarathiFrequency(med.frequency)}</td>
-                        <td style={{ border: '1px solid #333', padding: '4px 10px', color: '#333' }}>{toMarathiDuration(med.duration)}</td>
-                      </tr>
-                    ))}
+                    {casePaper.medicines.map((med, index) => {
+                      const displayName = (med.dosage && !med.name.toLowerCase().includes(med.dosage.toLowerCase()))
+                        ? `${med.name} ${med.dosage}`
+                        : med.name;
+                      return (
+                        <tr key={index} style={{ borderBottom: '1px solid #333', height: '26px' }}>
+                          <td style={{ border: '1px solid #333', padding: '4px 6px', textAlign: 'center', fontFamily: 'monospace', fontSize: '11.5px' }}>{index + 1}</td>
+                          <td style={{ border: '1px solid #333', padding: '4px 10px', fontWeight: 700, color: '#111' }}>{displayName}</td>
+                          <td style={{ border: '1px solid #333', padding: '4px 10px', fontWeight: 600, color: '#222' }}>{renderFrequencyCell(med.frequency, med.name, language, med.instructions || med.notes)}</td>
+                          <td style={{ border: '1px solid #333', padding: '4px 10px', color: '#333' }}>{translateDuration(med.duration, language)}</td>
+                          <td style={{ border: '1px solid #333', padding: '4px 6px', textAlign: 'center', fontWeight: 700, color: '#047857' }}>{calculateMedicineCount(med)}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               ) : (
@@ -426,19 +584,18 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
             </div>
           </div>
 
-          {/* Template 2 Footer */}
-          <footer style={{ borderTop: 'none', padding: '6px 20px 12px 20px', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>
+          <footer style={{ borderTop: 'none', padding: printOnStationery ? '6px 20px 90px 20px' : '6px 20px 12px 20px', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>
             <div style={{ textAlign: 'right', marginBottom: '2px', fontWeight: 700, fontSize: '0.85rem', color: '#222' }}>
-              पुढील भेटीची दि. : {formatDate(casePaper.followUpDate)}
+              <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>पुढील भेटीची दि. : </span>
+              {formatDate(casePaper.followUpDate)}
             </div>
-            <div style={{ borderTop: '1px solid #111', paddingTop: '6px', fontSize: '0.95rem', display: 'flex', justifyContent: 'center', alignItems: 'baseline', gap: '6px' }}>
-              <span style={{ color: '#7b2a2a', fontWeight: 700, fontSize: '1.3rem', fontFamily: "'Amita', 'Karma', serif" }}>
-                श्री मेडिकल
-              </span>
-              <span style={{ fontWeight: 600, fontFamily: "'Mukta', sans-serif", color: '#333' }}>
-                {pharmacyInfo || 'एस.टी. स्टँडजवळ, कल्याणी बाजारच्यावरती, गाळा नं. ७, पेठ वडगाव.'}
-              </span>
-            </div>
+            {pharmacyInfo && (
+              <div style={{ borderTop: '1px solid #111', paddingTop: '6px', fontSize: '0.95rem', display: 'flex', justifyContent: 'center', alignItems: 'baseline', gap: '6px' }}>
+                <span style={{ fontWeight: 600, fontFamily: "'Mukta', sans-serif", color: '#333' }}>
+                  {pharmacyInfo}
+                </span>
+              </div>
+            )}
           </footer>
         </div>
       ) : (
@@ -451,7 +608,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               display: 'flex',
               flex: 1,
               position: 'relative',
-              borderTop: '3px double #a53b3b',
+              borderTop: printOnStationery ? 'none' : '3px double #a53b3b',
               overflow: 'hidden',
             }}
           >
@@ -459,7 +616,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
             <aside
               style={{
                 width: '22%',
-                borderRight: '3px double #a53b3b',
+                borderRight: printOnStationery ? 'none' : '3px double #a53b3b',
                 padding: '6px 8px',
                 fontFamily: "'Inter', sans-serif",
                 fontSize: '10px',
@@ -469,6 +626,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
+                visibility: printOnStationery ? 'hidden' : 'visible',
               }}
             >
               {/* Past History */}
@@ -653,21 +811,23 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                   <div style={{ fontSize: '28px', fontFamily: "'EB Garamond', Georgia, serif", fontWeight: 800, fontStyle: 'italic', color: '#111' }}>
                     Rx
                   </div>
-                  <svg width="38" height="42" viewBox="0 0 100 110" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="47.5" y="14" width="5" height="88" rx="2.5" fill="#2d773f" />
-                    <circle cx="50" cy="12" r="5" fill="#2d773f" />
-                    <path d="M 46 22 C 32 10, 15 15, 8 21 C 22 26, 36 27, 46 30 Z" fill="#2d773f" />
-                    <path d="M 45 27 C 32 20, 20 22, 12 27 C 24 30, 36 30, 45 32 Z" fill="#2d773f" />
-                    <path d="M 54 22 C 68 10, 85 15, 92 21 C 78 26, 64 27, 54 30 Z" fill="#2d773f" />
-                    <path d="M 55 27 C 68 20, 80 22, 88 27 C 76 30, 64 30, 55 32 Z" fill="#2d773f" />
-                    <ellipse cx="50" cy="38" rx="18" ry="7.5" stroke="#2d773f" strokeWidth="4.5" fill="none" />
-                    <ellipse cx="50" cy="54" rx="15" ry="7" stroke="#2d773f" strokeWidth="4.5" fill="none" />
-                    <ellipse cx="50" cy="69" rx="12" ry="6" stroke="#2d773f" strokeWidth="4" fill="none" />
-                    <ellipse cx="50" cy="82" rx="9" ry="5" stroke="#2d773f" strokeWidth="3.5" fill="none" />
-                    <ellipse cx="50" cy="93" rx="6" ry="3.5" stroke="#2d773f" strokeWidth="3" fill="none" />
-                    <path d="M 33 32 C 41 24, 46 24, 47.5 25.5" stroke="#2d773f" strokeWidth="4" strokeLinecap="round" fill="none" />
-                    <path d="M 67 32 C 59 24, 54 24, 52.5 25.5" stroke="#2d773f" strokeWidth="4" strokeLinecap="round" fill="none" />
-                  </svg>
+                  {!printOnStationery && (
+                    <svg width="38" height="42" viewBox="0 0 100 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <rect x="47.5" y="14" width="5" height="88" rx="2.5" fill="#2d773f" />
+                      <circle cx="50" cy="12" r="5" fill="#2d773f" />
+                      <path d="M 46 22 C 32 10, 15 15, 8 21 C 22 26, 36 27, 46 30 Z" fill="#2d773f" />
+                      <path d="M 45 27 C 32 20, 20 22, 12 27 C 24 30, 36 30, 45 32 Z" fill="#2d773f" />
+                      <path d="M 54 22 C 68 10, 85 15, 92 21 C 78 26, 64 27, 54 30 Z" fill="#2d773f" />
+                      <path d="M 55 27 C 68 20, 80 22, 88 27 C 76 30, 64 30, 55 32 Z" fill="#2d773f" />
+                      <ellipse cx="50" cy="38" rx="18" ry="7.5" stroke="#2d773f" strokeWidth="4.5" fill="none" />
+                      <ellipse cx="50" cy="54" rx="15" ry="7" stroke="#2d773f" strokeWidth="4.5" fill="none" />
+                      <ellipse cx="50" cy="69" rx="12" ry="6" stroke="#2d773f" strokeWidth="4" fill="none" />
+                      <ellipse cx="50" cy="82" rx="9" ry="5" stroke="#2d773f" strokeWidth="3.5" fill="none" />
+                      <ellipse cx="50" cy="93" rx="6" ry="3.5" stroke="#2d773f" strokeWidth="3" fill="none" />
+                      <path d="M 33 32 C 41 24, 46 24, 47.5 25.5" stroke="#2d773f" strokeWidth="4" strokeLinecap="round" fill="none" />
+                      <path d="M 67 32 C 59 24, 54 24, 52.5 25.5" stroke="#2d773f" strokeWidth="4" strokeLinecap="round" fill="none" />
+                    </svg>
+                  )}
                 </div>
 
                 {/* Medicines Rx Table */}
@@ -680,24 +840,29 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                     <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #333', fontSize: '11.5px' }}>
                       <thead>
                         <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #333', fontWeight: 700 }}>
-                          <th style={{ border: '1px solid #333', padding: '5px 6px', textAlign: 'center', width: '48px' }}>Sr. No.</th>
-                          <th style={{ border: '1px solid #333', padding: '5px 8px', textAlign: 'left' }}>Medicine Name</th>
-                          <th style={{ border: '1px solid #333', padding: '5px 8px', textAlign: 'left', width: '75px' }}>Dosage</th>
-                          <th style={{ border: '1px solid #333', padding: '5px 8px', textAlign: 'left', width: '200px' }}>Frequency</th>
-                          <th style={{ border: '1px solid #333', padding: '5px 8px', textAlign: 'left', width: '75px' }}>Duration</th>
+                          <th style={{ border: '1px solid #333', padding: '5px 4px', textAlign: 'center', width: '45px' }}>{headers.srNo || 'Sr. No.'}</th>
+                          <th style={{ border: '1px solid #333', padding: '5px 8px', textAlign: 'left' }}>{headers.medName}</th>
+                          <th style={{ border: '1px solid #333', padding: '5px 8px', textAlign: 'left', width: '200px' }}>{headers.freq}</th>
+                          <th style={{ border: '1px solid #333', padding: '5px 8px', textAlign: 'left', width: '75px' }}>{headers.duration}</th>
+                          <th style={{ border: '1px solid #333', padding: '5px 6px', textAlign: 'center', width: '65px', color: '#93231f' }}>{headers.count}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {casePaper.medicines &&
-                          casePaper.medicines.map((med, index) => (
-                            <tr key={index} style={{ borderBottom: '1px solid #333' }}>
-                              <td style={{ border: '1px solid #333', padding: '6px 6px', textAlign: 'center', fontFamily: 'monospace', fontSize: '11px' }}>{index + 1}</td>
-                              <td style={{ border: '1px solid #333', padding: '6px 8px', fontWeight: 700, color: '#111', lineHeight: '1.3' }}>{med.name}</td>
-                              <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#333', lineHeight: '1.3' }}>{med.dosage}</td>
-                              <td style={{ border: '1px solid #333', padding: '6px 8px', fontWeight: 600, color: '#222', lineHeight: '1.3' }}>{toMarathiFrequency(med.frequency)}</td>
-                              <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#333', lineHeight: '1.3' }}>{toMarathiDuration(med.duration)}</td>
-                            </tr>
-                          ))}
+                          casePaper.medicines.map((med, index) => {
+                            const displayName = (med.dosage && !med.name.toLowerCase().includes(med.dosage.toLowerCase()))
+                              ? `${med.name} ${med.dosage}`
+                              : med.name;
+                            return (
+                              <tr key={index} style={{ borderBottom: '1px solid #333' }}>
+                                <td style={{ border: '1px solid #333', padding: '6px 6px', textAlign: 'center', fontFamily: 'monospace', fontSize: '11px' }}>{index + 1}</td>
+                                <td style={{ border: '1px solid #333', padding: '6px 8px', fontWeight: 700, color: '#111', lineHeight: '1.3' }}>{displayName}</td>
+                                <td style={{ border: '1px solid #333', padding: '6px 8px', fontWeight: 600, color: '#222', lineHeight: '1.3' }}>{renderFrequencyCell(med.frequency, med.name, language, med.instructions || med.notes)}</td>
+                                <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#333', lineHeight: '1.3' }}>{translateDuration(med.duration, language)}</td>
+                                <td style={{ border: '1px solid #333', padding: '6px 6px', textAlign: 'center', fontWeight: 700, color: '#047857', fontSize: '11.5px' }}>{calculateMedicineCount(med)}</td>
+                              </tr>
+                            );
+                          })}
                         {Array.from({ length: emptyCount }).map((_, i) => (
                           <tr key={`empty-${i}`} style={{ borderBottom: '1px solid #333', height: '24px' }}>
                             <td style={{ border: '1px solid #333', padding: '3px 6px', textAlign: 'center', fontFamily: 'monospace', fontSize: '11px', color: '#ccc' }}>{currentCount + i + 1}</td>
@@ -724,7 +889,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               <div
                 style={{
                   position: 'absolute',
-                  bottom: '2px',
+                  bottom: printOnStationery ? '90px' : '2px',
                   left: '12px',
                   right: '12px',
                   display: 'flex',
@@ -734,8 +899,11 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                   color: '#222',
                 }}
               >
-                <span style={{ width: '60%' }}>Patient Signature - </span>
-                <span>Follow up - {formatDate(casePaper.followUpDate)}</span>
+                <span style={{ width: '60%', visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
+                <span>
+                  <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Follow up - </span>
+                  {formatDate(casePaper.followUpDate)}
+                </span>
               </div>
             </main>
           </div>
@@ -743,34 +911,38 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
           {/* Template 1 Footer */}
           <footer
             style={{
-              borderTop: '2px solid #a53b3b',
+              borderTop: printOnStationery ? 'none' : '2px solid #a53b3b',
               padding: '4px 10px 6px',
               fontSize: '9.5px',
               fontWeight: 600,
               lineHeight: 1.15,
             }}
           >
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '2px' }}>
-              <div style={{ flex: '0 0 62%' }}>
-                <div style={{ marginBottom: '1px' }}>☑ Methotrexate- weekly dosing explained & overdose risk etc. Explained.</div>
-                <div style={{ marginBottom: '1px' }}>☑ JAK inhibitors - DVT/PE warning explained & leukopenia etc. Explained.</div>
-                <div style={{ marginBottom: '1px' }}>☑ DAPSONE - DAPSONE syndrome, organ toxicity, Jaundice risk etc. Explained</div>
-              </div>
-              <div style={{ flex: '0 0 38%' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-                  <span>☑ </span>
-                  <span style={{ lineHeight: 1.15 }}>
-                    Azathioprine-related myelosuppression &<br />
-                    hair fall etc. Explained
-                  </span>
+            {!printOnStationery && (
+              <>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '2px' }}>
+                  <div style={{ flex: '0 0 62%' }}>
+                    <div style={{ marginBottom: '1px' }}>☑ Methotrexate- weekly dosing explained & overdose risk etc. Explained.</div>
+                    <div style={{ marginBottom: '1px' }}>☑ JAK inhibitors - DVT/PE warning explained & leukopenia etc. Explained.</div>
+                    <div style={{ marginBottom: '1px' }}>☑ DAPSONE - DAPSONE syndrome, organ toxicity, Jaundice risk etc. Explained</div>
+                  </div>
+                  <div style={{ flex: '0 0 38%' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                      <span>☑ </span>
+                      <span style={{ lineHeight: 1.15 }}>
+                        Azathioprine-related myelosuppression &<br />
+                        hair fall etc. Explained
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '11.5px', marginTop: '3px', lineHeight: 1.25 }}>
-              - त्वचा विकाराची औषधे इतर औषधांप्रमाणे महाग असू शकतात. - चिठ्ठीमधील औषधे दिलेल्या अवधीसाठीच आहेत.<br />
-              - काही विकार बरे होण्यास वेळ लागतो. तसेच काही विकार औषधानंतर काही प्रमाणात वाढतात व त्यानंतर बरे होतात.
-            </div>
+                <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '11.5px', marginTop: '3px', lineHeight: 1.25 }}>
+                  - त्वचा विकाराची औषधे इतर औषधांप्रमाणे महाग असू शकतात. - चिठ्ठीमधील औषधे दिलेल्या अवधीसाठीच आहेत.<br />
+                  - काही विकार बरे होण्यास वेळ लागतो. तसेच काही विकार औषधानंतर काही प्रमाणात वाढतात व त्यानंतर बरे होतात.
+                </div>
+              </>
+            )}
 
             {pharmacyInfo && (
               <div style={{ textAlign: 'center', fontWeight: 700, fontSize: '11px', paddingTop: '3px', borderTop: '1px solid #333', marginTop: '3px' }}>

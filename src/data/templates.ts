@@ -27,10 +27,10 @@ export const templates: CaseTemplate[] = [
     isFavorite: true,
     createdDate: '2026-07-20',
     medicines: [
-      { medicineId: 'med_ab_03', dosage: '100mg', frequency: 'BD', duration: '14 Days' }, // Doxycycline
-      { medicineId: 'med_rt_03', dosage: '0.1%', frequency: 'OD (HS)', duration: '30 Days' }, // Adapalene Gel
-      { medicineId: 'med_ac_02', dosage: '1%', frequency: 'BD', duration: '30 Days' }, // Clindamycin Gel
-      { medicineId: 'med_ms_01', dosage: 'SPF 50', frequency: 'BD (Daytime)', duration: '30 Days' } // Sunscreen
+      { medicineId: 'med_ab_03', dosage: '100mg', frequency: 'Twice daily', duration: '14 Days' }, // Doxycycline
+      { medicineId: 'med_rt_03', dosage: '0.1%', frequency: 'At bedtime', duration: '30 Days' }, // Adapalene Gel
+      { medicineId: 'med_ac_02', dosage: '1%', frequency: 'Twice daily', duration: '30 Days' }, // Clindamycin Gel
+      { medicineId: 'med_ms_01', dosage: 'SPF 50', frequency: 'Twice daily', duration: '30 Days' } // Sunscreen
     ],
     investigationsAdvised: [],
     counsellingPoints: [

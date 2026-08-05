@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('clinicos_jwt_token');
@@ -71,5 +71,11 @@ export const api = {
   getWhatsAppStatus: () => apiRequest<any>('/whatsapp/status'),
   triggerAutoWhatsApp: (date?: string) => apiRequest<any>('/whatsapp/trigger-auto-send', { method: 'POST', body: JSON.stringify({ date }) }),
   updateWhatsAppSettings: (autoScheduleEnabled: boolean) => apiRequest<any>('/whatsapp/settings', { method: 'POST', body: JSON.stringify({ autoScheduleEnabled }) }),
+  disconnectWhatsApp: () => apiRequest<any>('/whatsapp/disconnect', { method: 'POST' }),
+  restartWhatsApp: () => apiRequest<any>('/whatsapp/restart', { method: 'POST' }),
+  sendSingleWhatsApp: (phone: string, message?: string, patientName?: string, followUpDate?: string) => apiRequest<any>('/whatsapp/send-single', { method: 'POST', body: JSON.stringify({ phone, message, patientName, followUpDate }) }),
+
+  // Groq AI Translation
+  translateText: (text: string, targetLang: string) => apiRequest<{ translatedText: string }>('/clinic/translate', { method: 'POST', body: JSON.stringify({ text, targetLang }) }),
 };
 

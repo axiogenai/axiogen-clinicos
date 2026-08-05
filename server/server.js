@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
@@ -25,6 +26,27 @@ app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Rate Limiters
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000,
+  message: { error: 'Too many requests from this IP. Please try again after 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 50, // max 50 login/register requests per 15 minutes
+  message: { error: 'Too many login attempts. Please try again after 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply Rate Limiters
+app.use('/api', apiLimiter);
+app.use('/api/auth', authLimiter);
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/patients', patientRoutes);
@@ -48,10 +70,12 @@ app.get('/api/health', (req, res) => {
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
+const isProd = process.env.NODE_ENV === 'production';
 
-sequelize.sync({ alter: true }).then(() => {
+// Only alter schemas automatically in non-production environments to protect production data integrity
+sequelize.sync({ alter: !isProd }).then(() => {
   app.listen(PORT, () => {
-    console.log(`🚀 ClinicOS Express Backend Server running on http://localhost:${PORT}`);
+    console.log(`🚀 ClinicOS Express Backend Server running on http://localhost:${PORT} [Prod: ${isProd}]`);
   });
 }).catch(err => {
   console.error('❌ Database connection / sync error:', err);

@@ -1,10 +1,36 @@
 const { Queue, Patient, AuditLog } = require('../models');
 const { Op } = require('sequelize');
 
+const autoPurgeOldQueueItems = async (clinicId = 1) => {
+  try {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - 7);
+    const cutoffDateStr = cutoffDate.toISOString().split('T')[0];
+
+    const deleted = await Queue.destroy({
+      where: {
+        clinicId,
+        date: {
+          [Op.lt]: cutoffDateStr
+        }
+      }
+    });
+    if (deleted > 0) {
+      console.log(`🧹 [7-DAY AUTOMATIC PURGE] Deleted ${deleted} OPD queue items older than 7 days (prior to ${cutoffDateStr}).`);
+    }
+  } catch (err) {
+    console.error('❌ Error during 7-day queue auto-purge:', err);
+  }
+};
+
 exports.getQueue = async (req, res, next) => {
   try {
     const clinicId = req.user?.clinicId || 1;
     const date = req.query.date || new Date().toISOString().split('T')[0];
+    
+    // Automatically purge OPD queue items older than 7 days
+    autoPurgeOldQueueItems(clinicId).catch(() => {});
+
     const queue = await Queue.findAll({
       where: { clinicId, date },
       order: [['created_at', 'ASC']]
@@ -59,25 +85,21 @@ exports.updateQueueStatus = async (req, res, next) => {
     const { status } = req.body;
     const id = req.params.id;
 
-    let item = await Queue.findOne({
-      where: {
-        [Op.or]: [
-          { queueId: id },
-          { patientId: id },
-          { name: id }
-        ]
+    const [updatedCount] = await Queue.update(
+      { status },
+      {
+        where: {
+          [Op.or]: [
+            { queueId: id },
+            { patientId: id },
+            { name: id }
+          ]
+        }
       }
-    });
+    );
 
-    if (!item) {
-      item = await Queue.findByPk(id);
-    }
-
-    if (!item) return res.status(404).json({ error: 'Queue item not found' });
-
-    await item.update({ status });
-    console.log(`✅ [QUEUE STATUS UPDATED] Queue item ${item.queueId} (${item.name}) updated to status: '${status}'`);
-    res.json(item);
+    console.log(`✅ [QUEUE STATUS UPDATED] Updated ${updatedCount} queue items matching '${id}' to status: '${status}'`);
+    res.json({ success: true, updatedCount, status });
   } catch (err) {
     next(err);
   }

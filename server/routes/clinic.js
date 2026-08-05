@@ -7,5 +7,6 @@ router.use(verifyToken);
 
 router.get('/settings', clinicController.getSettings);
 router.put('/settings', clinicController.updateSettings);
+router.post('/translate', clinicController.translateText);
 
 module.exports = router;

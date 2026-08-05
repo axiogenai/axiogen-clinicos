@@ -50,3 +50,15 @@ exports.updateSettings = async (req, res, next) => {
     next(err);
   }
 };
+
+const { translateWithGroq } = require('../services/groqTranslationService');
+
+exports.translateText = async (req, res, next) => {
+  try {
+    const { text, targetLang } = req.body;
+    const translated = await translateWithGroq(text, targetLang);
+    res.json({ translatedText: translated });
+  } catch (err) {
+    next(err);
+  }
+};

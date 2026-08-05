@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# SQLite database files
+server/*.sqlite
+server/*.sqlite-wal
+server/*.sqlite-shm
+
+# WhatsApp gateway credentials
+server/whatsapp_auth_info/
+server/whatsapp_auth/

@@ -5,6 +5,7 @@ import type { Patient, QueueItem } from './data/patients';
 import type { CasePaper } from './types';
 import QueueView from './components/QueueView';
 import CasepaperForm from './components/CasepaperForm';
+
 import PrintPreview from './components/PrintPreview';
 import ReceptionistDashboard from './components/ReceptionistDashboard';
 import TemplateDashboard from './components/TemplateDashboard';
@@ -12,6 +13,7 @@ import DailyPatientRegister from './components/DailyPatientRegister';
 import { api } from './api/client';
 import LoginView from './components/LoginView';
 import Toast from './components/Toast';
+import WhatsAppGatewayModal from './components/WhatsAppGatewayModal';
 
 type TabState = 'receptionist' | 'doctor' | 'templates' | 'register';
 type DoctorViewState = 'queue' | 'form' | 'print';
@@ -66,7 +68,7 @@ function DoctorDashboardView() {
     if (savedCasePaper) {
       setCasePaper({
         patientId: patient.id,
-        date: savedCasePaper.date || new Date().toISOString().split('T')[0],
+        date: new Date().toISOString().split('T')[0],
         templateId: savedCasePaper.templateId || '',
         complaint: savedCasePaper.complaint || queueItem.complaint,
         pastHistory: savedCasePaper.pastHistory || patient.pastHistory || '',
@@ -171,17 +173,21 @@ function DoctorDashboardView() {
           queueId={selectedQueueId}
           casePaper={casePaper}
           onUpdateCasePaper={handleUpdateCasePaper}
-          onPrintPreview={() => setView('print')}
           onBack={() => setView('queue')}
         />
       )}
       
       {view === 'print' && selectedPatient && casePaper && (
-        <PrintPreview 
+        <PrintPreview
           patient={selectedPatient}
           casePaper={casePaper}
           onBack={() => setView('form')}
-          onReturnToQueue={() => setView('queue')}
+          onReturnToQueue={() => {
+            setView('queue');
+            setSelectedPatient(null);
+            setSelectedQueueId(null);
+            setCasePaper(null);
+          }}
         />
       )}
 
@@ -192,6 +198,7 @@ function DoctorDashboardView() {
 function MainApp() {
   const { user, token, logout, toast, setToast } = useClinic();
   const [tab, setTab] = useState<TabState>('doctor');
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
 
   useEffect(() => {
     if (user?.role === 'receptionist') {
@@ -210,6 +217,11 @@ function MainApp() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#faf9f6] via-[#f8f6f2] to-[#f4f2eb] text-[#1a1c1a] font-sans antialiased">
 
+      {/* ── WhatsApp Gateway Modal ── */}
+      <WhatsAppGatewayModal
+        isOpen={isWhatsAppModalOpen}
+        onClose={() => setIsWhatsAppModalOpen(false)}
+      />
       
       {/* ── Frosted Glass Header ── */}
       <header className="app-header bg-white/90 backdrop-blur-md border-b border-[#e4e2e1] shadow-sm sticky top-0 z-40 no-print">
@@ -234,6 +246,15 @@ function MainApp() {
 
             {/* Mobile User Badge + Logout */}
             <div className="flex sm:hidden items-center gap-2 shrink-0">
+              {isDoctor && (
+                <button
+                  onClick={() => setIsWhatsAppModalOpen(true)}
+                  title="WhatsApp Gateway"
+                  className="px-2 py-1 text-xs font-bold bg-[#ecfdf5] text-[#047857] border border-[#a7f3d0] rounded-xl flex items-center gap-1 cursor-pointer"
+                >
+                  <span>📱 WA</span>
+                </button>
+              )}
               <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs ${isDoctor ? 'bg-[#ecfdf5] border-[#a7f3d0]' : 'bg-[#f0f9ff] border-[#bae6fd]'}`}>
                 <span className={`font-bold text-[11px] ${isDoctor ? 'text-[#064e3b]' : 'text-[#1d4ed8]'}`}>{user.name.split(' ')[0]}</span>
               </div>
@@ -289,8 +310,17 @@ function MainApp() {
             </nav>
           )}
 
-          {/* Desktop User Badge + Logout */}
+          {/* Desktop User Badge + WhatsApp QR + Logout */}
           <div className="hidden sm:flex items-center gap-2 shrink-0">
+            {isDoctor && (
+              <button
+                onClick={() => setIsWhatsAppModalOpen(true)}
+                className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-[#ecfdf5] text-[#047857] border border-[#a7f3d0] hover:bg-[#d1fae5] shadow-sm cursor-pointer"
+              >
+                <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
+                <span>WhatsApp QR</span>
+              </button>
+            )}
             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs ${isDoctor ? 'bg-[#ecfdf5] border-[#a7f3d0]' : 'bg-[#f0f9ff] border-[#bae6fd]'}`}>
               <div>
                 <div className={`font-bold text-xs ${isDoctor ? 'text-[#064e3b]' : 'text-[#1d4ed8]'}`}>{user.name}</div>
@@ -311,7 +341,7 @@ function MainApp() {
       </header>
 
       {/* ── Main Content ── */}
-      <main className="w-full px-5 sm:px-8 py-6">
+      <main className="w-full px-3 sm:px-5 lg:px-8 py-4 sm:py-6 overflow-x-hidden">
         {tab === 'receptionist' && <ReceptionistDashboard />}
         {tab === 'doctor' && isDoctor && <DoctorDashboardView />}
         {tab === 'register' && <DailyPatientRegister />}
@@ -329,6 +359,22 @@ function MainApp() {
           onClose={() => setToast(null)}
         />
       )}
+
+      {/* ── Footer ── */}
+      <footer className="w-full mt-auto border-t border-[#e4e2e1] bg-[#faf9f6]">
+        <div className="px-3 sm:px-5 lg:px-8 py-3 flex items-center justify-center gap-1.5">
+          <span className="text-[11px] text-[#9c9590]">Made by</span>
+          <a
+            href="https://team.axiogen.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[11px] font-semibold text-[#047857] hover:text-[#065f46] hover:underline transition-colors"
+          >
+            team.axiogen.in
+          </a>
+          <span className="text-[11px] text-[#9c9590]">· © {new Date().getFullYear()}</span>
+        </div>
+      </footer>
     </div>
   );
 }

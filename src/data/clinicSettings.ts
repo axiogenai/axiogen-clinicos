@@ -49,7 +49,7 @@ export const defaultClinicSettings: ClinicSettings = {
       title: "MD (Ayu) - D.Dermatology (Ay.)",
       subTitle: "(MUHS)",
       regNo: "Reg. No. I-87218-A",
-      specialty: "त्वचारोग व सौंदर्य विशेषज्ञ",
+      specialty: "त्वचारोग व सौंदर्य विशेष तज्ज्ञ",
     },
   ],
   address: "एस.टी. स्टँड जवळ, राजाराम चित्र मंदिर समोर, कल्याणी बझार वरती गाळा नं. ६, पेठ वडगाव",
@@ -58,7 +58,7 @@ export const defaultClinicSettings: ClinicSettings = {
   closedDay: "दर रविवारी बंद राहिल.",
   headerBgColor: "#7CB342", // Clinic Brand Green
   headerTextColor: "#FFFFFF",
-  pharmacyInfo: "श्री मेडिकल एस.टी. स्टँडजवळ, कल्याणी बझारच्यावरती, गाळा नं. ७, पेठ वडगाव.",
+  pharmacyInfo: "",
   templateVariant: "dermatology",
   sections: {
     showPastHistory: true,

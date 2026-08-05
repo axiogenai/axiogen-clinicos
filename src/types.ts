@@ -1,9 +1,13 @@
 export interface CasePaperMedicine {
   medicineId: string;
   name: string;
-  dosage: string;
+  dosage?: string;
   frequency: string;
   duration: string;
+  count?: string | number;
+  isManualCount?: boolean;
+  notes?: string;
+  instructions?: string;
 }
 
 export interface CasePaper {
