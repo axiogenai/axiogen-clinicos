@@ -3,7 +3,10 @@ const { Op } = require('sequelize');
 
 exports.getMedicines = async (req, res, next) => {
   try {
-    const medicines = await Medicine.findAll({ order: [['name', 'ASC']] });
+    const medicines = await Medicine.findAll({
+      order: [['name', 'ASC']],
+      limit: 500
+    });
     res.json(medicines);
   } catch (err) {
     next(err);
@@ -13,15 +16,24 @@ exports.getMedicines = async (req, res, next) => {
 exports.searchMedicines = async (req, res, next) => {
   try {
     const { q } = req.query;
-    if (!q) return res.json([]);
+    const likeOp = Op.iLike || Op.like;
 
+    if (!q || !q.trim()) {
+      const defaultMeds = await Medicine.findAll({
+        order: [['name', 'ASC']],
+        limit: 50
+      });
+      return res.json(defaultMeds);
+    }
+
+    const query = q.trim();
     const medicines = await Medicine.findAll({
       where: {
         [Op.or]: [
-          { name: { [Op.like]: `%${q}%` } },
-          { brand: { [Op.like]: `%${q}%` } },
-          { productId: { [Op.like]: `%${q}%` } },
-          { category: { [Op.like]: `%${q}%` } }
+          { name: { [likeOp]: `%${query}%` } },
+          { brand: { [likeOp]: `%${query}%` } },
+          { productId: { [likeOp]: `%${query}%` } },
+          { category: { [likeOp]: `%${query}%` } }
         ]
       },
       limit: 100
@@ -40,45 +52,22 @@ exports.createMedicine = async (req, res, next) => {
     const id = `med_${Date.now()}`;
     const medicine = await Medicine.create({
       id,
-      productId: productId || `PRD${Date.now().toString().slice(-6)}`,
+      productId: productId || id,
       name,
       brand: brand || '',
       strength: strength || '',
       form: form || 'Tablet',
-      dosage: dosage || strength || '',
+      dosage: dosage || '',
       frequency: frequency || '',
       duration: duration || '',
       category: category || 'General',
-      stockQty: stockQty ? parseInt(stockQty, 10) : 0,
+      stockQty: stockQty || 100,
       expiryDate: expiryDate || '',
-      availability: availability || 'In Stock',
+      availability: availability !== undefined ? availability : true,
       notes: notes || ''
     });
+
     res.status(201).json(medicine);
-  } catch (err) {
-    next(err);
-  }
-};
-
-exports.updateMedicine = async (req, res, next) => {
-  try {
-    const med = await Medicine.findByPk(req.params.id);
-    if (!med) return res.status(404).json({ error: 'Medicine not found' });
-
-    await med.update(req.body);
-    res.json(med);
-  } catch (err) {
-    next(err);
-  }
-};
-
-exports.deleteMedicine = async (req, res, next) => {
-  try {
-    const med = await Medicine.findByPk(req.params.id);
-    if (!med) return res.status(404).json({ error: 'Medicine not found' });
-
-    await med.destroy();
-    res.json({ message: 'Medicine deleted' });
   } catch (err) {
     next(err);
   }
@@ -88,41 +77,28 @@ exports.bulkImportMedicines = async (req, res, next) => {
   try {
     const { medicines } = req.body;
     if (!Array.isArray(medicines) || medicines.length === 0) {
-      return res.status(400).json({ error: 'No medicines array provided' });
+      return res.status(400).json({ error: 'Medicines array required' });
     }
 
-    const timestamp = Date.now();
-    const itemsToCreate = medicines.map((med, index) => ({
-      id: `med_${timestamp}_${index}`,
-      productId: med.productId || med['Product ID'] || `PRD${String(index + 1).padStart(4, '0')}`,
-      name: med.name || med['Medicine Name'] || 'Unknown Medicine',
-      brand: med.brand || med['Brand'] || '',
-      strength: med.strength || med['Strength'] || '',
-      form: med.form || med['Form'] || 'Tablet',
-      dosage: med.dosage || med.strength || med['Strength'] || '',
-      frequency: med.frequency || med['Frequency'] || '',
-      duration: med.duration || med['Duration'] || '',
-      category: med.category || med['Category'] || 'General',
-      stockQty: med.stockQty || med['Stock Qty'] ? parseInt(med.stockQty || med['Stock Qty'], 10) : 0,
-      expiryDate: med.expiryDate || med['Expiry Date'] || '',
-      availability: med.availability || med['Availability'] || 'In Stock',
-      notes: med.notes || ''
+    const prepared = medicines.map((m, idx) => ({
+      id: m.id || `med_${Date.now()}_${idx}`,
+      productId: m.productId || m.id || `PROD_${idx}`,
+      name: m.name,
+      brand: m.brand || '',
+      strength: m.strength || '',
+      form: m.form || 'Tablet',
+      dosage: m.dosage || '',
+      frequency: m.frequency || '',
+      duration: m.duration || '',
+      category: m.category || 'General',
+      stockQty: m.stockQty !== undefined ? m.stockQty : 100,
+      expiryDate: m.expiryDate || '',
+      availability: m.availability !== undefined ? m.availability : true,
+      notes: m.notes || ''
     }));
 
-    // Chunk array into batches of 50 items to strictly satisfy SQLite parameter limits
-    const chunkSize = 50;
-    let totalImported = 0;
-
-    for (let i = 0; i < itemsToCreate.length; i += chunkSize) {
-      const chunk = itemsToCreate.slice(i, i + chunkSize);
-      const createdBatch = await Medicine.bulkCreate(chunk, { ignoreDuplicates: true });
-      totalImported += createdBatch.length;
-    }
-
-    res.status(201).json({
-      message: `Successfully imported ${totalImported} medicines into database!`,
-      count: totalImported
-    });
+    await Medicine.bulkCreate(prepared, { ignoreDuplicates: true });
+    res.json({ success: true, count: prepared.length, message: `Successfully imported ${prepared.length} medicines` });
   } catch (err) {
     next(err);
   }
