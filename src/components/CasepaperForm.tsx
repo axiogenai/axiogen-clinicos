@@ -307,37 +307,44 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     };
   }, []);
 
-  // Real-time search matching name, brand, strength, prioritizing starting characters
+  // Real-time search matching name, brand, strength, prioritizing core drug name prefix
   useEffect(() => {
     if (searchQuery.trim() === '') {
       setFilteredMedicines(dbMedicines);
     } else {
       const lowerQuery = searchQuery.toLowerCase().trim();
+
+      const getCoreName = (fullName: string) => {
+        return (fullName || '')
+          .replace(/^(Tab\.|Cap\.|Syp\.|Inj\.|Cream|Gel \/ Ointment|Lotion|Ointment|Soap|Drops|Powder)\s*/i, '')
+          .toLowerCase()
+          .trim();
+      };
+
       const matches = dbMedicines.filter((m) => {
-        const nameMatch = (m.name || '').toLowerCase().includes(lowerQuery);
+        const fullName = (m.name || '').toLowerCase();
+        const coreName = getCoreName(m.name);
         const brandMatch = (m.brand || '').toLowerCase().includes(lowerQuery);
         const strengthMatch = (m.strength || '').toLowerCase().includes(lowerQuery);
-        return nameMatch || brandMatch || strengthMatch;
+        return fullName.includes(lowerQuery) || coreName.includes(lowerQuery) || brandMatch || strengthMatch;
       });
 
-      // Sort matching results: startsWith prioritizes name, then brand
+      // Sort matching results: coreName startsWith prioritizes drug name
       matches.sort((a, b) => {
-        const aName = (a.name || '').toLowerCase();
-        const bName = (b.name || '').toLowerCase();
-        const aBrand = (a.brand || '').toLowerCase();
-        const bBrand = (b.brand || '').toLowerCase();
+        const aCore = getCoreName(a.name);
+        const bCore = getCoreName(b.name);
 
-        const aNameStarts = aName.startsWith(lowerQuery);
-        const bNameStarts = bName.startsWith(lowerQuery);
-        if (aNameStarts && !bNameStarts) return -1;
-        if (!aNameStarts && bNameStarts) return 1;
+        const aCoreStarts = aCore.startsWith(lowerQuery);
+        const bCoreStarts = bCore.startsWith(lowerQuery);
+        if (aCoreStarts && !bCoreStarts) return -1;
+        if (!aCoreStarts && bCoreStarts) return 1;
 
-        const aBrandStarts = aBrand.startsWith(lowerQuery);
-        const bBrandStarts = bBrand.startsWith(lowerQuery);
+        const aBrandStarts = (a.brand || '').toLowerCase().startsWith(lowerQuery);
+        const bBrandStarts = (b.brand || '').toLowerCase().startsWith(lowerQuery);
         if (aBrandStarts && !bBrandStarts) return -1;
         if (!aBrandStarts && bBrandStarts) return 1;
 
-        return aName.localeCompare(bName);
+        return aCore.localeCompare(bCore);
       });
 
       setFilteredMedicines(matches);
