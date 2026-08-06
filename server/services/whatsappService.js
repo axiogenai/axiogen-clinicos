@@ -12,8 +12,8 @@ function formatWhatsAppDate(dateStr) {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return dateStr;
     const day = String(d.getDate()).padStart(2, '0');
-    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const month = monthNames[d.getMonth()];
+    const marathiMonths = ['जानेवारी', 'फेब्रुवारी', 'मार्च', 'एप्रिल', 'मे', 'जून', 'जुलै', 'ऑगस्ट', 'सप्टेंबर', 'ऑक्टोबर', 'नोव्हेंबर', 'डिसेंबर'];
+    const month = marathiMonths[d.getMonth()];
     const year = d.getFullYear();
     return `${day} ${month} ${year}`;
   } catch (e) {
@@ -24,21 +24,21 @@ function formatWhatsAppDate(dateStr) {
 /**
  * Formats WhatsApp text message for a patient follow-up reminder
  */
-function buildReminderMessage(patientName, followUpDate, doctorName = 'Dr. Pramod Shinagare') {
+function buildReminderMessage(patientName, followUpDate, doctorName = 'डॉ. प्रमोद शिनगारे') {
   const formattedDate = formatWhatsAppDate(followUpDate);
-  const pName = (patientName || 'Patient').trim();
+  const pName = (patientName || 'रुग्ण').trim();
 
   return (
-    `*Namaste ${pName} Ji,*\n\n` +
-    `Your *skin consultation follow-up appointment* at *Shinagare Skin & Cosmetic Clinic* with *${doctorName}* is scheduled for *${formattedDate}*.\n\n` +
-    `*📍 Clinic Address:*\n` +
-    `ST Stand Near, Rajaram Chitra Mandir Samor, Peth Vadgaon\n\n` +
-    `*🕙 Consultation Hours:*\n` +
-    `10:00 AM – 6:00 PM\n\n` +
-    `*📞 Contact:*\n` +
+    `*🙏 नमस्कार ${pName},*\n\n` +
+    `आपली *Skin Consultation Follow-up Appointment* *Shinagare Skin & Cosmetic Clinic* येथे *${doctorName}* यांच्यासोबत *${formattedDate}* रोजी नियोजित करण्यात आली आहे.\n\n` +
+    `*📍 क्लिनिकचा पत्ता:*\n` +
+    `ST Stand जवळ, राजाराम चित्र मंदिर समोर, पेठ वडगाव\n\n` +
+    `*🕙 Consultation वेळ:*\n` +
+    `सकाळी 10:00 ते सायंकाळी 6:00\n\n` +
+    `*📞 संपर्क:*\n` +
     `7249727104 / 9657727104\n\n` +
-    `We kindly request you to visit the clinic during the consultation hours. If you need any assistance or wish to reschedule, please contact us using the numbers above.\n\n` +
-    `Thank you for choosing Shinagare Skin & Cosmetic Clinic. We look forward to serving you and wish you good health.`
+    `आपण कृपया दिलेल्या Consultation वेळेत क्लिनिकला भेट द्यावी, ही नम्र विनंती. Appointment मध्ये कोणताही बदल करायचा असल्यास किंवा अधिक माहितीसाठी वरील क्रमांकांवर संपर्क साधावा.\n\n` +
+    `*Shinagare Skin & Cosmetic Clinic* वर दाखविलेल्या विश्वासाबद्दल मनःपूर्वक धन्यवाद. आपल्याला उत्तम आरोग्य लाभो, हीच शुभेच्छा. आम्ही आपल्या सेवेसाठी सदैव तत्पर आहोत.`
   );
 }
 
