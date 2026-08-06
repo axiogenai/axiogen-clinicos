@@ -103,3 +103,30 @@ exports.bulkImportMedicines = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.updateMedicine = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const medicine = await Medicine.findByPk(id);
+    if (!medicine) return res.status(404).json({ error: 'Medicine not found' });
+
+    await medicine.update(req.body);
+    res.json(medicine);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.deleteMedicine = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const medicine = await Medicine.findByPk(id);
+    if (!medicine) return res.status(404).json({ error: 'Medicine not found' });
+
+    await medicine.destroy();
+    res.json({ success: true, message: 'Medicine deleted' });
+  } catch (err) {
+    next(err);
+  }
+};
+
