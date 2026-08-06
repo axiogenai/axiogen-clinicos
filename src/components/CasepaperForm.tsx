@@ -368,16 +368,15 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
 
     return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); };
   }, [searchQuery, dbMedicines]);
-
   const applyTemplate = (templateId: string) => {
     const template = templates.find(t => t.id === templateId);
     if (!template) return;
 
     const newMedicines = template.medicines.map(tm => {
-      const med = dbMedicines.find(m => m.id === tm.medicineId);
+      const med = filteredMedicines.find(m => m.id === tm.medicineId) || dbMedicines.find(m => m.id === tm.medicineId);
       return {
         medicineId: tm.medicineId,
-        name: tm.medicineName || (med ? med.name : 'Unknown Medicine'),
+        name: tm.medicineName || tm.name || (med ? med.name : 'Unknown Medicine'),
         dosage: tm.dosage || (med ? `${med.strength || ''} (${med.form || 'Tablet'})` : ''),
         frequency: tm.frequency || (med ? med.defaultFrequency || 'Twice daily' : 'Twice daily'),
         duration: tm.duration || (med ? med.defaultDuration || '7 Days' : '7 Days'),
@@ -394,7 +393,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
   };
 
   const addMedicine = (medicineId: string) => {
-    const med = dbMedicines.find(m => m.id === medicineId);
+    const med = filteredMedicines.find(m => m.id === medicineId) || dbMedicines.find(m => m.id === medicineId);
     if (!med) return;
 
     let fullName = med.name.trim();
