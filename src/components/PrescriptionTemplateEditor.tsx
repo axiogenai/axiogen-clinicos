@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useClinic } from '../context/ClinicContext';
 import PrintTemplate from './PrintTemplate';
+import { defaultClinicSettings } from '../data/clinicSettings';
 import type { ClinicSettings, DoctorInfo } from '../data/clinicSettings';
 
 interface Props {
@@ -25,7 +26,13 @@ type SubTab = 'header' | 'patient_info' | 'left_column' | 'footer' | 'general' |
 
 export default function PrescriptionTemplateEditor({ onClose }: Props) {
   const { clinicSettings, updateClinicSettings, setToast } = useClinic();
-  const [settings, setSettings] = useState<ClinicSettings>({ ...clinicSettings });
+  const [settings, setSettings] = useState<ClinicSettings>(() => ({
+    ...defaultClinicSettings,
+    ...(clinicSettings || {}),
+    doctors: (clinicSettings?.doctors && clinicSettings.doctors.length >= 2)
+      ? clinicSettings.doctors
+      : defaultClinicSettings.doctors
+  }));
   const [activeTab, setActiveTab] = useState<SubTab>('header');
   const [showFieldTags, setShowFieldTags] = useState(true);
   
@@ -65,27 +72,12 @@ export default function PrescriptionTemplateEditor({ onClose }: Props) {
     followUpDate: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
   };
 
-  const doc1 = settings.doctors[0] || {
-    id: 'd1',
-    name: 'डॉ. प्रियांका प्रमोद शिनगारे',
-    title: 'BHMS, FCHD (MUHS)',
-    subTitle: '(Consultant Homeopathy Dermatologist)',
-    regNo: 'Reg. No. 73338',
-    specialty: 'त्वचारोग तज्ज्ञ',
-  };
-
-  const doc2 = settings.doctors[1] || {
-    id: 'd2',
-    name: 'डॉ. प्रमोद सुरेश शिनगारे',
-    title: 'MD (Ayu) - D.Dermatology (Ay.)',
-    subTitle: '(MUHS)',
-    regNo: 'Reg. No. I-87218-A',
-    specialty: 'त्वचारोग व सौंदर्य विशेषज्ञ',
-  };
+  const doc1 = settings?.doctors?.[0] || defaultClinicSettings.doctors[0];
+  const doc2 = settings?.doctors?.[1] || defaultClinicSettings.doctors[1];
 
   const handleUpdateDoctor = (index: 0 | 1, key: keyof DoctorInfo, value: string) => {
     setSettings((prev) => {
-      const updatedDocs = [...prev.doctors];
+      const updatedDocs = [...(prev.doctors || defaultClinicSettings.doctors)];
       if (!updatedDocs[index]) {
         updatedDocs[index] = { id: `doc_${index + 1}`, name: '', title: '', regNo: '' };
       }

@@ -19,7 +19,17 @@ const COMMON_INVESTIGATIONS = [
 ];
 
 export default function TemplateEditor({ template, onSave, onCancel, onPreview }: TemplateEditorProps) {
-  const [formData, setFormData] = useState<CaseTemplate>({ ...template });
+  const [formData, setFormData] = useState<CaseTemplate>(() => ({
+    id: template?.id || `tpl_${Date.now()}`,
+    name: template?.name || '',
+    description: template?.description || '',
+    medicines: template?.medicines || [],
+    investigationsAdvised: template?.investigationsAdvised || [],
+    counsellingPoints: template?.counsellingPoints || [],
+    isFavorite: template?.isFavorite || false,
+    createdDate: template?.createdDate || new Date().toISOString().split('T')[0],
+    updatedDate: template?.updatedDate || new Date().toISOString().split('T')[0],
+  }));
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [customInv, setCustomInv] = useState('');
   const [customAdvice, setCustomAdvice] = useState('');
