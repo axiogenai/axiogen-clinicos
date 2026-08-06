@@ -1,5 +1,7 @@
-import { Users, Clock, Stethoscope, CheckCircle2, ArrowRight, FileText, Phone, MapPin } from 'lucide-react';
+import { useState } from 'react';
+import { Users, Clock, Stethoscope, CheckCircle2, ArrowRight, FileText, Phone, MapPin, Search, X } from 'lucide-react';
 import type { Patient, QueueItem } from '../data/patients';
+import PatientEMRHistoryModal from './PatientEMRHistoryModal';
 
 interface QueueViewProps {
   queue: QueueItem[];
@@ -8,11 +10,21 @@ interface QueueViewProps {
 }
 
 export default function QueueView({ queue, patients, onSelectPatient }: QueueViewProps) {
+  const [patientSearchQuery, setPatientSearchQuery] = useState('');
+  const [selectedEMRPatient, setSelectedEMRPatient] = useState<Patient | null>(null);
+
   const getPatient = (id: string) => patients.find(p => p.id === id);
 
   const waiting = queue.filter(q => q.status === 'waiting').length;
   const consulting = queue.filter(q => q.status === 'in-consultation').length;
   const completed = queue.filter(q => q.status === 'completed').length;
+
+  const searchedPatients = patientSearchQuery.trim() ? patients.filter(p =>
+    p.name.toLowerCase().includes(patientSearchQuery.toLowerCase()) ||
+    p.phone.includes(patientSearchQuery) ||
+    p.village.toLowerCase().includes(patientSearchQuery.toLowerCase()) ||
+    p.id.toLowerCase().includes(patientSearchQuery.toLowerCase())
+  ) : [];
 
   return (
     <div className="space-y-5">
@@ -48,6 +60,100 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
             <p className="text-lg sm:text-2xl font-black text-[#166534] leading-none mt-0.5">{completed}</p>
           </div>
         </div>
+      </div>
+
+      {/* ── Search Returning Patient & View EMR History Bar ── */}
+      <div className="bg-[#faf9f6] p-4 rounded-2xl border border-[#e4e2e1] shadow-sm space-y-3">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <div>
+            <h2 className="text-sm font-serif font-bold text-[#1a1c1a] flex items-center gap-2">
+              <Search className="w-4 h-4 text-[#047857]" />
+              <span>Search Returning Patient & Past EMR History</span>
+            </h2>
+            <p className="text-[11px] text-[#7c766d] mt-0.5">
+              Type patient name, phone, or village to view past visit prescriptions & history (saved forever)
+            </p>
+          </div>
+          <span className="text-[10px] bg-[#ecfdf5] text-[#047857] px-2.5 py-1 rounded-full font-bold border border-[#a7f3d0]">
+            {patients.length} Registered Patients
+          </span>
+        </div>
+
+        <div className="relative">
+          <Search className="w-4 h-4 text-[#7c766d] absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Type patient name, mobile number, village or ID..."
+            value={patientSearchQuery}
+            onChange={(e) => setPatientSearchQuery(e.target.value)}
+            className="form-input text-xs sm:text-sm pl-10 pr-10 py-2.5 w-full bg-white"
+          />
+          {patientSearchQuery && (
+            <button
+              onClick={() => setPatientSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7c766d] hover:text-[#1a1c1a]"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Search Results list */}
+        {patientSearchQuery.trim() && (
+          <div className="bg-white border border-[#e4e2e1] rounded-xl shadow-lg max-h-72 overflow-y-auto divide-y divide-[#f2eee3]">
+            {searchedPatients.length > 0 ? (
+              searchedPatients.map((p) => {
+                const existingQueueItem = queue.find(q => q.patientId === p.id || q.name === p.name);
+                const qItem: QueueItem = existingQueueItem || {
+                  queueId: `Q_TEMP_${p.id}`,
+                  patientId: p.id,
+                  name: p.name,
+                  age: p.age,
+                  phone: p.phone,
+                  village: p.village,
+                  timeAdded: 'Direct Consultation',
+                  complaint: 'Returning Patient Visit',
+                  status: 'waiting'
+                };
+
+                return (
+                  <div key={p.id} className="p-3 hover:bg-[#faf9f6] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-colors">
+                    <div>
+                      <div className="font-bold text-[#1a1c1a] text-sm">{p.name}</div>
+                      <div className="text-xs text-[#7c766d] mt-0.5">
+                        {p.age} Yrs / {p.gender === 'M' ? 'Male' : 'Female'} · 📞 {p.phone} · 📍 {p.village || 'N/A'}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedEMRPatient(p)}
+                        className="btn-secondary text-xs py-1.5 px-3 flex-1 sm:flex-initial justify-center"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-[#047857]" />
+                        <span>📜 View EMR History</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => onSelectPatient(qItem, p)}
+                        className="btn-primary text-xs py-1.5 px-3 flex-1 sm:flex-initial justify-center"
+                      >
+                        <Stethoscope className="w-3.5 h-3.5" />
+                        <span>Start Consultation</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="p-4 text-center text-xs text-[#7c766d]">
+                No registered patient found matching "<strong>{patientSearchQuery}</strong>".
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Queue Table */}
@@ -282,6 +388,28 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
           </table>
         </div>
       </div>
+
+      {selectedEMRPatient && (
+        <PatientEMRHistoryModal
+          patient={selectedEMRPatient}
+          onClose={() => setSelectedEMRPatient(null)}
+          onLoadPrescription={(pastPaper) => {
+            const qItem: QueueItem = {
+              queueId: `Q_TEMP_${selectedEMRPatient.id}`,
+              patientId: selectedEMRPatient.id,
+              name: selectedEMRPatient.name,
+              age: selectedEMRPatient.age,
+              phone: selectedEMRPatient.phone,
+              village: selectedEMRPatient.village,
+              timeAdded: 'Direct Consultation',
+              complaint: pastPaper.complaint || 'Follow-up Consultation',
+              status: 'waiting'
+            };
+            onSelectPatient(qItem, selectedEMRPatient);
+            setSelectedEMRPatient(null);
+          }}
+        />
+      )}
     </div>
   );
 }
