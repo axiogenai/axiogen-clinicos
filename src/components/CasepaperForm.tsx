@@ -376,7 +376,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
       const med = filteredMedicines.find(m => m.id === tm.medicineId) || dbMedicines.find(m => m.id === tm.medicineId);
       return {
         medicineId: tm.medicineId,
-        name: tm.medicineName || tm.name || (med ? med.name : 'Unknown Medicine'),
+        name: tm.medicineName || (tm as any).name || (med ? med.name : 'Unknown Medicine'),
         dosage: tm.dosage || (med ? `${med.strength || ''} (${med.form || 'Tablet'})` : ''),
         frequency: tm.frequency || (med ? med.defaultFrequency || 'Twice daily' : 'Twice daily'),
         duration: tm.duration || (med ? med.defaultDuration || '7 Days' : '7 Days'),
