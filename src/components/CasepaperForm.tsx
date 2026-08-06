@@ -199,6 +199,9 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
   const [showTemplateDropdown, setShowTemplateDropdown] = useState(false);
   const [dbMedicines, setDbMedicines] = useState<any[]>(initialLocalMedicines);
   const [filteredMedicines, setFilteredMedicines] = useState<any[]>(initialLocalMedicines);
+  const [totalMedicineCount, setTotalMedicineCount] = useState(0);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [isMedicineImportOpen, setIsMedicineImportOpen] = useState(false);
@@ -262,26 +265,33 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     );
   }, [templates, templateSearchQuery]);
 
-  // Fetch and normalize medicines from backend API
+  const normalizeMedicine = (m: any, idx: number) => ({
+    id: m.id || m.productId || `med_${idx}`,
+    name: m.name || m['Medicine Name'] || m.productId || `Medicine #${idx + 1}`,
+    brand: m.brand || m['Brand'] || '',
+    strength: m.strength || m['Strength'] || '',
+    form: m.form || m['Form'] || 'Tablet',
+    category: m.category || m['Category'] || 'General',
+    defaultFrequency: m.frequency || m.defaultFrequency || 'Twice daily',
+    defaultDuration: m.duration || m.defaultDuration || '7 Days',
+  });
+
   const loadMedicines = async () => {
     try {
       const fetched = await api.getMedicines();
       if (fetched && fetched.length > 0) {
-        const normalized = fetched.map((m: any, idx: number) => ({
-          id: m.id || m.productId || `med_${idx}`,
-          name: m.name || m['Medicine Name'] || m.productId || `Medicine #${idx + 1}`,
-          brand: m.brand || m['Brand'] || '',
-          strength: m.strength || m['Strength'] || '',
-          form: m.form || m['Form'] || 'Tablet',
-          category: m.category || m['Category'] || 'General',
-          defaultFrequency: m.frequency || m.defaultFrequency || 'Twice daily',
-          defaultDuration: m.duration || m.defaultDuration || '7 Days',
-        }));
+        const normalized = fetched.map(normalizeMedicine);
         setDbMedicines(normalized);
         setFilteredMedicines(normalized);
       }
+      try {
+        const countRes = await api.getMedicineCount();
+        setTotalMedicineCount(countRes?.count || fetched?.length || 0);
+      } catch {
+        setTotalMedicineCount(fetched?.length || 0);
+      }
     } catch {
-      // Offline fallback
+      setTotalMedicineCount(initialLocalMedicines.length);
     }
   };
 
@@ -307,49 +317,56 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     };
   }, []);
 
-  // Real-time search matching name, brand, strength, prioritizing core drug name prefix
+  // Server-side search with debounce (searches all 42,032 medicines on Supabase)
   useEffect(() => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+
     if (searchQuery.trim() === '') {
       setFilteredMedicines(dbMedicines);
-    } else {
-      const lowerQuery = searchQuery.toLowerCase().trim();
-
-      const getCoreName = (fullName: string) => {
-        return (fullName || '')
-          .replace(/^(Tab\.|Cap\.|Syp\.|Inj\.|Cream|Gel \/ Ointment|Lotion|Ointment|Soap|Drops|Powder)\s*/i, '')
-          .toLowerCase()
-          .trim();
-      };
-
-      const matches = dbMedicines.filter((m) => {
-        const fullName = (m.name || '').toLowerCase();
-        const coreName = getCoreName(m.name);
-        const brandMatch = (m.brand || '').toLowerCase().includes(lowerQuery);
-        const strengthMatch = (m.strength || '').toLowerCase().includes(lowerQuery);
-        return fullName.includes(lowerQuery) || coreName.includes(lowerQuery) || brandMatch || strengthMatch;
-      });
-
-      // Sort matching results: coreName startsWith prioritizes drug name
-      matches.sort((a, b) => {
-        const aCore = getCoreName(a.name);
-        const bCore = getCoreName(b.name);
-
-        const aCoreStarts = aCore.startsWith(lowerQuery);
-        const bCoreStarts = bCore.startsWith(lowerQuery);
-        if (aCoreStarts && !bCoreStarts) return -1;
-        if (!aCoreStarts && bCoreStarts) return 1;
-
-        const aBrandStarts = (a.brand || '').toLowerCase().startsWith(lowerQuery);
-        const bBrandStarts = (b.brand || '').toLowerCase().startsWith(lowerQuery);
-        if (aBrandStarts && !bBrandStarts) return -1;
-        if (!aBrandStarts && bBrandStarts) return 1;
-
-        return aCore.localeCompare(bCore);
-      });
-
-      setFilteredMedicines(matches);
+      setIsSearching(false);
+      setHighlightedIndex(-1);
+      return;
     }
-    setHighlightedIndex(-1);
+
+    setIsSearching(true);
+    searchTimerRef.current = setTimeout(async () => {
+      try {
+        const results = await api.searchMedicines(searchQuery.trim());
+        if (results && results.length > 0) {
+          const normalized = results.map(normalizeMedicine);
+
+          // Sort: prefix matches first
+          const lowerQuery = searchQuery.toLowerCase().trim();
+          const getCoreName = (fullName: string) =>
+            (fullName || '').replace(/^(Tab\.|Cap\.|Syp\.|Inj\.|Cream|Gel \/ Ointment|Lotion|Ointment|Soap|Drops|Powder)\s*/i, '').toLowerCase().trim();
+
+          normalized.sort((a, b) => {
+            const aCore = getCoreName(a.name);
+            const bCore = getCoreName(b.name);
+            const aCoreStarts = aCore.startsWith(lowerQuery);
+            const bCoreStarts = bCore.startsWith(lowerQuery);
+            if (aCoreStarts && !bCoreStarts) return -1;
+            if (!aCoreStarts && bCoreStarts) return 1;
+            return aCore.localeCompare(bCore);
+          });
+
+          setFilteredMedicines(normalized);
+        } else {
+          setFilteredMedicines([]);
+        }
+      } catch {
+        // Fallback to local filter
+        const lq = searchQuery.toLowerCase().trim();
+        setFilteredMedicines(dbMedicines.filter(m =>
+          (m.name || '').toLowerCase().includes(lq) ||
+          (m.brand || '').toLowerCase().includes(lq)
+        ));
+      }
+      setIsSearching(false);
+      setHighlightedIndex(-1);
+    }, 250); // 250ms debounce
+
+    return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); };
   }, [searchQuery, dbMedicines]);
 
   const applyTemplate = (templateId: string) => {
@@ -759,14 +776,14 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                 Rx — Prescription
               </h3>
               <span className="text-[11px] font-bold text-[#047857] bg-[#ecfdf5] px-2.5 py-1 rounded-full border border-[#a7f3d0]">
-                {dbMedicines.length} medicines
+                {totalMedicineCount > 0 ? totalMedicineCount.toLocaleString() : dbMedicines.length} medicines
               </span>
             </div>
             
             {/* Medicine Search */}
             <div className="relative mb-4">
               <div className="relative">
-                <Search className="w-4 h-4 text-[#7c766d] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+                <Search className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10 ${isSearching ? 'text-[#047857] animate-pulse' : 'text-[#7c766d]'}`} />
                 <input 
                   ref={searchInputRef}
                   type="text" 

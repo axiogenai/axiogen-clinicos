@@ -50,6 +50,7 @@ export const api = {
   searchMedicines: (q: string) => apiRequest<any[]>(`/medicines/search?q=${encodeURIComponent(q)}`),
   createMedicine: (med: any) => apiRequest<any>('/medicines', { method: 'POST', body: JSON.stringify(med) }),
   bulkImportMedicines: (medicines: any[]) => apiRequest<any>('/medicines/bulk', { method: 'POST', body: JSON.stringify({ medicines }) }),
+  getMedicineCount: () => apiRequest<{ count: number }>('/medicines/count'),
 
   // Templates
   getTemplates: () => apiRequest<any[]>('/templates'),

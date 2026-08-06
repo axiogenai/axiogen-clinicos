@@ -13,6 +13,15 @@ exports.getMedicines = async (req, res, next) => {
   }
 };
 
+exports.getMedicineCount = async (req, res, next) => {
+  try {
+    const count = await Medicine.count();
+    res.json({ count });
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.searchMedicines = async (req, res, next) => {
   try {
     const { q } = req.query;
