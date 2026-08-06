@@ -36,18 +36,50 @@ exports.searchMedicines = async (req, res, next) => {
     }
 
     const query = q.trim();
-    const medicines = await Medicine.findAll({
+
+    // 1. Fetch prefix matches first (either starts with query or has Tab./Cap./Syp./Cream prefix followed by query)
+    const prefixMatches = await Medicine.findAll({
       where: {
+        [Op.or]: [
+          { name: { [likeOp]: `${query}%` } },
+          { name: { [likeOp]: `Tab. ${query}%` } },
+          { name: { [likeOp]: `Cap. ${query}%` } },
+          { name: { [likeOp]: `Syp. ${query}%` } },
+          { name: { [likeOp]: `Cream ${query}%` } },
+          { name: { [likeOp]: `Lotion ${query}%` } },
+          { name: { [likeOp]: `Gel ${query}%` } },
+          { name: { [likeOp]: `Ointment ${query}%` } },
+          { name: { [likeOp]: `Soap ${query}%` } },
+          { name: { [likeOp]: `Cap ${query}%` } },
+          { name: { [likeOp]: `Tab ${query}%` } },
+          { name: { [likeOp]: `Syp ${query}%` } },
+          { brand: { [likeOp]: `${query}%` } }
+        ]
+      },
+      order: [['name', 'ASC']],
+      limit: 100
+    });
+
+    if (prefixMatches.length >= 100) {
+      return res.json(prefixMatches);
+    }
+
+    // 2. Fetch other containing matches to fill the rest of the 100 limit
+    const prefixIds = prefixMatches.map(m => m.id);
+    const middleMatches = await Medicine.findAll({
+      where: {
+        id: { [Op.notIn]: prefixIds },
         [Op.or]: [
           { name: { [likeOp]: `%${query}%` } },
           { brand: { [likeOp]: `%${query}%` } },
-          { productId: { [likeOp]: `%${query}%` } },
           { category: { [likeOp]: `%${query}%` } }
         ]
       },
-      limit: 100
+      order: [['name', 'ASC']],
+      limit: 100 - prefixMatches.length
     });
-    res.json(medicines);
+
+    res.json([...prefixMatches, ...middleMatches]);
   } catch (err) {
     next(err);
   }
