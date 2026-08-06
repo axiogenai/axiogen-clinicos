@@ -60,10 +60,11 @@ export default function PatientSearch({ patients, onSelectPatient, onNewPatient 
   return (
     <div className="relative w-full max-w-2xl" ref={wrapperRef}>
       <div className="relative">
-        <Search className="w-4 h-4 text-gray-400 absolute left-4 top-3.5" />
+        <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
         <input
           type="text"
-          className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm"
+          className="w-full pr-10 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm"
+          style={{ paddingLeft: '2.5rem' }}
           placeholder="Search patients by name, phone, or village..."
           value={query}
           onChange={(e) => {
