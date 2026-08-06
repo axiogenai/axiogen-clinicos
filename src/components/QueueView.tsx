@@ -80,13 +80,14 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
         </div>
 
         <div className="relative">
-          <Search className="w-4 h-4 text-[#7c766d] absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[#7c766d] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
           <input
             type="text"
             placeholder="Type patient name, mobile number, village or ID..."
             value={patientSearchQuery}
             onChange={(e) => setPatientSearchQuery(e.target.value)}
-            className="form-input text-xs sm:text-sm pl-10 pr-10 py-2.5 w-full bg-white"
+            className="form-input text-xs sm:text-sm pr-10 py-2.5 w-full bg-white"
+            style={{ paddingLeft: '2.5rem' }}
           />
           {patientSearchQuery && (
             <button
