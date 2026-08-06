@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Pill, FlaskConical, Lightbulb, Calendar, ArrowLeft, Printer, Trash2, Database, CheckCircle2, Search, Plus, X, ChevronDown } from 'lucide-react';
+import { Pill, FlaskConical, Lightbulb, Calendar, ArrowLeft, Printer, Trash2, Database, CheckCircle2, Search, Plus, X, ChevronDown, FileText } from 'lucide-react';
 import type { Patient } from '../data/patients';
 import { medicines as initialLocalMedicines } from '../data/medicines';
 import { useClinic } from '../context/ClinicContext';
@@ -7,6 +7,7 @@ import { api } from '../api/client';
 import type { CasePaper, CasePaperMedicine } from '../types';
 import MedicineImportModal from './MedicineImportModal';
 import ReprintPreview from './ReprintPreview';
+import PatientEMRHistoryModal from './PatientEMRHistoryModal';
 
 import { calculateMedicineCount } from '../utils/countCalculator';
 
@@ -206,6 +207,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [isMedicineImportOpen, setIsMedicineImportOpen] = useState(false);
   const [showPrintOverlay, setShowPrintOverlay] = useState(false);
+  const [showEMRModal, setShowEMRModal] = useState(false);
   const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
   const [freqOpenIndex, setFreqOpenIndex] = useState<number | null>(null);
   const [freqInputDisplay, setFreqInputDisplay] = useState('');
@@ -648,6 +650,15 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                   rows={2}
                 />
               </div>
+
+              <button
+                type="button"
+                onClick={() => setShowEMRModal(true)}
+                className="w-full mt-3 py-2 px-3 bg-[#ecfdf5] hover:bg-[#d1fae5] text-[#047857] border border-[#a7f3d0] rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm"
+              >
+                <FileText className="w-4 h-4 text-[#047857]" />
+                <span>📜 View All Past Prescriptions & EMR</span>
+              </button>
             </div>
           </div>
 
@@ -1191,6 +1202,30 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
           onReturnToQueue={() => {
             setShowPrintOverlay(false);
             onBack();
+          }}
+        />
+      )}
+
+      {/* Patient EMR History Modal */}
+      {showEMRModal && (
+        <PatientEMRHistoryModal
+          patient={patient}
+          onClose={() => setShowEMRModal(false)}
+          onLoadPrescription={(pastCasePaper) => {
+            const medicines = Array.isArray(pastCasePaper.medicines)
+              ? pastCasePaper.medicines
+              : (typeof pastCasePaper.medicines === 'string' ? JSON.parse(pastCasePaper.medicines || '[]') : []);
+
+            onUpdateCasePaper({
+              ...casePaper,
+              complaint: pastCasePaper.complaint || casePaper.complaint,
+              pastHistory: pastCasePaper.pastHistory || casePaper.pastHistory,
+              allergies: pastCasePaper.allergies || casePaper.allergies,
+              medicines: medicines.length > 0 ? medicines : casePaper.medicines,
+              investigationsAdvised: pastCasePaper.investigationsAdvised || casePaper.investigationsAdvised,
+              counsellingDone: pastCasePaper.counsellingDone || casePaper.counsellingDone,
+            });
+            setShowEMRModal(false);
           }}
         />
       )}
