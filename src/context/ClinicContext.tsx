@@ -119,7 +119,38 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
         setQueue(dbQueue.value);
       }
       if (dbTemplates.status === 'fulfilled') {
-        setTemplates(dbTemplates.value);
+        const parsedTemplates = dbTemplates.value.map((t: any) => {
+          let parsedMedicines = [];
+          try {
+            parsedMedicines = typeof t.medicines === 'string' ? JSON.parse(t.medicines) : (Array.isArray(t.medicines) ? t.medicines : []);
+          } catch {
+            parsedMedicines = [];
+          }
+
+          let parsedInvestigations = [];
+          try {
+            parsedInvestigations = typeof t.investigationsAdvised === 'string' ? JSON.parse(t.investigationsAdvised) : (Array.isArray(t.investigationsAdvised) ? t.investigationsAdvised : []);
+          } catch {
+            parsedInvestigations = [];
+          }
+
+          let parsedCounselling = [];
+          try {
+            const rawCounselling = t.counsellingPoints || t.counsellingDone;
+            parsedCounselling = typeof rawCounselling === 'string' ? JSON.parse(rawCounselling) : (Array.isArray(rawCounselling) ? rawCounselling : []);
+          } catch {
+            parsedCounselling = [];
+          }
+
+          return {
+            ...t,
+            medicines: parsedMedicines,
+            investigationsAdvised: parsedInvestigations,
+            counsellingPoints: parsedCounselling,
+            counsellingDone: parsedCounselling
+          };
+        });
+        setTemplates(parsedTemplates);
       }
       if (dbSettings.status === 'fulfilled' && dbSettings.value) {
         setClinicSettings((prev) => ({
