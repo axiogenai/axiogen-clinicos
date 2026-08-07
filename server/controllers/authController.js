@@ -45,8 +45,11 @@ async function ensureDefaultAccounts() {
         name: 'डॉ. प्रमोद शिनगारे',
         role: 'doctor',
         clinicId: 1,
-        phone: '9822674254'
+        phone: '9561896943'
       });
+    } else if (doc.phone !== '9561896943') {
+      doc.phone = '9561896943';
+      await doc.save();
     }
 
     const rec = await User.findOne({ where: { email: 'reception@shinagareclinic.com' } });
