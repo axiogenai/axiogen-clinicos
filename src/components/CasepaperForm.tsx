@@ -359,7 +359,14 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
       } catch {
         // Fallback to local filter
         const lq = searchQuery.toLowerCase().trim();
-        setFilteredMedicines(dbMedicines.filter(m =>
+        const getCoreName = (fullName: string) =>
+          (fullName || '').replace(/^(Tab\.|Cap\.|Syp\.|Inj\.|Cream|Gel \/ Ointment|Lotion|Ointment|Soap|Drops|Powder)\s*/i, '').toLowerCase().trim();
+
+        const prefixOnly = dbMedicines.filter(m =>
+          getCoreName(m.name).startsWith(lq) || (m.brand || '').toLowerCase().startsWith(lq) || (m.name || '').toLowerCase().startsWith(lq)
+        );
+
+        setFilteredMedicines(prefixOnly.length > 0 ? prefixOnly : dbMedicines.filter(m =>
           (m.name || '').toLowerCase().includes(lq) ||
           (m.brand || '').toLowerCase().includes(lq)
         ));
@@ -814,7 +821,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
               {showSearchDropdown && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-[#e4e2e1] rounded-xl shadow-xl max-h-64 overflow-auto">
                   {filteredMedicines.length > 0 ? (
-                    filteredMedicines.slice(0, 100).map((med, idx) => (
+                    filteredMedicines.map((med, idx) => (
                       <div 
                         key={med.id}
                         className={`px-4 py-2.5 cursor-pointer border-b border-[#f2eee3] last:border-0 transition-colors ${highlightedIndex === idx ? 'bg-[#ecfdf5]' : 'hover:bg-[#f8f6f0]'}`}
