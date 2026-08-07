@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Lock, UserCheck, ShieldAlert, ArrowRight, KeyRound, CheckCircle2, RefreshCw, X, Eye, EyeOff } from 'lucide-react';
+import { Lock, UserCheck, ShieldAlert, ArrowRight, KeyRound, CheckCircle2, RefreshCw, X, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useClinic } from '../context/ClinicContext';
 import { api, apiRequest } from '../api/client';
 import { supabaseAuth } from '../lib/supabase';
@@ -11,7 +11,7 @@ interface Props {
 export default function LoginView({ onSuccess }: Props) {
   const { login, setToast } = useClinic();
   const [email, setEmail] = useState('8010127704');
-  const [password, setPassword] = useState('doctor123');
+  const [password, setPassword] = useState('');
   const [role, setRole] = useState<'doctor' | 'receptionist'>('doctor');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,13 +32,13 @@ export default function LoginView({ onSuccess }: Props) {
 
   const handleQuickRoleSelect = (selectedRole: 'doctor' | 'receptionist') => {
     setRole(selectedRole);
+    setPassword('');
+    setError(null);
     if (selectedRole === 'doctor') {
       setEmail('8010127704');
-      setPassword('doctor123');
       setForgotIdentifier('8010127704');
     } else {
       setEmail('7972884083');
-      setPassword('reception123');
       setForgotIdentifier('7972884083');
     }
   };
@@ -56,7 +56,7 @@ export default function LoginView({ onSuccess }: Props) {
       });
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Invalid email or password credentials');
+      setError(err.message || 'Invalid credentials');
     } finally {
       setLoading(false);
     }
@@ -70,12 +70,10 @@ export default function LoginView({ onSuccess }: Props) {
     setGeneratedOTPNotice(null);
 
     try {
-      // 1. Try Supabase Auth password reset
       try {
         await supabaseAuth.resetPasswordForEmail(forgotIdentifier);
       } catch {}
 
-      // 2. Primary Database API OTP Reset with fallback
       if (typeof api?.forgotPassword === 'function') {
         await api.forgotPassword(forgotIdentifier);
       } else {
@@ -87,14 +85,14 @@ export default function LoginView({ onSuccess }: Props) {
 
       setForgotStep(2);
       setOtpCode('');
-      setGeneratedOTPNotice(`📲 6-digit OTP verification code sent via WhatsApp to ${forgotIdentifier}!`);
+      setGeneratedOTPNotice(`6-digit OTP verification code sent via WhatsApp to ${forgotIdentifier}!`);
       setToast({
         type: 'success',
         title: 'OTP Sent',
         message: `Verification code generated for ${forgotIdentifier}`
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to generate OTP code. Please check email/phone.');
+      setError(err.message || 'Failed to generate OTP code. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -117,13 +115,11 @@ export default function LoginView({ onSuccess }: Props) {
 
     setLoading(true);
     try {
-      // 1. Try Supabase OTP verification & password update
       try {
         await supabaseAuth.verifyOtp(forgotIdentifier, otpCode);
         await supabaseAuth.updatePassword(newPassword);
       } catch {}
 
-      // 2. Primary Database API Password Reset with fallback
       if (typeof api?.resetPassword === 'function') {
         await api.resetPassword(forgotIdentifier, otpCode, newPassword);
       } else {
@@ -139,7 +135,6 @@ export default function LoginView({ onSuccess }: Props) {
         message: 'Your password was updated successfully. Signing in now...'
       });
 
-      // Automatically log in with new password
       await login(forgotIdentifier, newPassword);
       onSuccess();
     } catch (err: any) {
@@ -166,7 +161,7 @@ export default function LoginView({ onSuccess }: Props) {
             <h1 className="text-2xl font-serif font-bold text-[#1a1c1a] tracking-tight">ClinicOS</h1>
             <p className="text-xs font-semibold text-[#7c766d] mt-0.5">शिनगारे स्किन & कॉस्मेटीक क्लिनिक</p>
           </div>
-          <span className="inline-block bg-[#f2eee3] text-[#4b463e] text-[10px] font-bold px-2 py-0.5 rounded border border-[#cdc6ba]">
+          <span className="inline-block bg-[#f2eee3] text-[#4b463e] text-[10px] font-bold px-2.5 py-0.5 rounded border border-[#cdc6ba]">
             AUTHENTICATED SECURE LOGIN
           </span>
         </div>
@@ -211,24 +206,8 @@ export default function LoginView({ onSuccess }: Props) {
               </div>
             )}
 
-            {/* Login Form */}
+            {/* Clean Login Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Fixed Account Identity Badge */}
-              <div className="bg-[#f8f6f0] p-3 rounded-xl border border-[#e4e2e1] flex items-center justify-between">
-                <div>
-                  <div className="text-xs text-[#7c766d] font-semibold">Logging in as:</div>
-                  <div className="text-sm font-bold text-[#1a1c1a]">
-                    {role === 'doctor' ? '👨‍⚕️ डॉ. प्रमोद शिनगारे (Doctor)' : '📋 Reception Desk (पेठ वडगाव)'}
-                  </div>
-                  <div className="text-[11px] font-mono text-[#047857] font-bold">
-                    📞 WhatsApp: {role === 'doctor' ? '8010127704' : '7972884083'}
-                  </div>
-                </div>
-                <span className="text-[10px] font-bold px-2 py-1 bg-[#ecfdf5] text-[#047857] rounded-lg border border-[#a7f3d0]">
-                  ACTIVE
-                </span>
-              </div>
-
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-xs font-bold text-[#4b463e]">Enter Password</label>
@@ -252,7 +231,7 @@ export default function LoginView({ onSuccess }: Props) {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full pl-9 pr-10 py-2 text-sm bg-white border border-[#cdc6ba] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#047857] text-[#1a1c1a]"
-                    placeholder="••••••••"
+                    placeholder="Enter password"
                   />
                   <button
                     type="button"
@@ -317,20 +296,10 @@ export default function LoginView({ onSuccess }: Props) {
             )}
 
             {forgotStep === 1 ? (
-              /* Step 1: Confirm Mobile Number for OTP */
+              /* Step 1: Request OTP */
               <form onSubmit={handleRequestOTP} className="space-y-4">
-                <div className="bg-[#ecfdf5] p-3 rounded-xl border border-[#a7f3d0] space-y-1">
-                  <div className="text-xs text-[#065f46] font-semibold">Verification Destination:</div>
-                  <div className="text-sm font-bold text-[#064e3b]">
-                    {role === 'doctor' ? '👨‍⚕️ Dr. Pramod Shinagare' : '📋 Reception Desk'}
-                  </div>
-                  <div className="text-xs font-mono font-bold text-[#047857]">
-                    📲 WhatsApp Mobile: {forgotIdentifier}
-                  </div>
-                </div>
-
                 <p className="text-xs text-[#7c766d]">
-                  Click below to generate a 6-digit OTP verification code sent directly to your registered WhatsApp mobile number.
+                  Click below to receive a 6-digit verification code sent directly to registered WhatsApp <strong className="font-mono text-[#1a1c1a]">{forgotIdentifier}</strong>.
                 </p>
 
                 <button
@@ -351,16 +320,17 @@ export default function LoginView({ onSuccess }: Props) {
                 <button
                   type="button"
                   onClick={() => setIsForgotMode(false)}
-                  className="w-full text-center text-xs font-bold text-[#7c766d] hover:text-[#1a1c1a]"
+                  className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-[#7c766d] hover:text-[#1a1c1a]"
                 >
-                  ← Back to Normal Login
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Back to Sign In</span>
                 </button>
               </form>
             ) : (
               /* Step 2: Enter OTP & New Password */
               <form onSubmit={handleResetPassword} className="space-y-4">
                 <p className="text-xs text-[#7c766d]">
-                  Verification code generated for <strong>{forgotIdentifier}</strong>. Enter the 6-digit OTP code below and choose your new password.
+                  Enter the 6-digit OTP code sent to <strong className="font-mono text-[#1a1c1a]">{forgotIdentifier}</strong> and choose your new password.
                 </p>
 
                 <div>
@@ -389,7 +359,7 @@ export default function LoginView({ onSuccess }: Props) {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       className="w-full pl-9 pr-10 py-2 text-sm bg-white border border-[#cdc6ba] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#047857] text-[#1a1c1a]"
-                      placeholder="••••••••"
+                      placeholder="Enter new password"
                     />
                     <button
                       type="button"
@@ -412,7 +382,7 @@ export default function LoginView({ onSuccess }: Props) {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className="w-full pl-9 pr-10 py-2 text-sm bg-white border border-[#cdc6ba] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#047857] text-[#1a1c1a]"
-                      placeholder="••••••••"
+                      placeholder="Confirm new password"
                     />
                     <button
                       type="button"
@@ -444,9 +414,10 @@ export default function LoginView({ onSuccess }: Props) {
                   <button
                     type="button"
                     onClick={() => setForgotStep(1)}
-                    className="text-[#7c766d] hover:text-[#1a1c1a] font-bold"
+                    className="text-[#7c766d] hover:text-[#1a1c1a] font-bold flex items-center gap-1"
                   >
-                    ← Change Email/Phone
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Back</span>
                   </button>
                   <button
                     type="button"
