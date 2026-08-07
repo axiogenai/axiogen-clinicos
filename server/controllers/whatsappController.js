@@ -1,4 +1,4 @@
-const { processBackgroundFollowUps, buildReminderMessage } = require('../services/whatsappService');
+const { processBackgroundFollowUps, buildReminderMessage, processFestivalWishes } = require('../services/whatsappService');
 const { getGatewayStatus, sendWhatsAppMessage, logoutGateway, initWhatsAppGateway } = require('../services/whatsappGateway');
 
 let isAutoScheduleEnabled = true;
@@ -19,6 +19,16 @@ const triggerAutoSend = async (req, res) => {
   res.json({
     success: true,
     message: `Automated background WhatsApp reminders processed for ${summary.date}`,
+    summary,
+  });
+};
+
+const triggerFestivalWishes = async (req, res) => {
+  const { date } = req.body;
+  const summary = await processFestivalWishes(date);
+  res.json({
+    success: true,
+    message: `Automated festival greetings processed for ${summary.festivalName || 'Festival'}`,
     summary,
   });
 };
@@ -68,6 +78,7 @@ const updateSettings = (req, res) => {
 module.exports = {
   getStatus,
   triggerAutoSend,
+  triggerFestivalWishes,
   sendSingleReminder,
   disconnectGateway,
   restartGateway,
