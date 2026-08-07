@@ -4,6 +4,7 @@ const whatsappController = require('../controllers/whatsappController');
 
 router.get('/status', whatsappController.getStatus);
 router.post('/trigger-auto-send', whatsappController.triggerAutoSend);
+router.post('/trigger-festival', whatsappController.triggerFestivalWishes);
 router.post('/send-single', whatsappController.sendSingleReminder);
 router.post('/disconnect', whatsappController.disconnectGateway);
 router.post('/restart', whatsappController.restartGateway);
