@@ -53,6 +53,147 @@ function buildReminderMessage(patientName, followUpDate, doctorName = 'डॉ. �
 }
 
 /**
+ * Annual Calendar of Major Indian / Marathi Festivals
+ */
+const FESTIVAL_CALENDAR = {
+  '01-01': {
+    name: 'नवीन वर्ष (New Year 2026)',
+    message: 'नवीन वर्षाच्या आपणास व आपल्या परिवारास हार्दिक हार्दिक शुभेच्छा! हे नवीन वर्ष आपल्या आयुष्यात सुख, समृद्धी, समाधान आणि उत्तम आरोग्य घेऊन येवो!'
+  },
+  '01-14': {
+    name: 'मकर संक्रांती (Makar Sankranti)',
+    message: 'तिळगूळ घ्या, गोड गोड बोला! मकर संक्रांतीच्या आपणास व आपल्या कुटुंबास मनःपूर्वक शुभेच्छा! आपले नाते असेच गोड आणि दृढ राहो!'
+  },
+  '01-26': {
+    name: 'प्रजासत्ताक दिन (Republic Day)',
+    message: 'भारतीय प्रजासत्ताक दिनाच्या सर्व देशवासीयांना हार्दिक हार्दिक शुभेच्छा! जय हिंद, जय भारत! 🇮🇳'
+  },
+  '02-19': {
+    name: 'छत्रपती शिवाजी महाराज जयंती (Shiv Jayanti)',
+    message: 'प्रौढ प्रताप पुरंदर, क्षत्रियकुलावतंस, सिंहासनाधीश्वर, श्रीमंत छत्रपती शिवाजी महाराज यांच्या जयंतीनिमित्त त्रिवार मानाचा मुजरा! 🚩'
+  },
+  '03-14': {
+    name: 'होळी / धुलिवंदन (Holi)',
+    message: 'रंगांची उधळण, आनंदाची बरसात! होळी व धुलिवंदनाच्या आपणास व आपल्या कुटुंबास रंगीबेरंगी हार्दिक शुभेच्छा! 🎨'
+  },
+  '03-30': {
+    name: 'गुढीपाडवा (Gudi Padwa)',
+    message: 'मराठी नूतन वर्षाच्या व गुढीपाडव्याच्या आपणास व आपल्या परिवारास हार्दिक मनःपूर्वक शुभेच्छा! नवीन वर्ष आरोग्यदायी व भरभराटीचे जावो! 🚩'
+  },
+  '04-14': {
+    name: 'डॉ. बाबासाहेब आंबेडकर जयंती (Ambedkar Jayanti)',
+    message: 'भारतीय घटनेचे शिल्पकार, भारतरत्न डॉ. बाबासाहेब आंबेडकर यांच्या जयंतीनिमित्त विनम्र अभिवादन! 🙏'
+  },
+  '05-01': {
+    name: 'महाराष्ट्र दिन व कामगार दिन (Maharashtra Day)',
+    message: 'महाराष्ट्र दिन व जागतिक कामगार दिनाच्या सर्व बांधवांना हार्दिक हार्दिक शुभेच्छा! जय महाराष्ट्र! 🚩'
+  },
+  '08-15': {
+    name: 'स्वातंत्र्य दिन (Independence Day)',
+    message: 'भारतीय स्वातंत्र्य दिनाच्या सर्वांना हार्दिक शुभेच्छा! चला आपल्या देशाच्या प्रगतीसाठी व आरोग्यासाठी एकत्र येऊया! 🇮🇳'
+  },
+  '08-27': {
+    name: 'गणेश चतुर्थी (Ganesh Chaturthi)',
+    message: 'गणपती बाप्पा मोरया! गणेश चतुर्थीच्या व श्री गणेशाच्या आगमनानिमित्त हार्दिक शुभेच्छा! बाप्पा आपल्या सर्व चिंता दूर करो व उत्तम आरोग्य प्रदान करो! 🌺'
+  },
+  '10-02': {
+    name: 'महात्मा गांधी जयंती (Gandhi Jayanti)',
+    message: 'राष्ट्रपिता महात्मा गांधी व लाल बहादूर शास्त्री यांच्या जयंतीनिमित्त विनम्र अभिवादन! 🙏'
+  },
+  '10-12': {
+    name: 'दसरा / विजयादशमी (Dussehra)',
+    message: 'आपट्याची पाने, सोन्याची खाण, दसऱ्याच्या दिवशी द्या एकमेकांना मानाचा मान! विजयादशमी व दसऱ्याच्या हार्दिक शुभेच्छा! 🏹'
+  },
+  '11-01': {
+    name: 'दिवाळी (Diwali - Laxmi Pujan)',
+    message: 'दिव्यांच्या लखलखाटात आणि आनंदाच्या वातावरणात साजरी होणाऱ्या दीपावलीच्या आपणास व आपल्या संपूर्ण परिवारास हार्दिक शुभेच्छा! आरोग्य, समृद्धी व समाधान लाभो! 🪔'
+  },
+  '11-02': {
+    name: 'बळीप्रतिपदा व पाडवा (Diwali Padwa)',
+    message: 'दीपावली पाडवा व नवीन वर्षाच्या मंगलमय शुभेच्छा! आपले आयुष्य सुख-समृद्धीने व उत्तम आरोग्याने उजळून निघो! 🪔'
+  },
+  '11-03': {
+    name: 'भाऊबीज (Bhau Beej)',
+    message: 'बहीण-भावाच्या पवित्र प्रेमाचे प्रतीक असणाऱ्या भाऊबीज सणाच्या हार्दिक हार्दिक शुभेच्छा! 🌸'
+  }
+};
+
+/**
+ * Automatically sends Festival Greetings to ALL registered patients on holiday/festival dates
+ */
+async function processFestivalWishes(overrideDateStr = null) {
+  const { dateStr } = getISTTimeInfo();
+  const targetDate = overrideDateStr || dateStr;
+  const monthDay = targetDate.slice(5); // 'MM-DD'
+
+  const festival = FESTIVAL_CALENDAR[monthDay];
+  if (!festival && !overrideDateStr) {
+    return { status: 'no_festival', date: targetDate, message: 'No festival scheduled for today.' };
+  }
+
+  const activeFestival = festival || {
+    name: 'उत्सवाच्या हार्दिक शुभेच्छा (Festive Greetings)',
+    message: 'आपणास व आपल्या संपूर्ण कुटुंबास सण आणि उत्सवाच्या शिनगारे स्किन क्लिनिकतर्फे हार्दिक हार्दिक शुभेच्छा!'
+  };
+
+  const results = {
+    festivalName: activeFestival.name,
+    date: targetDate,
+    totalPatients: 0,
+    sentCount: 0,
+    skippedCount: 0,
+  };
+
+  try {
+    const allPatients = await Patient.findAll();
+    results.totalPatients = allPatients.length;
+
+    for (const patient of allPatients) {
+      if (!patient || !patient.phone || patient.phone.length < 10) {
+        results.skippedCount++;
+        continue;
+      }
+
+      const logKey = `FESTIVAL_${activeFestival.name}_${patient.id}_${targetDate}`;
+      if (sentLog.has(logKey)) {
+        results.skippedCount++;
+        continue;
+      }
+
+      const messageText = (
+        `🌿 *शिनगारे स्किन अँड कॉस्मेटिक क्लिनिक* 🌿\n` +
+        `त्वचा • केस • नख विकार तज्ञ\n\n` +
+        `🙏 *नमस्कार*\n\n` +
+        `🎉 *${activeFestival.name}*\n\n` +
+        `${activeFestival.message}\n\n` +
+        `आपणास व आपल्या संपूर्ण परिवारास शिनगारे स्किन अँड कॉस्मेटिक क्लिनिक परिवारातर्फे हार्दिक मनःपूर्वक शुभेच्छा! 🌸\n\n` +
+        `📍 *पत्ता :*\n` +
+        `एस. टी. स्टँडजवळ, राजाराम चित्र मंदिर समोर, कल्याणी बझार वरती, पेठ वडगाव.\n` +
+        `📞 *संपर्क :* ७२४९७२७१०४ | ९६५७७२७१०४\n\n` +
+        `– *डॉ. प्रमोद शिनगारे*\n` +
+        `शिनगारे स्किन अँड कॉस्मेटिक क्लिनिक, पेठ वडगाव`
+      );
+
+      const dispatchSuccess = await dispatchWhatsAppMessage(patient.phone, messageText);
+      if (dispatchSuccess) {
+        sentLog.add(logKey);
+        results.sentCount++;
+      } else {
+        results.skippedCount++;
+      }
+
+      await new Promise(r => setTimeout(r, 300));
+    }
+
+    console.log(`🎉 [FESTIVAL ENGINE] Completed sending '${activeFestival.name}' greetings to ${results.sentCount}/${results.totalPatients} patients.`);
+  } catch (err) {
+    console.error('❌ Error in processFestivalWishes:', err);
+  }
+
+  return results;
+}
+
+/**
  * Returns current Date & Hour strictly in Indian Standard Time (Asia/Kolkata)
  */
 function getISTTimeInfo() {
@@ -75,10 +216,29 @@ function getISTTimeInfo() {
 }
 
 /**
+ * Returns tomorrow's date string (YYYY-MM-DD) strictly in Indian Standard Time (Asia/Kolkata)
+ * Reminders are automatically sent 1 day BEFORE the scheduled appointment date
+ */
+function getTomorrowISTDateStr() {
+  const now = new Date();
+  const tomorrow = new Date(now.getTime() + (24 * 60 * 60 * 1000));
+  const options = { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' };
+  const formatter = new Intl.DateTimeFormat('en-CA', options);
+  const parts = formatter.formatToParts(tomorrow);
+
+  const year = parts.find(p => p.type === 'year').value;
+  const month = parts.find(p => p.type === 'month').value;
+  const day = parts.find(p => p.type === 'day').value;
+
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * Background Auto-Send Engine: Sends WhatsApp messages to all patients scheduled for follow-up on targetDate
+ * Default targetDate is TOMORROW (1 day earlier than appointment date)
  */
 async function processBackgroundFollowUps(targetDate = null) {
-  const dateStr = targetDate || getISTTimeInfo().dateStr;
+  const dateStr = targetDate || getTomorrowISTDateStr();
   const results = {
     date: dateStr,
     totalEligible: 0,
@@ -322,19 +482,32 @@ async function autoBackupDailyQueue(targetDate = null) {
 function initBackgroundScheduler() {
   let lastReminderDate = '';
   let lastBackupDate = '';
+  let lastFestivalDate = '';
 
   const checkIntervalMs = 60 * 1000; // Check every 1 minute
 
   const runChecks = async () => {
     const { dateStr, hour, minute } = getISTTimeInfo();
 
+    // Trigger automated festival wishes at 8:30 AM IST or later on holiday dates
+    const monthDay = dateStr.slice(5);
+    if (hour >= 8 && FESTIVAL_CALENDAR[monthDay] && lastFestivalDate !== dateStr) {
+      lastFestivalDate = dateStr;
+      console.log(`🎉 [FESTIVAL ENGINE IST ${dateStr}] Today is ${FESTIVAL_CALENDAR[monthDay].name}! Triggering auto festival greetings...`);
+      try {
+        await processFestivalWishes(dateStr);
+      } catch (err) {
+        console.error('❌ Festival wishes error:', err);
+      }
+    }
+
     // Trigger daily reminders if it is 9 AM IST or later, and we haven't sent for today yet
     if (hour >= 9 && lastReminderDate !== dateStr) {
       lastReminderDate = dateStr;
-      console.log(`⏰ [IST ${dateStr} ${hour}:${minute}] Triggering Daily Automated Background WhatsApp Reminders...`);
+      console.log(`⏰ [IST ${dateStr} ${hour}:${minute}] Triggering 1-Day Prior WhatsApp Follow-Up Reminders...`);
       try {
-        const summary = await processBackgroundFollowUps(dateStr);
-        console.log(`✅ Background WhatsApp Reminders Complete for ${dateStr}: Sent ${summary.sentCount}/${summary.totalEligible}`);
+        const summary = await processBackgroundFollowUps();
+        console.log(`✅ 1-Day Prior WhatsApp Reminders Complete (Target Date: ${summary.date}): Sent ${summary.sentCount}/${summary.totalEligible}`);
       } catch (err) {
         console.error('❌ Scheduler reminder error:', err);
       }
@@ -367,6 +540,8 @@ function initBackgroundScheduler() {
 module.exports = {
   buildReminderMessage,
   processBackgroundFollowUps,
+  processFestivalWishes,
+  FESTIVAL_CALENDAR,
   dispatchWhatsAppMessage,
   initBackgroundScheduler,
 };
