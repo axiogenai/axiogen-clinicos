@@ -1,15 +1,19 @@
-import { useState } from 'react';
-import { UserCheck, UserPlus, Phone, MapPin, AlertCircle, Plus } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { UserCheck, UserPlus, Phone, MapPin, AlertCircle, AlertTriangle, ArrowRight, Plus } from 'lucide-react';
 import type { Patient } from '../data/patients';
+import { useClinic } from '../context/ClinicContext';
 
 interface Props {
   selectedPatient: Patient | null;
   onSubmit: (data: any) => void;
   onCancel: () => void;
   onClearSelected: () => void;
+  onSelectExistingPatient?: (patient: Patient) => void;
 }
 
-export default function PatientRegistrationForm({ selectedPatient, onSubmit, onCancel, onClearSelected }: Props) {
+export default function PatientRegistrationForm({ selectedPatient, onSubmit, onCancel, onClearSelected, onSelectExistingPatient }: Props) {
+  const { patients, queue } = useClinic();
+
   const [formData, setFormData] = useState({
     name: selectedPatient?.name || '',
     age: selectedPatient?.age?.toString() || '',
@@ -24,14 +28,55 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Real-time Duplicate Mobile Check
+  const duplicatePatient = useMemo(() => {
+    if (selectedPatient) return null;
+    const clean = formData.phone.replace(/\D/g, '');
+    if (clean.length === 10) {
+      return patients.find(p => p.phone === clean);
+    }
+    return null;
+  }, [formData.phone, patients, selectedPatient]);
+
+  // Real-time Duplicate Queue Entry Check
+  const isAlreadyInQueue = useMemo(() => {
+    const targetPatientId = selectedPatient?.id || duplicatePatient?.id;
+    const cleanPhone = formData.phone.replace(/\D/g, '');
+
+    return queue.some(q => {
+      if (q.status === 'completed') return false;
+      if (targetPatientId && q.patientId === targetPatientId) return true;
+      if (cleanPhone && cleanPhone.length === 10 && q.phone === cleanPhone) return true;
+      return false;
+    });
+  }, [selectedPatient, duplicatePatient, formData.phone, queue]);
+
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!selectedPatient) {
-      if (!formData.name.trim()) newErrors.name = 'Full name is required';
-      if (!formData.age.trim() || isNaN(Number(formData.age))) newErrors.age = 'Valid age is required';
-      if (!formData.phone.trim() || !/^\d{10}$/.test(formData.phone)) newErrors.phone = 'Valid 10-digit phone number required';
-      if (!formData.village.trim()) newErrors.village = 'Village/Town is required';
+      if (!formData.name.trim() || formData.name.trim().length < 2) {
+        newErrors.name = 'Full name is required (at least 2 characters)';
+      }
+      const cleanPhone = formData.phone.replace(/\D/g, '');
+      if (!cleanPhone || cleanPhone.length !== 10) {
+        newErrors.phone = 'Valid 10-digit mobile number required (digits only)';
+      }
+      const numAge = Number(formData.age);
+      if (!formData.age.trim() || isNaN(numAge) || numAge < 0 || numAge > 120) {
+        newErrors.age = 'Age must be a valid number between 0 and 120';
+      }
+      if (!formData.village.trim()) {
+        newErrors.village = 'Village/Town name is required';
+      }
+      if (duplicatePatient) {
+        newErrors.phone = `A patient with mobile ${formData.phone} already exists (${duplicatePatient.name})`;
+      }
     }
+
+    if (isAlreadyInQueue) {
+      newErrors.queue = 'Patient is already in today’s active consultation queue!';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -81,6 +126,36 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
       </div>
 
       <div className="p-6 space-y-6">
+
+        {/* Duplicate Queue Alert Banner */}
+        {isAlreadyInQueue && (
+          <div className="p-3.5 bg-[#fef2f2] border border-[#fecaca] rounded-xl flex items-center gap-2.5 text-xs text-[#991b1b] shadow-sm">
+            <AlertCircle className="w-4 h-4 text-[#dc2626] shrink-0" />
+            <span><strong className="font-bold">Duplicate Blocked:</strong> Patient is already in today's active OPD consultation queue!</span>
+          </div>
+        )}
+
+        {/* Duplicate Mobile Patient Alert Banner */}
+        {duplicatePatient && (
+          <div className="p-3.5 bg-[#fffbeb] border border-[#fde68a] rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-[#92400e] shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <AlertTriangle className="w-4.5 h-4.5 text-[#b45309] shrink-0" />
+              <div>
+                <span className="font-bold text-[#b45309]">Existing Patient Match:</span> Patient <strong className="text-[#78350f]">{duplicatePatient.name}</strong> ({duplicatePatient.age} YRS · {duplicatePatient.village || 'N/A'}) is already registered with mobile <strong className="text-[#78350f]">{duplicatePatient.phone}</strong>.
+              </div>
+            </div>
+            {onSelectExistingPatient && (
+              <button
+                type="button"
+                onClick={() => onSelectExistingPatient(duplicatePatient)}
+                className="px-3.5 py-1.5 bg-[#b45309] hover:bg-[#92400e] text-white font-bold rounded-lg shrink-0 flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer"
+              >
+                <span>Select Existing Patient</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Mode 1: Selected Existing Patient Summary */}
         {selectedPatient ? (
