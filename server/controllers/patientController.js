@@ -49,18 +49,41 @@ exports.createPatient = async (req, res, next) => {
     const clinicId = req.user?.clinicId || 1;
     const { id, name, age, gender, phone, village, pastHistory, allergies, notes } = req.body;
 
-    if (!name) return res.status(400).json({ error: 'Patient name is required' });
+    if (!name || name.trim().length < 2) {
+      return res.status(400).json({ error: 'Patient full name is required (at least 2 characters)' });
+    }
+
+    const cleanPhone = (phone || '').replace(/\D/g, '');
+    if (cleanPhone && cleanPhone.length !== 10) {
+      return res.status(400).json({ error: 'Mobile number must be a valid 10-digit number' });
+    }
+
+    // Duplicate Mobile Number Check
+    if (cleanPhone) {
+      const existing = await Patient.findOne({ where: { clinicId, phone: cleanPhone } });
+      if (existing) {
+        return res.status(409).json({
+          error: `A patient with mobile number ${cleanPhone} is already registered (${existing.name}, Village: ${existing.village || 'N/A'}). Duplicate registration is blocked.`,
+          existingPatient: existing
+        });
+      }
+    }
+
+    const parsedAge = age !== undefined && age !== null && age !== '' ? parseInt(age, 10) : null;
+    if (parsedAge !== null && (isNaN(parsedAge) || parsedAge < 0 || parsedAge > 120)) {
+      return res.status(400).json({ error: 'Age must be a valid number between 0 and 120' });
+    }
 
     const patientId = id || `PT${String(Date.now()).slice(-4)}`;
 
     const patient = await Patient.create({
       id: patientId,
       clinicId,
-      name,
-      age: age ? parseInt(age, 10) : null,
+      name: name.trim(),
+      age: parsedAge,
       gender: gender || 'M',
-      phone: phone || '',
-      village: village || '',
+      phone: cleanPhone,
+      village: village ? village.trim() : '',
       pastHistory: pastHistory || '',
       allergies: allergies || '',
       notes: notes || ''
