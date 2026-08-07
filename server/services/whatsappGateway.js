@@ -1,4 +1,4 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, Browsers } = require('@whiskeysockets/baileys');
 const QRCode = require('qrcode');
 const path = require('path');
 const fs = require('fs');
@@ -57,12 +57,12 @@ async function initWhatsAppGateway(forceFresh = false) {
       auth: state,
       printQRInTerminal: true,
       logger: pino({ level: 'silent' }),
-      browser: ['ClinicOS', 'Chrome', '1.0.0'],
+      browser: Browsers.macOS('Desktop'),
       connectTimeoutMs: 60000,
       defaultQueryTimeoutMs: 60000,
-      keepAliveIntervalMs: 25000, // 25s ping heartbeat keeps socket alive forever
-      retryRequestDelayMs: 2000,
-      markOnlineOnConnect: true,
+      keepAliveIntervalMs: 30000,
+      retryRequestDelayMs: 3000,
+      markOnlineOnConnect: false,
       syncFullHistory: false,
     });
 
