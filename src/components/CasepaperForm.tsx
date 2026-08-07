@@ -491,7 +491,30 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     };
   };
 
+  const validateCasePaperBeforeSave = (): boolean => {
+    if (!patient || !patient.name) {
+      setToast({ type: 'error', message: 'Invalid patient selected. Cannot save consultation.' });
+      return false;
+    }
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (casePaper.followUpDate && casePaper.followUpDate < todayStr) {
+      setToast({ type: 'error', message: 'Follow-up date cannot be in the past. Please select today or a future date.' });
+      return false;
+    }
+
+    if ((!casePaper.medicines || casePaper.medicines.length === 0) && (!casePaper.complaint || !casePaper.complaint.trim())) {
+      if (!window.confirm('⚠️ No medicines prescribed or chief complaint specified. Save empty consultation record anyway?')) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const handleSaveAndComplete = async () => {
+    if (!validateCasePaperBeforeSave()) return;
+
     try {
       const { payload, effectiveQueueId } = buildCasePaperPayload();
 
@@ -529,6 +552,8 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
   };
 
   const handleSaveAndPrintPreview = () => {
+    if (!validateCasePaperBeforeSave()) return;
+
     try {
       const { payload, effectiveQueueId } = buildCasePaperPayload();
       try { localStorage.setItem(`clinicos_saved_casepaper_${patient.id}`, JSON.stringify(payload)); } catch {}
