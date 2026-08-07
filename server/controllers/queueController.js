@@ -34,7 +34,7 @@ exports.getQueue = async (req, res, next) => {
 
     const queue = await Queue.findAll({
       where: { clinicId, date },
-      order: [['created_at', 'ASC']]
+      order: [['created_at', 'DESC']]
     });
     res.json(queue);
   } catch (err) {
