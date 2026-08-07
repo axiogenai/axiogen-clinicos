@@ -5,9 +5,10 @@ import type { CaseTemplate } from '../data/templates';
 import type { ClinicSettings } from '../data/clinicSettings';
 import { defaultClinicSettings } from '../data/clinicSettings';
 import { api } from '../api/client';
+import { supabaseAuth } from '../lib/supabase';
 
 export interface UserSession {
-  id: number;
+  id: number | string;
   email: string;
   name: string;
   role: 'admin' | 'doctor' | 'receptionist';
@@ -70,8 +71,32 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
   const [clinicSettings, setClinicSettings] = useState<ClinicSettings>(defaultClinicSettings);
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
-  // Authentication Actions
+  // Real Supabase + Database Login Action
   const login = useCallback(async (emailInput: string, passwordInput: string) => {
+    let authSuccess = false;
+
+    // 1. Try Supabase Auth First
+    try {
+      const sbData = await supabaseAuth.signIn(emailInput, passwordInput);
+      if (sbData?.session && sbData?.user) {
+        const sbUser: UserSession = {
+          id: sbData.user.id,
+          email: sbData.user.email || emailInput,
+          name: sbData.user.user_metadata?.name || (emailInput.includes('reception') ? 'Receptionist' : 'Dr. Shinagare'),
+          role: sbData.user.user_metadata?.role || (emailInput.includes('reception') ? 'receptionist' : 'doctor'),
+          clinicId: 1
+        };
+        setToken(sbData.session.access_token);
+        setUser(sbUser);
+        localStorage.setItem('clinicos_jwt_token', sbData.session.access_token);
+        localStorage.setItem('clinicos_user_session', JSON.stringify(sbUser));
+        authSuccess = true;
+      }
+    } catch {}
+
+    if (authSuccess) return;
+
+    // 2. Try Primary Database API Auth
     try {
       const data = await api.login(emailInput, passwordInput);
       setToken(data.token);
@@ -79,23 +104,12 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem('clinicos_jwt_token', data.token);
       localStorage.setItem('clinicos_user_session', JSON.stringify(data.user));
     } catch (err: any) {
-      // Fallback for offline local dev mode
-      const mockRole = emailInput.includes('reception') ? 'receptionist' : 'doctor';
-      const mockUser: UserSession = {
-        id: 1,
-        email: emailInput,
-        name: mockRole === 'doctor' ? 'डॉ. प्रमोद शिनगारे' : 'Sneha Kulkarni',
-        role: mockRole,
-        clinicId: 1
-      };
-      setToken('mock_offline_jwt_token');
-      setUser(mockUser);
-      localStorage.setItem('clinicos_jwt_token', 'mock_offline_jwt_token');
-      localStorage.setItem('clinicos_user_session', JSON.stringify(mockUser));
+      throw new Error(err.message || 'Invalid authentication credentials. Please check email and password.');
     }
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try { await supabaseAuth.signOut(); } catch {}
     setToken(null);
     setUser(null);
     localStorage.removeItem('clinicos_jwt_token');
