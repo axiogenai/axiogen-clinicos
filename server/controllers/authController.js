@@ -68,10 +68,10 @@ async function ensureDefaultAccounts() {
         name: 'Reception Desk',
         role: 'receptionist',
         clinicId: 1,
-        phone: '7972884082'
+        phone: '7972884083'
       });
-    } else if (rec.phone !== '7972884082') {
-      rec.phone = '7972884082';
+    } else if (rec.phone !== '7972884083') {
+      rec.phone = '7972884083';
       await rec.save();
     }
   } catch {}
@@ -81,8 +81,20 @@ exports.login = async (req, res, next) => {
   try {
     await ensureDefaultAccounts();
     const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Mobile number/Email and password are required' });
 
-    let user = await User.findOne({ where: { email } });
+    const cleanInput = email.trim().toLowerCase();
+    const cleanPhone = cleanInput.replace(/\D/g, '');
+
+    const { Op } = require('sequelize');
+    let user = await User.findOne({
+      where: {
+        [Op.or]: [
+          { email: cleanInput },
+          ...(cleanPhone ? [{ phone: cleanPhone }] : [])
+        ]
+      }
+    });
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
 
     const valid = await user.verifyPassword(password);
@@ -154,22 +166,24 @@ exports.forgotPassword = async (req, res, next) => {
     user.resetOTPExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins expiry
     await user.save();
 
-    // Optionally dispatch WhatsApp notification if phone exists
+    // Dispatch WhatsApp notification using live WhatsApp Gateway
     if (user.phone) {
       try {
-        const whatsappService = require('../services/whatsappService');
-        await whatsappService.sendMessage(
+        const { sendWhatsAppMessage } = require('../services/whatsappGateway');
+        await sendWhatsAppMessage(
           user.phone,
           `*🔐 ClinicOS Password Reset Code*\n\nYour 6-digit verification code is: *${otp}*\n\nThis code will expire in 15 minutes. If you did not request this, please ignore.\n\n– *शिनगारे स्किन अँड कॉस्मेटिक क्लिनिक*`
         );
-      } catch {}
+        console.log(`📱 WhatsApp OTP ${otp} dispatched to ${user.phone}`);
+      } catch (err) {
+        console.error('❌ Failed to send WhatsApp OTP:', err.message);
+      }
     }
 
     res.json({
-      message: `Password reset verification code generated for ${user.email || user.name}`,
+      message: `Password reset verification code dispatched to WhatsApp (${user.phone})`,
       email: user.email,
-      phone: user.phone,
-      otp // Provided for instant demo/testing access
+      phone: user.phone
     });
   } catch (err) {
     next(err);
