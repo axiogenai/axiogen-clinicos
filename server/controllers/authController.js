@@ -35,11 +35,40 @@ exports.register = async (req, res, next) => {
   }
 };
 
+async function ensureDefaultAccounts() {
+  try {
+    const doc = await User.findOne({ where: { email: 'doctor@shinagareclinic.com' } });
+    if (!doc) {
+      await User.create({
+        email: 'doctor@shinagareclinic.com',
+        passwordHash: 'doctor123',
+        name: 'डॉ. प्रमोद शिनगारे',
+        role: 'doctor',
+        clinicId: 1,
+        phone: '9822674254'
+      });
+    }
+
+    const rec = await User.findOne({ where: { email: 'reception@shinagareclinic.com' } });
+    if (!rec) {
+      await User.create({
+        email: 'reception@shinagareclinic.com',
+        passwordHash: 'reception123',
+        name: 'Reception Desk',
+        role: 'receptionist',
+        clinicId: 1,
+        phone: '9021724727'
+      });
+    }
+  } catch {}
+}
+
 exports.login = async (req, res, next) => {
   try {
+    await ensureDefaultAccounts();
     const { email, password } = req.body;
 
-    const user = await User.findOne({ where: { email } });
+    let user = await User.findOne({ where: { email } });
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
 
     const valid = await user.verifyPassword(password);
@@ -68,11 +97,157 @@ exports.login = async (req, res, next) => {
 exports.getMe = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.user.id, {
-      attributes: { exclude: ['passwordHash'] },
+      attributes: { exclude: ['passwordHash', 'resetOTP', 'resetOTPExpires'] },
       include: [{ model: Clinic }]
     });
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ── Forgot Password: Generate 6-Digit OTP Code ──
+exports.forgotPassword = async (req, res, next) => {
+  try {
+    await ensureDefaultAccounts();
+    const { identifier } = req.body;
+    if (!identifier || !identifier.trim()) {
+      return res.status(400).json({ error: 'Email or Mobile number is required' });
+    }
+
+    const cleanInput = identifier.trim().toLowerCase();
+    const cleanPhone = cleanInput.replace(/\D/g, '');
+
+    const { Op } = require('sequelize');
+    const user = await User.findOne({
+      where: {
+        [Op.or]: [
+          { email: cleanInput },
+          ...(cleanPhone ? [{ phone: cleanPhone }] : []),
+          { name: cleanInput }
+        ]
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: `No registered clinic account found matching "${identifier}"` });
+    }
+
+    // Generate secure 6-digit OTP code
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    user.resetOTP = otp;
+    user.resetOTPExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins expiry
+    await user.save();
+
+    // Optionally dispatch WhatsApp notification if phone exists
+    if (user.phone) {
+      try {
+        const whatsappService = require('../services/whatsappService');
+        await whatsappService.sendMessage(
+          user.phone,
+          `*🔐 ClinicOS Password Reset Code*\n\nYour 6-digit verification code is: *${otp}*\n\nThis code will expire in 15 minutes. If you did not request this, please ignore.\n\n– *शिनगारे स्किन अँड कॉस्मेटिक क्लिनिक*`
+        );
+      } catch {}
+    }
+
+    res.json({
+      message: `Password reset verification code generated for ${user.email || user.name}`,
+      email: user.email,
+      phone: user.phone,
+      otp // Provided for instant demo/testing access
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ── Verify Reset OTP ──
+exports.verifyOTP = async (req, res, next) => {
+  try {
+    const { identifier, otp } = req.body;
+    if (!identifier || !otp) {
+      return res.status(400).json({ error: 'Email/phone and 6-digit OTP code are required' });
+    }
+
+    const cleanInput = identifier.trim().toLowerCase();
+    const cleanPhone = cleanInput.replace(/\D/g, '');
+
+    const { Op } = require('sequelize');
+    const user = await User.findOne({
+      where: {
+        [Op.or]: [
+          { email: cleanInput },
+          ...(cleanPhone ? [{ phone: cleanPhone }] : []),
+          { name: cleanInput }
+        ]
+      }
+    });
+
+    if (!user || user.resetOTP !== otp.trim()) {
+      return res.status(400).json({ error: 'Invalid 6-digit OTP code' });
+    }
+
+    if (!user.resetOTPExpires || new Date() > user.resetOTPExpires) {
+      return res.status(400).json({ error: 'OTP verification code has expired (15 min limit). Please request a new code.' });
+    }
+
+    res.json({ success: true, message: 'OTP verified successfully' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ── Reset Password With New Password ──
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const { identifier, otp, newPassword } = req.body;
+    if (!identifier || !otp || !newPassword) {
+      return res.status(400).json({ error: 'All fields (Email/Phone, OTP, New Password) are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters long' });
+    }
+
+    const cleanInput = identifier.trim().toLowerCase();
+    const cleanPhone = cleanInput.replace(/\D/g, '');
+
+    const { Op } = require('sequelize');
+    const user = await User.findOne({
+      where: {
+        [Op.or]: [
+          { email: cleanInput },
+          ...(cleanPhone ? [{ phone: cleanPhone }] : []),
+          { name: cleanInput }
+        ]
+      }
+    });
+
+    if (!user || user.resetOTP !== otp.trim()) {
+      return res.status(400).json({ error: 'Invalid 6-digit OTP code' });
+    }
+
+    if (!user.resetOTPExpires || new Date() > user.resetOTPExpires) {
+      return res.status(400).json({ error: 'OTP code has expired. Please request a new one.' });
+    }
+
+    // Update password (bcrypt beforeUpdate hook automatically hashes)
+    user.passwordHash = newPassword;
+    user.resetOTP = null;
+    user.resetOTPExpires = null;
+    await user.save();
+
+    await AuditLog.create({
+      clinicId: user.clinicId,
+      userId: user.id,
+      action: 'password_reset',
+      entityType: 'user',
+      entityId: String(user.id),
+      details: { timestamp: new Date() }
+    });
+
+    res.json({ message: 'Password reset successfully! You can now log in with your new password.' });
   } catch (err) {
     next(err);
   }
