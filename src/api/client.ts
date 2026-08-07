@@ -71,6 +71,7 @@ export const api = {
   // WhatsApp Background Automation
   getWhatsAppStatus: () => apiRequest<any>('/whatsapp/status'),
   triggerAutoWhatsApp: (date?: string) => apiRequest<any>('/whatsapp/trigger-auto-send', { method: 'POST', body: JSON.stringify({ date }) }),
+  triggerFestivalWhatsApp: (date?: string) => apiRequest<any>('/whatsapp/trigger-festival', { method: 'POST', body: JSON.stringify({ date }) }),
   updateWhatsAppSettings: (autoScheduleEnabled: boolean) => apiRequest<any>('/whatsapp/settings', { method: 'POST', body: JSON.stringify({ autoScheduleEnabled }) }),
   disconnectWhatsApp: () => apiRequest<any>('/whatsapp/disconnect', { method: 'POST' }),
   restartWhatsApp: () => apiRequest<any>('/whatsapp/restart', { method: 'POST' }),
