@@ -22,7 +22,6 @@ const A4_H = 1123;
 const LANGS: { key: PrintLanguage; label: string }[] = [
   { key: 'marathi', label: 'मराठी' },
   { key: 'english', label: 'Eng' },
-  { key: 'hindi',   label: 'हिंदी' },
   { key: 'kannada', label: 'ಕನ್ನಡ' },
 ];
 
