@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Lock, UserCheck, ShieldAlert, ArrowRight, KeyRound, CheckCircle2, RefreshCw, X } from 'lucide-react';
+import { Lock, UserCheck, ShieldAlert, ArrowRight, KeyRound, CheckCircle2, RefreshCw, X, Eye, EyeOff } from 'lucide-react';
 import { useClinic } from '../context/ClinicContext';
 import { api, apiRequest } from '../api/client';
 import { supabaseAuth } from '../lib/supabase';
@@ -15,6 +15,11 @@ export default function LoginView({ onSuccess }: Props) {
   const [role, setRole] = useState<'doctor' | 'receptionist'>('doctor');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Password Visibility States
+  const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Forgot Password States
   const [isForgotMode, setIsForgotMode] = useState(false);
@@ -32,9 +37,9 @@ export default function LoginView({ onSuccess }: Props) {
       setPassword('doctor123');
       setForgotIdentifier('8010127704');
     } else {
-      setEmail('7972884082');
+      setEmail('7972884083');
       setPassword('reception123');
-      setForgotIdentifier('7972884082');
+      setForgotIdentifier('7972884083');
     }
   };
 
@@ -71,21 +76,18 @@ export default function LoginView({ onSuccess }: Props) {
       } catch {}
 
       // 2. Primary Database API OTP Reset with fallback
-      let res: any = null;
       if (typeof api?.forgotPassword === 'function') {
-        res = await api.forgotPassword(forgotIdentifier);
+        await api.forgotPassword(forgotIdentifier);
       } else {
-        res = await apiRequest<{ message: string; otp?: string }>('/auth/forgot-password', {
+        await apiRequest<{ message: string }>('/auth/forgot-password', {
           method: 'POST',
           body: JSON.stringify({ identifier: forgotIdentifier })
         });
       }
 
       setForgotStep(2);
-      if (res && res.otp) {
-        setOtpCode(res.otp);
-        setGeneratedOTPNotice(`Your 6-digit verification code is: ${res.otp}`);
-      }
+      setOtpCode('');
+      setGeneratedOTPNotice(`📲 6-digit OTP verification code sent via WhatsApp to ${forgotIdentifier}!`);
       setToast({
         type: 'success',
         title: 'OTP Sent',
@@ -219,7 +221,7 @@ export default function LoginView({ onSuccess }: Props) {
                     {role === 'doctor' ? '👨‍⚕️ डॉ. प्रमोद शिनगारे (Doctor)' : '📋 Reception Desk (पेठ वडगाव)'}
                   </div>
                   <div className="text-[11px] font-mono text-[#047857] font-bold">
-                    📞 WhatsApp: {role === 'doctor' ? '8010127704' : '7972884082'}
+                    📞 WhatsApp: {role === 'doctor' ? '8010127704' : '7972884083'}
                   </div>
                 </div>
                 <span className="text-[10px] font-bold px-2 py-1 bg-[#ecfdf5] text-[#047857] rounded-lg border border-[#a7f3d0]">
@@ -245,13 +247,21 @@ export default function LoginView({ onSuccess }: Props) {
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-[#cdc6ba] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#047857] text-[#1a1c1a]"
+                    className="w-full pl-9 pr-10 py-2 text-sm bg-white border border-[#cdc6ba] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#047857] text-[#1a1c1a]"
                     placeholder="••••••••"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 focus:outline-none p-0.5 rounded"
+                    title={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
@@ -374,13 +384,21 @@ export default function LoginView({ onSuccess }: Props) {
                   <div className="relative">
                     <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                     <input
-                      type="password"
+                      type={showNewPassword ? 'text' : 'password'}
                       required
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-[#cdc6ba] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#047857] text-[#1a1c1a]"
+                      className="w-full pl-9 pr-10 py-2 text-sm bg-white border border-[#cdc6ba] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#047857] text-[#1a1c1a]"
                       placeholder="••••••••"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 focus:outline-none p-0.5 rounded"
+                      title={showNewPassword ? "Hide password" : "Show password"}
+                    >
+                      {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
 
@@ -389,13 +407,21 @@ export default function LoginView({ onSuccess }: Props) {
                   <div className="relative">
                     <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                     <input
-                      type="password"
+                      type={showConfirmPassword ? 'text' : 'password'}
                       required
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-[#cdc6ba] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#047857] text-[#1a1c1a]"
+                      className="w-full pl-9 pr-10 py-2 text-sm bg-white border border-[#cdc6ba] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#047857] text-[#1a1c1a]"
                       placeholder="••••••••"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 focus:outline-none p-0.5 rounded"
+                      title={showConfirmPassword ? "Hide password" : "Show password"}
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
 
