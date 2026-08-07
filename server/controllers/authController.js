@@ -37,6 +37,14 @@ exports.register = async (req, res, next) => {
 
 async function ensureDefaultAccounts() {
   try {
+    const sequelize = require('../config/database');
+    await sequelize.query(`
+      ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "reset_otp" VARCHAR(255);
+      ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "reset_otp_expires" TIMESTAMP WITH TIME ZONE;
+      ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "reset_o_t_p" VARCHAR(255);
+      ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "reset_o_t_p_expires" TIMESTAMP WITH TIME ZONE;
+    `).catch(() => {});
+
     const doc = await User.findOne({ where: { email: 'doctor@shinagareclinic.com' } });
     if (!doc) {
       await User.create({
