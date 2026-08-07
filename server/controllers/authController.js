@@ -70,9 +70,17 @@ async function ensureDefaultAccounts() {
         clinicId: 1,
         phone: '7972884083'
       });
-    } else if (rec.phone !== '7972884083') {
-      rec.phone = '7972884083';
-      await rec.save();
+    } else {
+      let updated = false;
+      if (rec.phone !== '7972884083') {
+        rec.phone = '7972884083';
+        updated = true;
+      }
+      if (rec.name !== 'Reception Desk') {
+        rec.name = 'Reception Desk';
+        updated = true;
+      }
+      if (updated) await rec.save();
     }
   } catch {}
 }
