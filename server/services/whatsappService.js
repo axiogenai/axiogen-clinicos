@@ -181,8 +181,8 @@ async function processFestivalWishes(overrideDateStr = null) {
         results.skippedCount++;
       }
 
-      // Humanized 3-5 second randomized delay between messages to prevent spam flagging
-      const humanDelay = Math.floor(3000 + Math.random() * 2000);
+      // Humanized 10-12 second delay between messages to prevent WhatsApp anti-spam flagging
+      const humanDelay = Math.floor(10000 + Math.random() * 2000);
       await new Promise(r => setTimeout(r, humanDelay));
     }
 
@@ -326,8 +326,9 @@ async function processBackgroundFollowUps(targetDate = null) {
         });
       }
 
-      // Small delay between sends to avoid WhatsApp rate limiting
-      await new Promise(r => setTimeout(r, 300));
+      // Humanized 10-12 second delay between messages to avoid WhatsApp rate limiting
+      const humanDelay = Math.floor(10000 + Math.random() * 2000);
+      await new Promise(r => setTimeout(r, humanDelay));
     }
   } catch (err) {
     console.error('❌ Error in processBackgroundFollowUps:', err);
