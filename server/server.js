@@ -16,10 +16,12 @@ const medicineRoutes = require('./routes/medicines');
 const templateRoutes = require('./routes/templates');
 const casePaperRoutes = require('./routes/casePapers');
 const clinicRoutes = require('./routes/clinic');
-const whatsappRoutes = require('./routes/whatsapp');
 const { initBackgroundScheduler } = require('./services/whatsappService');
+const { initWhatsAppGateway } = require('./services/whatsappGateway');
 
-const app = express();
+// Start automated background scheduler & boot WhatsApp session
+initBackgroundScheduler();
+initWhatsAppGateway().catch(err => console.error('❌ Failed to boot WhatsApp Gateway:', err));
 
 // Middlewares
 app.use(compression()); // Gzip all responses - reduces payload size by 70-80%
@@ -68,9 +70,6 @@ app.use('/api/templates', templateRoutes);
 app.use('/api/case-papers', casePaperRoutes);
 app.use('/api/clinic', clinicRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
-
-// Start automated background scheduler
-initBackgroundScheduler();
 
 
 // Healthcheck
