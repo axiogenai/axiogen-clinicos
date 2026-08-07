@@ -84,14 +84,25 @@ app.get('/api/health', (req, res) => {
 // Error handling middleware
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
-const isProd = process.env.NODE_ENV === 'production';
+async function startServer() {
+  try {
+    await sequelize.authenticate();
+    // Execute safe column migrations for production PostgreSQL
+    await sequelize.query(`
+      ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "reset_otp" VARCHAR(255);
+      ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "reset_otp_expires" TIMESTAMP WITH TIME ZONE;
+      ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "reset_o_t_p" VARCHAR(255);
+      ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "reset_o_t_p_expires" TIMESTAMP WITH TIME ZONE;
+    `).catch(err => console.warn('Database column migration notice:', err.message));
 
-// Only alter schemas automatically in non-production environments to protect production data integrity
-sequelize.sync({ alter: !isProd }).then(() => {
-  app.listen(PORT, () => {
-    console.log(`🚀 ClinicOS Express Backend Server running on http://localhost:${PORT} [Prod: ${isProd}]`);
-  });
-}).catch(err => {
-  console.error('❌ Database connection / sync error:', err);
-});
+    await sequelize.sync({ alter: false });
+
+    app.listen(PORT, () => {
+      console.log(`🚀 ClinicOS Express Backend Server running on http://localhost:${PORT} [Prod: ${isProd}]`);
+    });
+  } catch (err) {
+    console.error('❌ Database connection / sync error:', err);
+  }
+}
+
+startServer();
