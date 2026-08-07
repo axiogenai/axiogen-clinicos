@@ -536,6 +536,9 @@ function initBackgroundScheduler() {
   setInterval(runChecks, checkIntervalMs);
 }
 
+// Auto-start background scheduler engine for WhatsApp reminders & festival wishes
+initBackgroundScheduler();
+
 module.exports = {
   buildReminderMessage,
   processBackgroundFollowUps,
