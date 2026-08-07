@@ -56,9 +56,25 @@ export default function WhatsAppGatewayModal({ isOpen, onClose }: WhatsAppGatewa
     setLoading(true);
     try {
       const res = await api.triggerAutoWhatsApp();
-      alert(`Automated Reminders Complete!\nTotal Due: ${res.summary?.totalEligible || 0}\nSent: ${res.summary?.sentCount || 0}`);
+      alert(`1-Day Prior Reminders Complete!\nTarget Date: ${res.summary?.date || 'Tomorrow'}\nTotal Due: ${res.summary?.totalEligible || 0}\nSent: ${res.summary?.sentCount || 0}`);
     } catch (e: any) {
       alert(`Failed to trigger auto reminders: ${e.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTriggerFestivalWishes = async () => {
+    setLoading(true);
+    try {
+      const res = await api.triggerFestivalWhatsApp();
+      if (res.summary?.status === 'no_festival') {
+        alert(`No official red holiday festival scheduled for today (${res.summary?.date}).`);
+      } else {
+        alert(`Festival Greetings Complete!\nFestival: ${res.summary?.festivalName || 'Festival Greetings'}\nSent to: ${res.summary?.sentCount || 0} Patients`);
+      }
+    } catch (e: any) {
+      alert(`Failed to send festival wishes: ${e.message}`);
     } finally {
       setLoading(false);
     }
@@ -159,15 +175,26 @@ export default function WhatsAppGatewayModal({ isOpen, onClose }: WhatsAppGatewa
 
           {/* Quick Actions (When Connected) */}
           {gatewayInfo.status === 'connected' && (
-            <div className="pt-2 border-t border-[#e4e2e1]">
+            <div className="pt-3 border-t border-[#e4e2e1] space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-xs uppercase tracking-wider text-[#4b463e]">Auto Reminders</span>
+                <span className="font-bold text-xs uppercase tracking-wider text-[#4b463e]">Auto Reminders (1-Day Prior)</span>
                 <button
                   onClick={handleTriggerAutoReminders}
                   disabled={loading}
-                  className="px-3.5 py-2 text-xs font-bold bg-[#047857] hover:bg-[#065f46] text-white rounded-xl shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                  className="px-3.5 py-1.5 text-xs font-bold bg-[#047857] hover:bg-[#065f46] text-white rounded-xl shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
                 >
-                  <Send className="w-3.5 h-3.5" /> Run Today's Follow-up Reminders Now
+                  <Send className="w-3.5 h-3.5" /> Run 1-Day Prior Reminders Now
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <span className="font-bold text-xs uppercase tracking-wider text-[#4b463e]">Festival Greetings Engine</span>
+                <button
+                  onClick={handleTriggerFestivalWishes}
+                  disabled={loading}
+                  className="px-3.5 py-1.5 text-xs font-bold bg-[#b45309] hover:bg-[#92400e] text-white rounded-xl shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                >
+                  🎉 Send Festival Wishes to Patients
                 </button>
               </div>
             </div>
