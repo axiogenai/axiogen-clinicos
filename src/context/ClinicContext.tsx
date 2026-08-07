@@ -232,10 +232,11 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
     api.createPatient(patient).catch(() => {});
   }, []);
 
-  const deletePatient = useCallback((patientId: string) => {
-    setPatients((prev) => prev.filter((p) => p.id !== patientId));
-    setQueue((prev) => prev.filter((q) => q.patientId !== patientId));
-    api.deletePatient(patientId).catch(() => {});
+  const deletePatient = useCallback((identifier: string) => {
+    const cleanPhone = identifier.replace(/\D/g, '');
+    setPatients((prev) => prev.filter((p) => p.id !== identifier && (cleanPhone.length < 10 || p.phone !== cleanPhone) && p.name !== identifier));
+    setQueue((prev) => prev.filter((q) => q.patientId !== identifier && (cleanPhone.length < 10 || q.phone !== cleanPhone) && q.name !== identifier));
+    api.deletePatient(identifier).catch(() => {});
     setToast({ type: 'info', message: 'Patient permanently deleted from database registers.' });
   }, []);
 
