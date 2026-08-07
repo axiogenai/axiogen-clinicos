@@ -55,11 +55,13 @@ const User = sequelize.define('User', {
   },
   resetOTP: {
     type: DataTypes.STRING,
-    allowNull: true
+    allowNull: true,
+    field: 'reset_otp'
   },
   resetOTPExpires: {
     type: DataTypes.DATE,
-    allowNull: true
+    allowNull: true,
+    field: 'reset_otp_expires'
   }
 });
 
