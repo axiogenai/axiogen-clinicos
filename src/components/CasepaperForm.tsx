@@ -660,7 +660,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                 className="w-full mt-3 py-2 px-3 bg-[#ecfdf5] hover:bg-[#d1fae5] text-[#047857] border border-[#a7f3d0] rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm"
               >
                 <FileText className="w-4 h-4 text-[#047857]" />
-                <span>📜 View All Past Prescriptions & EMR</span>
+                <span>View All Past Prescriptions & EMR</span>
               </button>
             </div>
           </div>
