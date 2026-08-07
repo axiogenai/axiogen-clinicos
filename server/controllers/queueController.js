@@ -47,9 +47,42 @@ exports.addToQueue = async (req, res, next) => {
     const clinicId = req.user?.clinicId || 1;
     const { queueId, patientId, name, age, phone, village, complaint, notes, date } = req.body;
 
+    const currentDate = date || new Date().toISOString().split('T')[0];
+
+    // Check if patient is already in today's queue
+    if (patientId) {
+      const existingInQueue = await Queue.findOne({
+        where: {
+          clinicId,
+          date: currentDate,
+          patientId,
+          status: { [Op.ne]: 'cancelled' }
+        }
+      });
+      if (existingInQueue) {
+        return res.status(409).json({
+          error: `Patient '${name}' is already in today's consultation queue (Status: ${existingInQueue.status.toUpperCase()}).`
+        });
+      }
+    } else if (phone && phone.replace(/\D/g, '').length === 10) {
+      const cleanPhone = phone.replace(/\D/g, '');
+      const existingInQueue = await Queue.findOne({
+        where: {
+          clinicId,
+          date: currentDate,
+          phone: cleanPhone,
+          status: { [Op.ne]: 'cancelled' }
+        }
+      });
+      if (existingInQueue) {
+        return res.status(409).json({
+          error: `Patient with mobile number '${cleanPhone}' is already in today's OPD queue.`
+        });
+      }
+    }
+
     const idToUse = queueId || `Q${Date.now()}`;
     const timeAdded = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-    const currentDate = date || new Date().toISOString().split('T')[0];
 
     const queueItem = await Queue.create({
       queueId: idToUse,
@@ -57,7 +90,7 @@ exports.addToQueue = async (req, res, next) => {
       patientId: patientId || null,
       name,
       age: age ? parseInt(age, 10) : null,
-      phone: phone || '',
+      phone: phone ? phone.replace(/\D/g, '') : '',
       village: village || '',
       complaint: complaint || '',
       notes: notes || '',
