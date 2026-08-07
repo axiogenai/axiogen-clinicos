@@ -23,12 +23,20 @@ export default function LoginView({ onSuccess }: Props) {
 
   // Forgot Password States
   const [isForgotMode, setIsForgotMode] = useState(false);
-  const [forgotStep, setForgotStep] = useState<1 | 2>(1); // 1 = Request OTP, 2 = Verify & Reset
+  const [forgotStep, setForgotStep] = useState<1 | 2 | 3>(1); // 1 = Request OTP, 2 = Verify OTP, 3 = Reset Password
   const [forgotIdentifier, setForgotIdentifier] = useState('8010127704');
   const [otpCode, setOtpCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [generatedOTPNotice, setGeneratedOTPNotice] = useState<string | null>(null);
+
+  const maskPhoneNumber = (phone: string) => {
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length >= 4) {
+      return `•••• ${digits.slice(-4)}`;
+    }
+    return phone;
+  };
 
   const handleQuickRoleSelect = (selectedRole: 'doctor' | 'receptionist') => {
     setRole(selectedRole);
@@ -85,11 +93,11 @@ export default function LoginView({ onSuccess }: Props) {
 
       setForgotStep(2);
       setOtpCode('');
-      setGeneratedOTPNotice(`6-digit OTP verification code sent via WhatsApp to ${forgotIdentifier}!`);
+      setGeneratedOTPNotice(`Verification code sent to WhatsApp ending in ${maskPhoneNumber(forgotIdentifier)}.`);
       setToast({
         type: 'success',
         title: 'OTP Sent',
-        message: `Verification code generated for ${forgotIdentifier}`
+        message: `Verification code sent to ${maskPhoneNumber(forgotIdentifier)}`
       });
     } catch (err: any) {
       setError(err.message || 'Failed to generate OTP code. Please try again.');
@@ -98,7 +106,43 @@ export default function LoginView({ onSuccess }: Props) {
     }
   };
 
-  // Step 2: Reset Password & Login via Supabase & Database
+  // Step 2: Verify 6-digit OTP Code FIRST before allowing password reset
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!otpCode || otpCode.trim().length < 6) {
+      setError('Please enter the complete 6-digit OTP code received on WhatsApp.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (typeof api?.verifyOTP === 'function') {
+        await api.verifyOTP(forgotIdentifier, otpCode);
+      } else {
+        await apiRequest('/auth/verify-otp', {
+          method: 'POST',
+          body: JSON.stringify({ identifier: forgotIdentifier, otp: otpCode })
+        });
+      }
+
+      setForgotStep(3);
+      setError(null);
+      setGeneratedOTPNotice(null);
+      setToast({
+        type: 'success',
+        title: 'OTP Verified',
+        message: 'OTP verified successfully. Choose your new password.'
+      });
+    } catch (err: any) {
+      setError(err.message || 'Invalid or expired 6-digit OTP code. Please check and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 3: Reset Password Page & Auto-Login
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -138,7 +182,7 @@ export default function LoginView({ onSuccess }: Props) {
       await login(forgotIdentifier, newPassword);
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Failed to reset password. Please check your 6-digit OTP code.');
+      setError(err.message || 'Failed to reset password. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -217,6 +261,9 @@ export default function LoginView({ onSuccess }: Props) {
                       setIsForgotMode(true);
                       setError(null);
                       setForgotStep(1);
+                      setOtpCode('');
+                      setNewPassword('');
+                      setConfirmPassword('');
                     }}
                     className="text-[11px] font-bold text-[#047857] hover:underline"
                   >
@@ -231,7 +278,6 @@ export default function LoginView({ onSuccess }: Props) {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full pl-9 pr-10 py-2 text-sm bg-white border border-[#cdc6ba] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#047857] text-[#1a1c1a]"
-                    placeholder="Enter password"
                   />
                   <button
                     type="button"
@@ -261,12 +307,14 @@ export default function LoginView({ onSuccess }: Props) {
             </form>
           </>
         ) : (
-          /* Forgot Password OTP Mode */
+          /* Forgot Password Mode */
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-[#e4e2e1] pb-3">
               <div className="flex items-center gap-2">
                 <KeyRound className="w-5 h-5 text-[#047857]" />
-                <h2 className="font-serif font-bold text-base text-[#1a1c1a]">Reset Password</h2>
+                <h2 className="font-serif font-bold text-base text-[#1a1c1a]">
+                  {forgotStep === 3 ? 'Set New Password' : 'Reset Password'}
+                </h2>
               </div>
               <button
                 type="button"
@@ -296,10 +344,10 @@ export default function LoginView({ onSuccess }: Props) {
             )}
 
             {forgotStep === 1 ? (
-              /* Step 1: Request OTP */
+              /* Step 1: Request OTP Code */
               <form onSubmit={handleRequestOTP} className="space-y-4">
                 <p className="text-xs text-[#7c766d]">
-                  Click below to receive a 6-digit verification code sent directly to registered WhatsApp <strong className="font-mono text-[#1a1c1a]">{forgotIdentifier}</strong>.
+                  Send a 6-digit verification code to registered WhatsApp ending in <strong className="font-mono text-[#1a1c1a]">{maskPhoneNumber(forgotIdentifier)}</strong>.
                 </p>
 
                 <button
@@ -308,7 +356,7 @@ export default function LoginView({ onSuccess }: Props) {
                   className="w-full py-2.5 bg-gradient-to-r from-[#064e3b] to-[#047857] hover:from-[#022c22] hover:to-[#064e3b] text-[#ecfdf5] font-bold text-sm rounded-lg shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {loading ? (
-                    <span>Sending 6-Digit OTP...</span>
+                    <span>Sending OTP...</span>
                   ) : (
                     <>
                       <span>Send 6-Digit OTP Code via WhatsApp</span>
@@ -326,11 +374,11 @@ export default function LoginView({ onSuccess }: Props) {
                   <span>Back to Sign In</span>
                 </button>
               </form>
-            ) : (
-              /* Step 2: Enter OTP & New Password */
-              <form onSubmit={handleResetPassword} className="space-y-4">
+            ) : forgotStep === 2 ? (
+              /* Step 2: Verify OTP Code FIRST */
+              <form onSubmit={handleVerifyOTP} className="space-y-4">
                 <p className="text-xs text-[#7c766d]">
-                  Enter the 6-digit OTP code sent to <strong className="font-mono text-[#1a1c1a]">{forgotIdentifier}</strong> and choose your new password.
+                  Enter the 6-digit OTP code received on WhatsApp ending in <strong className="font-mono text-[#1a1c1a]">{maskPhoneNumber(forgotIdentifier)}</strong>.
                 </p>
 
                 <div>
@@ -344,10 +392,49 @@ export default function LoginView({ onSuccess }: Props) {
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value)}
                       className="w-full pl-9 pr-3 py-2 text-base font-mono font-bold tracking-widest bg-white border border-[#cdc6ba] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#047857] text-[#1a1c1a]"
-                      placeholder="123456"
                     />
                   </div>
                 </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-2.5 bg-gradient-to-r from-[#064e3b] to-[#047857] hover:from-[#022c22] hover:to-[#064e3b] text-[#ecfdf5] font-bold text-sm rounded-lg shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {loading ? (
+                    <span>Verifying OTP Code...</span>
+                  ) : (
+                    <>
+                      <span>Verify OTP Code</span>
+                      <CheckCircle2 className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+
+                <div className="flex justify-between items-center text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setForgotStep(1)}
+                    className="text-[#7c766d] hover:text-[#1a1c1a] font-bold flex items-center gap-1"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Back</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRequestOTP}
+                    className="text-[#047857] hover:underline font-bold flex items-center gap-1"
+                  >
+                    <RefreshCw className="w-3 h-3" /> Resend OTP Code
+                  </button>
+                </div>
+              </form>
+            ) : (
+              /* Step 3: Reset Password Page */
+              <form onSubmit={handleResetPassword} className="space-y-4">
+                <p className="text-xs text-[#7c766d]">
+                  OTP verified! Enter a new password for your account.
+                </p>
 
                 <div>
                   <label className="block text-xs font-bold text-[#4b463e] mb-1">New Password (min 6 chars)</label>
@@ -359,7 +446,6 @@ export default function LoginView({ onSuccess }: Props) {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       className="w-full pl-9 pr-10 py-2 text-sm bg-white border border-[#cdc6ba] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#047857] text-[#1a1c1a]"
-                      placeholder="Enter new password"
                     />
                     <button
                       type="button"
@@ -382,7 +468,6 @@ export default function LoginView({ onSuccess }: Props) {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className="w-full pl-9 pr-10 py-2 text-sm bg-white border border-[#cdc6ba] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#047857] text-[#1a1c1a]"
-                      placeholder="Confirm new password"
                     />
                     <button
                       type="button"
@@ -401,10 +486,10 @@ export default function LoginView({ onSuccess }: Props) {
                   className="w-full py-2.5 bg-gradient-to-r from-[#064e3b] to-[#047857] hover:from-[#022c22] hover:to-[#064e3b] text-[#ecfdf5] font-bold text-sm rounded-lg shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {loading ? (
-                    <span>Resetting Password...</span>
+                    <span>Saving New Password...</span>
                   ) : (
                     <>
-                      <span>Reset Password &amp; Sign In</span>
+                      <span>Save New Password &amp; Sign In</span>
                       <CheckCircle2 className="w-4 h-4" />
                     </>
                   )}
@@ -413,18 +498,11 @@ export default function LoginView({ onSuccess }: Props) {
                 <div className="flex justify-between items-center text-xs">
                   <button
                     type="button"
-                    onClick={() => setForgotStep(1)}
+                    onClick={() => setForgotStep(2)}
                     className="text-[#7c766d] hover:text-[#1a1c1a] font-bold flex items-center gap-1"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
                     <span>Back</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleRequestOTP}
-                    className="text-[#047857] hover:underline font-bold flex items-center gap-1"
-                  >
-                    <RefreshCw className="w-3 h-3" /> Resend OTP Code
                   </button>
                 </div>
               </form>
