@@ -181,7 +181,9 @@ async function processFestivalWishes(overrideDateStr = null) {
         results.skippedCount++;
       }
 
-      await new Promise(r => setTimeout(r, 300));
+      // Humanized 3-5 second randomized delay between messages to prevent spam flagging
+      const humanDelay = Math.floor(3000 + Math.random() * 2000);
+      await new Promise(r => setTimeout(r, humanDelay));
     }
 
     console.log(`🎉 [FESTIVAL ENGINE] Completed sending '${activeFestival.name}' greetings to ${results.sentCount}/${results.totalPatients} patients.`);
