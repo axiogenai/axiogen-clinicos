@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Users, Clock, Stethoscope, CheckCircle2, ArrowRight, FileText, Phone, MapPin, Search, X, Trash2 } from 'lucide-react';
 import type { Patient, QueueItem } from '../data/patients';
 import PatientEMRHistoryModal from './PatientEMRHistoryModal';
@@ -20,6 +20,23 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
   const waiting = queue.filter(q => q.status === 'waiting').length;
   const consulting = queue.filter(q => q.status === 'in-consultation').length;
   const completed = queue.filter(q => q.status === 'completed').length;
+
+  // Active (In-Room & Waiting) patients first, latest added at the very top. Completed patients at bottom.
+  const displayQueue = useMemo(() => {
+    return [...queue].sort((a, b) => {
+      const getWeight = (status: string) => {
+        if (status === 'in-consultation' || status === 'in_consultation') return 1;
+        if (status === 'waiting') return 2;
+        return 3;
+      };
+      const wA = getWeight(a.status);
+      const wB = getWeight(b.status);
+      if (wA !== wB) return wA - wB;
+
+      // Secondary: Newest created/added first
+      return (b.queueId || '').localeCompare(a.queueId || '');
+    });
+  }, [queue]);
 
   const searchedPatients = patientSearchQuery.trim() ? patients.filter(p =>
     p.name.toLowerCase().includes(patientSearchQuery.toLowerCase()) ||
@@ -187,7 +204,7 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
         
         {/* Mobile View (Stacked Cards — No Horizontal Scrollbar) */}
         <div className="block md:hidden divide-y divide-[#e4e2e1]">
-          {queue.map((item, index) => {
+          {displayQueue.map((item, index) => {
             const patient = getPatient(item.patientId) || {
               id: item.patientId || item.queueId,
               name: item.name || 'Patient',
@@ -306,7 +323,7 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
             </thead>
 
             <tbody>
-              {queue.map((item, index) => {
+              {displayQueue.map((item, index) => {
                 const patient = getPatient(item.patientId) || {
                   id: item.patientId || item.queueId,
                   name: item.name || 'Patient',
