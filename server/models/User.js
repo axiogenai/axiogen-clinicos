@@ -52,6 +52,14 @@ const User = sequelize.define('User', {
   isActive: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
+  },
+  resetOTP: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  resetOTPExpires: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
 });
 
