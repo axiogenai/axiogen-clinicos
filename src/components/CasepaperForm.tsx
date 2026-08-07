@@ -319,61 +319,57 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     };
   }, []);
 
-  // Server-side search with debounce (searches all 42,032 medicines on Supabase)
+  // Instant client-side filter (0ms) + Fast debounced server search (50ms)
   useEffect(() => {
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
 
-    if (searchQuery.trim() === '') {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) {
       setFilteredMedicines(dbMedicines);
       setIsSearching(false);
       setHighlightedIndex(-1);
       return;
     }
 
+    const getCoreName = (fullName: string) =>
+      (fullName || '').replace(/^(Tab\.|Cap\.|Syp\.|Inj\.|Cream|Gel \/ Ointment|Lotion|Ointment|Soap|Drops|Powder)\s*/i, '').toLowerCase().trim();
+
+    // 1. INSTANT LOCAL FILTER (0ms response time - Zero keypress delay!)
+    const localPrefixMatches = dbMedicines.filter(m =>
+      getCoreName(m.name).startsWith(q) || (m.brand || '').toLowerCase().startsWith(q) || (m.name || '').toLowerCase().startsWith(q)
+    );
+
+    const instantResults = localPrefixMatches.length > 0 ? localPrefixMatches : dbMedicines.filter(m =>
+      (m.name || '').toLowerCase().includes(q) || (m.brand || '').toLowerCase().includes(q)
+    );
+    setFilteredMedicines(instantResults);
+
+    // 2. FAST SERVER FETCH (50ms debounce for 42,000+ Supabase database records)
     setIsSearching(true);
     searchTimerRef.current = setTimeout(async () => {
       try {
-        const results = await api.searchMedicines(searchQuery.trim());
+        const results = await api.searchMedicines(q);
         if (results && results.length > 0) {
           const normalized = results.map(normalizeMedicine);
-
-          // Sort: prefix matches first
-          const lowerQuery = searchQuery.toLowerCase().trim();
-          const getCoreName = (fullName: string) =>
-            (fullName || '').replace(/^(Tab\.|Cap\.|Syp\.|Inj\.|Cream|Gel \/ Ointment|Lotion|Ointment|Soap|Drops|Powder)\s*/i, '').toLowerCase().trim();
 
           normalized.sort((a, b) => {
             const aCore = getCoreName(a.name);
             const bCore = getCoreName(b.name);
-            const aCoreStarts = aCore.startsWith(lowerQuery);
-            const bCoreStarts = bCore.startsWith(lowerQuery);
+            const aCoreStarts = aCore.startsWith(q);
+            const bCoreStarts = bCore.startsWith(q);
             if (aCoreStarts && !bCoreStarts) return -1;
             if (!aCoreStarts && bCoreStarts) return 1;
             return aCore.localeCompare(bCore);
           });
 
           setFilteredMedicines(normalized);
-        } else {
-          setFilteredMedicines([]);
         }
       } catch {
-        // Fallback to local filter
-        const lq = searchQuery.toLowerCase().trim();
-        const getCoreName = (fullName: string) =>
-          (fullName || '').replace(/^(Tab\.|Cap\.|Syp\.|Inj\.|Cream|Gel \/ Ointment|Lotion|Ointment|Soap|Drops|Powder)\s*/i, '').toLowerCase().trim();
-
-        const prefixOnly = dbMedicines.filter(m =>
-          getCoreName(m.name).startsWith(lq) || (m.brand || '').toLowerCase().startsWith(lq) || (m.name || '').toLowerCase().startsWith(lq)
-        );
-
-        setFilteredMedicines(prefixOnly.length > 0 ? prefixOnly : dbMedicines.filter(m =>
-          (m.name || '').toLowerCase().includes(lq) ||
-          (m.brand || '').toLowerCase().includes(lq)
-        ));
+        // Keep instant results on error
+      } finally {
+        setIsSearching(false);
       }
-      setIsSearching(false);
-      setHighlightedIndex(-1);
-    }, 250); // 250ms debounce
+    }, 50);
 
     return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); };
   }, [searchQuery, dbMedicines]);
