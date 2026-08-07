@@ -45,10 +45,10 @@ async function ensureDefaultAccounts() {
         name: 'डॉ. प्रमोद शिनगारे',
         role: 'doctor',
         clinicId: 1,
-        phone: '9561896943'
+        phone: '8010127704'
       });
-    } else if (doc.phone !== '9561896943') {
-      doc.phone = '9561896943';
+    } else if (doc.phone !== '8010127704') {
+      doc.phone = '8010127704';
       await doc.save();
     }
 
@@ -60,8 +60,11 @@ async function ensureDefaultAccounts() {
         name: 'Reception Desk',
         role: 'receptionist',
         clinicId: 1,
-        phone: '9021724727'
+        phone: '7972884082'
       });
+    } else if (rec.phone !== '7972884082') {
+      rec.phone = '7972884082';
+      await rec.save();
     }
   } catch {}
 }
