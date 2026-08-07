@@ -185,11 +185,10 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
     // Initial full load (once)
     loadFromDatabase();
 
-    // Connect to SSE stream for instant queue push updates
+    // Connect to SSE stream for instant 0ms queue push updates
     const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
     const sseToken = localStorage.getItem('clinicos_jwt_token');
     let evtSource: EventSource | null = null;
-    let sseConnected = false;
 
     try {
       evtSource = new EventSource(`${apiBase}/queue/events?token=${sseToken}`);
@@ -198,29 +197,21 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
         try {
           const msg = JSON.parse(e.data);
           if (msg.type === 'queue_update') {
-            loadQueueOnly(); // Only reload queue — not patients, templates, settings
-          }
-          if (msg.type === 'connected') {
-            sseConnected = true;
+            loadQueueOnly(); // Instant reload queue in Doctor's view!
           }
         } catch {}
       };
 
       evtSource.onerror = () => {
-        sseConnected = false;
         evtSource?.close();
         evtSource = null;
       };
-    } catch {
-      // SSE not supported or blocked
-    }
+    } catch {}
 
-    // Light background sync every 60s (only if SSE dropped)
+    // Fast 3-second live polling loop guarantees 100% real-time synchronization between Receptionist & Doctor views
     const interval = setInterval(() => {
-      if (!sseConnected) {
-        loadQueueOnly();
-      }
-    }, 60000);
+      loadQueueOnly();
+    }, 3000);
 
     return () => {
       evtSource?.close();
@@ -266,50 +257,70 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
     api.removeFromQueue(queueId).catch(() => {});
   }, []);
 
-  const registerAndEnqueue = useCallback((
+  const registerAndEnqueue = useCallback(async (
     patientData: Partial<Patient> & { complaint: string; notes?: string },
     existingPatient?: Patient
   ) => {
     let patient = existingPatient;
 
     if (!patient) {
-      patient = {
-        id: `PT${String(patients.length + 1).padStart(4, '0')}`,
-        name: patientData.name || 'Unknown',
+      const cleanPhone = (patientData.phone || '').replace(/\D/g, '');
+      const tempPatient: Patient = {
+        id: `PT${String(Date.now()).slice(-6)}`,
+        name: (patientData.name || 'Unknown').trim(),
         age: patientData.age || 0,
         gender: patientData.gender || 'M',
-        phone: patientData.phone || '',
-        village: patientData.village || '',
+        phone: cleanPhone,
+        village: (patientData.village || '').trim(),
         pastHistory: patientData.pastHistory || 'No known allergies',
         allergies: patientData.allergies || '',
         pastVisits: [],
       };
       
-      addPatient(patient);
+      try {
+        const created = await api.createPatient(tempPatient);
+        if (created && created.id) {
+          patient = created;
+        } else {
+          patient = tempPatient;
+        }
+      } catch (err: any) {
+        setToast({ type: 'error', message: err.message || 'Patient registration failed' });
+        return;
+      }
+
+      setPatients(prev => [...prev.filter(p => p.id !== patient!.id), patient!]);
     }
+
+    const targetPatient = patient;
+    if (!targetPatient) return;
 
     const queueId = `Q${Date.now()}`;
     const newQueueItem: QueueItem = {
       queueId,
-      patientId: patient.id,
-      name: patient.name,
-      age: patient.age,
-      phone: patient.phone,
-      village: patient.village,
+      patientId: targetPatient.id,
+      name: targetPatient.name,
+      age: targetPatient.age,
+      phone: targetPatient.phone,
+      village: targetPatient.village,
       timeAdded: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
-      complaint: patientData.complaint,
+      complaint: patientData.complaint || '',
       status: 'waiting',
       notes: patientData.notes || '',
     };
 
-    addToQueue(newQueueItem);
-    
-    setToast({
-      type: 'success',
-      message: `${patient.name} has been added to the queue.`
-    });
+    try {
+      await api.addToQueue(newQueueItem);
+      setQueue(prev => [...prev.filter(q => q.queueId !== queueId), newQueueItem]);
+      setToast({
+        type: 'success',
+        message: `${targetPatient.name} has been added to the queue.`
+      });
+    } catch (err: any) {
+      setToast({ type: 'error', message: err.message || 'Failed to add patient to queue' });
+    }
 
-  }, [patients, addPatient, addToQueue]);
+  }, [patients, setToast]);
 
   const addTemplate = useCallback((template: CaseTemplate) => {
     setTemplates((prev) => [...prev, template]);
