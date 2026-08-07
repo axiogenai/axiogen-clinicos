@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Users, Clock, Stethoscope, CheckCircle2, ArrowRight, FileText, Phone, MapPin, Search, X } from 'lucide-react';
+import { Users, Clock, Stethoscope, CheckCircle2, ArrowRight, FileText, Phone, MapPin, Search, X, Trash2 } from 'lucide-react';
 import type { Patient, QueueItem } from '../data/patients';
 import PatientEMRHistoryModal from './PatientEMRHistoryModal';
+import { useClinic } from '../context/ClinicContext';
 
 interface QueueViewProps {
   queue: QueueItem[];
@@ -10,6 +11,7 @@ interface QueueViewProps {
 }
 
 export default function QueueView({ queue, patients, onSelectPatient }: QueueViewProps) {
+  const { deletePatient } = useClinic();
   const [patientSearchQuery, setPatientSearchQuery] = useState('');
   const [selectedEMRPatient, setSelectedEMRPatient] = useState<Patient | null>(null);
 
@@ -144,6 +146,19 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                         <Stethoscope className="w-3.5 h-3.5" />
                         <span>Start Consultation</span>
                       </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm(`⚠️ Are you sure you want to permanently delete patient '${p.name}' (ID: ${p.id}) from database registers?`)) {
+                            deletePatient(p.id);
+                          }
+                        }}
+                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all border border-red-200 cursor-pointer"
+                        title="Delete Patient Record from DB"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                 );
@@ -173,8 +188,17 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
         {/* Mobile View (Stacked Cards — No Horizontal Scrollbar) */}
         <div className="block md:hidden divide-y divide-[#e4e2e1]">
           {queue.map((item, index) => {
-            const patient = getPatient(item.patientId);
-            if (!patient) return null;
+            const patient = getPatient(item.patientId) || {
+              id: item.patientId || item.queueId,
+              name: item.name || 'Patient',
+              age: item.age || 0,
+              gender: (item.gender || 'M') as 'M' | 'F',
+              phone: item.phone || '',
+              village: item.village || '',
+              pastHistory: 'No known allergies',
+              allergies: '',
+              pastVisits: []
+            };
 
             const isWaiting = item.status === 'waiting';
             const isConsulting = item.status === 'in-consultation';
@@ -283,8 +307,17 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
 
             <tbody>
               {queue.map((item, index) => {
-                const patient = getPatient(item.patientId);
-                if (!patient) return null;
+                const patient = getPatient(item.patientId) || {
+                  id: item.patientId || item.queueId,
+                  name: item.name || 'Patient',
+                  age: item.age || 0,
+                  gender: (item.gender || 'M') as 'M' | 'F',
+                  phone: item.phone || '',
+                  village: item.village || '',
+                  pastHistory: 'No known allergies',
+                  allergies: '',
+                  pastVisits: []
+                };
                 
                 const isWaiting = item.status === 'waiting';
                 const isConsulting = item.status === 'in-consultation';
