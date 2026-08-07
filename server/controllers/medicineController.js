@@ -57,18 +57,16 @@ exports.searchMedicines = async (req, res, next) => {
         ]
       },
       order: [['name', 'ASC']],
-      limit: 100
+      limit: 1000
     });
 
-    if (prefixMatches.length >= 100) {
+    if (prefixMatches.length > 0) {
       return res.json(prefixMatches);
     }
 
-    // 2. Fetch other containing matches to fill the rest of the 100 limit
-    const prefixIds = prefixMatches.map(m => m.id);
+    // 2. Only fallback to middle matches if NO prefix matches exist at all
     const middleMatches = await Medicine.findAll({
       where: {
-        id: { [Op.notIn]: prefixIds },
         [Op.or]: [
           { name: { [likeOp]: `%${query}%` } },
           { brand: { [likeOp]: `%${query}%` } },
@@ -76,10 +74,10 @@ exports.searchMedicines = async (req, res, next) => {
         ]
       },
       order: [['name', 'ASC']],
-      limit: 100 - prefixMatches.length
+      limit: 1000
     });
 
-    res.json([...prefixMatches, ...middleMatches]);
+    res.json(middleMatches);
   } catch (err) {
     next(err);
   }
