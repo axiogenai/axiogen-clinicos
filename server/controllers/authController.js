@@ -168,19 +168,22 @@ exports.forgotPassword = async (req, res, next) => {
       return res.status(404).json({ error: `No registered clinic account found matching "${identifier}"` });
     }
 
-    // Check if an OTP was already sent within the last 15 minutes
-    if (user.resetOTPExpires && user.resetOTPExpires > new Date()) {
-      const remainingMs = new Date(user.resetOTPExpires).getTime() - Date.now();
-      const remainingMins = Math.ceil(remainingMs / (60 * 1000));
-      return res.status(429).json({
-        error: `An OTP was already sent to your WhatsApp. Please wait ${remainingMins} minute${remainingMins > 1 ? 's' : ''} before requesting a new code.`
-      });
+    // Check if an OTP was requested less than 60 seconds ago (1-min cooldown)
+    if (user.resetOTPExpires) {
+      const createdTime = new Date(user.resetOTPExpires).getTime() - (15 * 60 * 1000);
+      const elapsedSecs = Math.floor((Date.now() - createdTime) / 1000);
+      if (elapsedSecs < 60) {
+        const waitSecs = 60 - elapsedSecs;
+        return res.status(429).json({
+          error: `An OTP was recently sent to your WhatsApp. Please wait ${waitSecs} seconds before requesting a new code.`
+        });
+      }
     }
 
     // Generate secure 6-digit OTP code
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     user.resetOTP = otp;
-    user.resetOTPExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins expiry
+    user.resetOTPExpires = new Date(Date.now() + 15 * 60 * 1000); // Valid for 15 mins
     await user.save();
 
     // Dispatch WhatsApp notification using live WhatsApp Gateway
