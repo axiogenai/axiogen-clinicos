@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useClinic } from '../context/ClinicContext';
 import { api } from '../api/client';
-import { Calendar, Search, Printer, UserCheck, Clock, CheckCircle2, FileSpreadsheet, Send, MessageSquare, Save, FileText, X, Pill, Edit3 } from 'lucide-react';
+import { Calendar, Search, Printer, UserCheck, Clock, CheckCircle2, FileSpreadsheet, Send, MessageSquare, Save, FileText, X, Pill, Edit3, Trash2 } from 'lucide-react';
 import PrintPreview from './PrintPreview';
 import CasepaperForm from './CasepaperForm';
 import type { Patient } from '../data/patients';
@@ -10,7 +10,7 @@ import { calculateMedicineCount } from '../utils/countCalculator';
 import * as XLSX from 'xlsx';
 
 export default function DailyPatientRegister() {
-  const { queue, patients, clinicSettings, setToast } = useClinic();
+  const { queue, patients, clinicSettings, setToast, deletePatient, removeFromQueue } = useClinic();
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [fetchedQueue, setFetchedQueue] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -772,6 +772,7 @@ export default function DailyPatientRegister() {
                 <th className="text-center w-28">Status</th>
                 <th className="text-center w-28">EMR Casepaper</th>
                 <th className="text-right w-24">WhatsApp</th>
+                <th className="text-center w-16">Delete</th>
               </tr>
             </thead>
             <tbody>
@@ -830,6 +831,29 @@ export default function DailyPatientRegister() {
                     ) : (
                       <span className="text-[#cdc6ba] text-xs">-</span>
                     )}
+                  </td>
+                  <td className="text-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm(`⚠️ Permanently delete '${item.name}' (OPD No: ${item.opdNo}) from today's OPD Register & Database Queue?`)) {
+                          removeFromQueue(item.opdNo || item.name);
+                          setFetchedQueue(prev => prev.filter(q => q.queueId !== item.opdNo && q.name !== item.name));
+                          
+                          const targetPatient = patients.find(p => p.name === item.name || p.phone === item.phone);
+                          if (targetPatient) {
+                            if (window.confirm(`Do you also want to permanently delete patient profile '${item.name}' (ID: ${targetPatient.id}) from Database Registers?`)) {
+                              deletePatient(targetPatient.id);
+                            }
+                          }
+                          setToast({ type: 'info', message: `Deleted OPD record '${item.name}' from database.` });
+                        }
+                      }}
+                      className="p-1.5 bg-[#fef2f2] hover:bg-[#fee2e2] text-[#dc2626] rounded-lg border border-[#fecaca] transition-all shadow-sm cursor-pointer"
+                      title="Permanently Delete Record from DB"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </td>
                 </tr>
               ))}
