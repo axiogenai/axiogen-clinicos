@@ -128,11 +128,45 @@ exports.updatePatient = async (req, res, next) => {
 
 exports.deletePatient = async (req, res, next) => {
   try {
-    const patient = await Patient.findByPk(req.params.id);
-    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+    const { id } = req.params;
+    const clinicId = req.user?.clinicId || 1;
 
+    let patient = await Patient.findByPk(id);
+    if (!patient) {
+      const cleanPhone = id.replace(/\D/g, '');
+      patient = await Patient.findOne({
+        where: {
+          clinicId,
+          [Op.or]: [
+            { id },
+            ...(cleanPhone ? [{ phone: cleanPhone }] : []),
+            { name: id }
+          ]
+        }
+      });
+    }
+
+    if (!patient) return res.status(404).json({ error: 'Patient record not found in database' });
+
+    const targetPhone = patient.phone;
+    const targetId = patient.id;
+
+    // Delete patient record from Patient table
     await patient.destroy();
-    res.json({ message: 'Patient deleted successfully' });
+
+    // Also clean up any lingering Queue entries with matching patientId or phone
+    const { Queue } = require('../models');
+    await Queue.destroy({
+      where: {
+        clinicId,
+        [Op.or]: [
+          { patientId: targetId },
+          ...(targetPhone ? [{ phone: targetPhone }] : [])
+        ]
+      }
+    });
+
+    res.json({ message: 'Patient and all associated queue records permanently deleted successfully' });
   } catch (err) {
     next(err);
   }
