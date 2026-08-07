@@ -32,6 +32,7 @@ interface ClinicContextType {
   toast: ToastMessage | null;
   setToast: (toast: ToastMessage | null) => void;
   addPatient: (patient: Patient) => void;
+  deletePatient: (patientId: string) => void;
   addToQueue: (queueItem: QueueItem) => void;
   updateQueueStatus: (queueId: string, status: QueueItem['status']) => void;
   removeFromQueue: (queueId: string) => void;
@@ -231,6 +232,13 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
     api.createPatient(patient).catch(() => {});
   }, []);
 
+  const deletePatient = useCallback((patientId: string) => {
+    setPatients((prev) => prev.filter((p) => p.id !== patientId));
+    setQueue((prev) => prev.filter((q) => q.patientId !== patientId));
+    api.deletePatient(patientId).catch(() => {});
+    setToast({ type: 'info', message: 'Patient permanently deleted from database registers.' });
+  }, []);
+
   const addToQueue = useCallback((queueItem: QueueItem) => {
     setQueue((prev) => [...prev, queueItem]);
     api.addToQueue(queueItem).catch(() => {});
@@ -399,6 +407,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
         toast,
         setToast,
         addPatient,
+        deletePatient,
         addToQueue,
         updateQueueStatus,
         removeFromQueue,
