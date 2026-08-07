@@ -146,6 +146,7 @@ export default function ReceptionistDashboard() {
                 onSubmit={handleFormSubmit}
                 onCancel={() => { setView('queue'); setSelectedPatientForForm(null); }}
                 onClearSelected={() => setSelectedPatientForForm(null)}
+                onSelectExistingPatient={(patient) => setSelectedPatientForForm(patient)}
               />
             </div>
           )}
