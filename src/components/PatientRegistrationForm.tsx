@@ -54,22 +54,32 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!selectedPatient) {
-      if (!formData.name.trim() || formData.name.trim().length < 2) {
+      const trimmedName = formData.name.trim();
+      if (!trimmedName || trimmedName.length < 2) {
         newErrors.name = 'Full name is required (at least 2 characters)';
+      } else if (!/^[a-zA-Z\s\.\-']+$/.test(trimmedName)) {
+        newErrors.name = 'Patient name should only contain letters, spaces, dots or hyphens';
       }
+
       const cleanPhone = formData.phone.replace(/\D/g, '');
       if (!cleanPhone || cleanPhone.length !== 10) {
-        newErrors.phone = 'Valid 10-digit mobile number required (digits only)';
+        newErrors.phone = 'Valid 10-digit mobile number required';
+      } else if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+        newErrors.phone = 'Mobile number must start with 6, 7, 8, or 9 (valid Indian mobile)';
       }
+
       const numAge = Number(formData.age);
-      if (!formData.age.trim() || isNaN(numAge) || numAge < 0 || numAge > 120) {
-        newErrors.age = 'Age must be a valid number between 0 and 120';
+      if (!formData.age.trim() || isNaN(numAge) || !Number.isInteger(numAge) || numAge < 0 || numAge > 120) {
+        newErrors.age = 'Age must be a valid whole number between 0 and 120';
       }
-      if (!formData.village.trim()) {
-        newErrors.village = 'Village/Town name is required';
+
+      const trimmedVillage = formData.village.trim();
+      if (!trimmedVillage || trimmedVillage.length < 2) {
+        newErrors.village = 'Village/Town name is required (at least 2 characters)';
       }
+
       if (duplicatePatient) {
-        newErrors.phone = `A patient with mobile ${formData.phone} already exists (${duplicatePatient.name})`;
+        newErrors.phone = `A patient with mobile ${formData.phone} is already registered (${duplicatePatient.name})`;
       }
     }
 
