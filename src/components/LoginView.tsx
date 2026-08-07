@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Lock, Mail, UserCheck, ShieldAlert, ArrowRight, KeyRound, CheckCircle2, RefreshCw, X } from 'lucide-react';
+import { Lock, UserCheck, ShieldAlert, ArrowRight, KeyRound, CheckCircle2, RefreshCw, X } from 'lucide-react';
 import { useClinic } from '../context/ClinicContext';
 import { api, apiRequest } from '../api/client';
 import { supabaseAuth } from '../lib/supabase';
@@ -10,7 +10,7 @@ interface Props {
 
 export default function LoginView({ onSuccess }: Props) {
   const { login, setToast } = useClinic();
-  const [email, setEmail] = useState('doctor@shinagareclinic.com');
+  const [email, setEmail] = useState('8010127704');
   const [password, setPassword] = useState('doctor123');
   const [role, setRole] = useState<'doctor' | 'receptionist'>('doctor');
   const [loading, setLoading] = useState(false);
@@ -19,7 +19,7 @@ export default function LoginView({ onSuccess }: Props) {
   // Forgot Password States
   const [isForgotMode, setIsForgotMode] = useState(false);
   const [forgotStep, setForgotStep] = useState<1 | 2>(1); // 1 = Request OTP, 2 = Verify & Reset
-  const [forgotIdentifier, setForgotIdentifier] = useState('doctor@shinagareclinic.com');
+  const [forgotIdentifier, setForgotIdentifier] = useState('8010127704');
   const [otpCode, setOtpCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -28,13 +28,13 @@ export default function LoginView({ onSuccess }: Props) {
   const handleQuickRoleSelect = (selectedRole: 'doctor' | 'receptionist') => {
     setRole(selectedRole);
     if (selectedRole === 'doctor') {
-      setEmail('doctor@shinagareclinic.com');
+      setEmail('8010127704');
       setPassword('doctor123');
-      setForgotIdentifier('doctor@shinagareclinic.com');
+      setForgotIdentifier('8010127704');
     } else {
-      setEmail('reception@shinagareclinic.com');
+      setEmail('7972884082');
       setPassword('reception123');
-      setForgotIdentifier('reception@shinagareclinic.com');
+      setForgotIdentifier('7972884082');
     }
   };
 
@@ -211,24 +211,25 @@ export default function LoginView({ onSuccess }: Props) {
 
             {/* Login Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-[#4b463e] mb-1">Email Address / User ID</label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                  <input
-                    type="text"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-[#cdc6ba] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#047857] text-[#1a1c1a]"
-                    placeholder="doctor@shinagareclinic.com"
-                  />
+              {/* Fixed Account Identity Badge */}
+              <div className="bg-[#f8f6f0] p-3 rounded-xl border border-[#e4e2e1] flex items-center justify-between">
+                <div>
+                  <div className="text-xs text-[#7c766d] font-semibold">Logging in as:</div>
+                  <div className="text-sm font-bold text-[#1a1c1a]">
+                    {role === 'doctor' ? '👨‍⚕️ डॉ. प्रमोद शिनगारे (Doctor)' : '📋 Reception Desk (पेठ वडगाव)'}
+                  </div>
+                  <div className="text-[11px] font-mono text-[#047857] font-bold">
+                    📞 WhatsApp: {role === 'doctor' ? '8010127704' : '7972884082'}
+                  </div>
                 </div>
+                <span className="text-[10px] font-bold px-2 py-1 bg-[#ecfdf5] text-[#047857] rounded-lg border border-[#a7f3d0]">
+                  ACTIVE
+                </span>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-bold text-[#4b463e]">Password</label>
+                  <label className="block text-xs font-bold text-[#4b463e]">Enter Password</label>
                   <button
                     type="button"
                     onClick={() => {
@@ -269,13 +270,6 @@ export default function LoginView({ onSuccess }: Props) {
                 )}
               </button>
             </form>
-
-            {/* Demo Preset Hints */}
-            <div className="pt-2 border-t border-[#e4e2e1] text-center text-[11px] text-[#7c766d] space-y-1">
-              <p className="font-semibold text-[#4b463e]">Authorized Authorized Accounts:</p>
-              <p>👨‍⚕️ <strong>Doctor:</strong> doctor@shinagareclinic.com (pass: doctor123)</p>
-              <p>📋 <strong>Reception:</strong> reception@shinagareclinic.com (pass: reception123)</p>
-            </div>
           </>
         ) : (
           /* Forgot Password OTP Mode */
@@ -283,7 +277,7 @@ export default function LoginView({ onSuccess }: Props) {
             <div className="flex items-center justify-between border-b border-[#e4e2e1] pb-3">
               <div className="flex items-center gap-2">
                 <KeyRound className="w-5 h-5 text-[#047857]" />
-                <h2 className="font-serif font-bold text-base text-[#1a1c1a]">Reset Account Password</h2>
+                <h2 className="font-serif font-bold text-base text-[#1a1c1a]">Reset Password</h2>
               </div>
               <button
                 type="button"
@@ -313,26 +307,21 @@ export default function LoginView({ onSuccess }: Props) {
             )}
 
             {forgotStep === 1 ? (
-              /* Step 1: Enter Email/Phone */
+              /* Step 1: Confirm Mobile Number for OTP */
               <form onSubmit={handleRequestOTP} className="space-y-4">
-                <p className="text-xs text-[#7c766d]">
-                  Enter your registered clinic email address or mobile number to receive a 6-digit verification code.
-                </p>
-
-                <div>
-                  <label className="block text-xs font-bold text-[#4b463e] mb-1">Email / Mobile Number</label>
-                  <div className="relative">
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                    <input
-                      type="text"
-                      required
-                      value={forgotIdentifier}
-                      onChange={(e) => setForgotIdentifier(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-[#cdc6ba] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#047857] text-[#1a1c1a]"
-                      placeholder="doctor@shinagareclinic.com or 9876543210"
-                    />
+                <div className="bg-[#ecfdf5] p-3 rounded-xl border border-[#a7f3d0] space-y-1">
+                  <div className="text-xs text-[#065f46] font-semibold">Verification Destination:</div>
+                  <div className="text-sm font-bold text-[#064e3b]">
+                    {role === 'doctor' ? '👨‍⚕️ Dr. Pramod Shinagare' : '📋 Reception Desk'}
+                  </div>
+                  <div className="text-xs font-mono font-bold text-[#047857]">
+                    📲 WhatsApp Mobile: {forgotIdentifier}
                   </div>
                 </div>
+
+                <p className="text-xs text-[#7c766d]">
+                  Click below to generate a 6-digit OTP verification code sent directly to your registered WhatsApp mobile number.
+                </p>
 
                 <button
                   type="submit"
@@ -340,10 +329,10 @@ export default function LoginView({ onSuccess }: Props) {
                   className="w-full py-2.5 bg-gradient-to-r from-[#064e3b] to-[#047857] hover:from-[#022c22] hover:to-[#064e3b] text-[#ecfdf5] font-bold text-sm rounded-lg shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {loading ? (
-                    <span>Generating OTP Code...</span>
+                    <span>Sending 6-Digit OTP...</span>
                   ) : (
                     <>
-                      <span>Send 6-Digit OTP Code</span>
+                      <span>Send 6-Digit OTP Code via WhatsApp</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
