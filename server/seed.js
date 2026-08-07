@@ -67,8 +67,8 @@ async function seedDatabase() {
       clinicId: 1,
       email: 'reception@shinagareclinic.com',
       passwordHash: bcrypt.hashSync('reception123', 10),
-      name: 'Sneha Kulkarni',
-      phone: '9876543210',
+      name: 'Reception Desk',
+      phone: '7972884083',
       role: 'receptionist'
     });
 
