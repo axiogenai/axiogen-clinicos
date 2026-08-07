@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Lock, Mail, UserCheck, ShieldAlert, ArrowRight, KeyRound, CheckCircle2, RefreshCw, X } from 'lucide-react';
 import { useClinic } from '../context/ClinicContext';
-import { api } from '../api/client';
+import { api, apiRequest } from '../api/client';
 import { supabaseAuth } from '../lib/supabase';
 
 interface Props {
@@ -70,16 +70,25 @@ export default function LoginView({ onSuccess }: Props) {
         await supabaseAuth.resetPasswordForEmail(forgotIdentifier);
       } catch {}
 
-      // 2. Primary Database API OTP Reset
-      const res = await api.forgotPassword(forgotIdentifier);
+      // 2. Primary Database API OTP Reset with fallback
+      let res: any = null;
+      if (typeof api?.forgotPassword === 'function') {
+        res = await api.forgotPassword(forgotIdentifier);
+      } else {
+        res = await apiRequest<{ message: string; otp?: string }>('/auth/forgot-password', {
+          method: 'POST',
+          body: JSON.stringify({ identifier: forgotIdentifier })
+        });
+      }
+
       setForgotStep(2);
-      if (res.otp) {
+      if (res && res.otp) {
         setOtpCode(res.otp);
         setGeneratedOTPNotice(`Your 6-digit verification code is: ${res.otp}`);
       }
       setToast({
         type: 'success',
-        title: 'Supabase OTP Sent',
+        title: 'OTP Sent',
         message: `Verification code generated for ${forgotIdentifier}`
       });
     } catch (err: any) {
@@ -112,13 +121,20 @@ export default function LoginView({ onSuccess }: Props) {
         await supabaseAuth.updatePassword(newPassword);
       } catch {}
 
-      // 2. Primary Database API Password Reset
-      await api.resetPassword(forgotIdentifier, otpCode, newPassword);
+      // 2. Primary Database API Password Reset with fallback
+      if (typeof api?.resetPassword === 'function') {
+        await api.resetPassword(forgotIdentifier, otpCode, newPassword);
+      } else {
+        await apiRequest('/auth/reset-password', {
+          method: 'POST',
+          body: JSON.stringify({ identifier: forgotIdentifier, otp: otpCode, newPassword })
+        });
+      }
 
       setToast({
         type: 'success',
-        title: 'Supabase Auth Updated',
-        message: 'Your password was updated in Supabase Auth. Signing in now...'
+        title: 'Password Updated',
+        message: 'Your password was updated successfully. Signing in now...'
       });
 
       // Automatically log in with new password
