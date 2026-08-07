@@ -100,6 +100,10 @@ async function startServer() {
 
     await sequelize.sync({ alter: false });
 
+    // Initialize WhatsApp Automated Festival & Follow-Up Engine
+    const { initBackgroundScheduler } = require('./services/whatsappService');
+    initBackgroundScheduler();
+
     app.listen(PORT, () => {
       console.log(`🚀 ClinicOS Express Backend Server running on http://localhost:${PORT} [Prod: ${isProd}]`);
     });
