@@ -133,7 +133,7 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                         className="btn-secondary text-xs py-1.5 px-3 flex-1 sm:flex-initial justify-center"
                       >
                         <FileText className="w-3.5 h-3.5 text-[#047857]" />
-                        <span>📜 View EMR History</span>
+                        <span>View EMR History</span>
                       </button>
 
                       <button
