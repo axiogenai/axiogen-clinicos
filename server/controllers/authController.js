@@ -160,6 +160,15 @@ exports.forgotPassword = async (req, res, next) => {
       return res.status(404).json({ error: `No registered clinic account found matching "${identifier}"` });
     }
 
+    // Check if an OTP was already sent within the last 15 minutes
+    if (user.resetOTPExpires && user.resetOTPExpires > new Date()) {
+      const remainingMs = new Date(user.resetOTPExpires).getTime() - Date.now();
+      const remainingMins = Math.ceil(remainingMs / (60 * 1000));
+      return res.status(429).json({
+        error: `An OTP was already sent to your WhatsApp. Please wait ${remainingMins} minute${remainingMins > 1 ? 's' : ''} before requesting a new code.`
+      });
+    }
+
     // Generate secure 6-digit OTP code
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     user.resetOTP = otp;
