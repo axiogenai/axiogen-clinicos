@@ -53,10 +53,32 @@ function buildReminderMessage(patientName, followUpDate, doctorName = 'डॉ. �
 }
 
 /**
+ * Returns current Date & Hour strictly in Indian Standard Time (Asia/Kolkata)
+ */
+function getISTTimeInfo() {
+  const now = new Date();
+  const options = { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false };
+  const formatter = new Intl.DateTimeFormat('en-CA', options);
+  const parts = formatter.formatToParts(now);
+
+  const year = parts.find(p => p.type === 'year').value;
+  const month = parts.find(p => p.type === 'month').value;
+  const day = parts.find(p => p.type === 'day').value;
+  const hour = parseInt(parts.find(p => p.type === 'hour').value, 10);
+  const minute = parseInt(parts.find(p => p.type === 'minute').value, 10);
+
+  return {
+    dateStr: `${year}-${month}-${day}`,
+    hour,
+    minute
+  };
+}
+
+/**
  * Background Auto-Send Engine: Sends WhatsApp messages to all patients scheduled for follow-up on targetDate
  */
 async function processBackgroundFollowUps(targetDate = null) {
-  const dateStr = targetDate || new Date().toISOString().split('T')[0];
+  const dateStr = targetDate || getISTTimeInfo().dateStr;
   const results = {
     date: dateStr,
     totalEligible: 0,
@@ -301,30 +323,28 @@ function initBackgroundScheduler() {
   let lastReminderDate = '';
   let lastBackupDate = '';
 
-  const checkIntervalMs = 5 * 60 * 1000; // Check every 5 minutes
+  const checkIntervalMs = 60 * 1000; // Check every 1 minute
 
   const runChecks = async () => {
-    const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
-    const currentHour = now.getHours();
+    const { dateStr, hour, minute } = getISTTimeInfo();
 
-    // Run follow-up reminders at 9 AM (or if missed and it's still morning < 12)
-    if (currentHour >= 9 && currentHour < 12 && lastReminderDate !== todayStr) {
-      lastReminderDate = todayStr;
-      console.log('⏰ Triggering Daily Automated Background WhatsApp Reminders...');
+    // Trigger daily reminders if it is 9 AM IST or later, and we haven't sent for today yet
+    if (hour >= 9 && lastReminderDate !== dateStr) {
+      lastReminderDate = dateStr;
+      console.log(`⏰ [IST ${dateStr} ${hour}:${minute}] Triggering Daily Automated Background WhatsApp Reminders...`);
       try {
-        const summary = await processBackgroundFollowUps();
-        console.log(`✅ Background WhatsApp Reminders Complete: Sent ${summary.sentCount}/${summary.totalEligible}`);
+        const summary = await processBackgroundFollowUps(dateStr);
+        console.log(`✅ Background WhatsApp Reminders Complete for ${dateStr}: Sent ${summary.sentCount}/${summary.totalEligible}`);
       } catch (err) {
         console.error('❌ Scheduler reminder error:', err);
       }
     }
 
-    // Run backup at 11 PM
-    if (currentHour === 23 && lastBackupDate !== todayStr) {
-      lastBackupDate = todayStr;
-      console.log('⏰ Triggering Daily Automated Background Register Backup & 7-Day Purge...');
-      await autoBackupDailyQueue();
+    // Run backup at 23:00 (11 PM) IST
+    if (hour === 23 && lastBackupDate !== dateStr) {
+      lastBackupDate = dateStr;
+      console.log(`⏰ [IST ${dateStr}] Triggering Daily Automated Background Register Backup & 7-Day Purge...`);
+      await autoBackupDailyQueue(dateStr);
       try {
         const { Queue } = require('../models');
         const { Op } = require('sequelize');
@@ -339,7 +359,7 @@ function initBackgroundScheduler() {
     }
   };
 
-  // Run immediately on start, then every 5 minutes
+  // Run immediately on start, then every 1 minute
   runChecks();
   setInterval(runChecks, checkIntervalMs);
 }
