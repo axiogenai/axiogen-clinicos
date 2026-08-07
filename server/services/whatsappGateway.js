@@ -55,10 +55,15 @@ async function initWhatsAppGateway(forceFresh = false) {
 
     sock = makeWASocket({
       auth: state,
-      printQRInTerminal: false,
+      printQRInTerminal: true,
       logger: pino({ level: 'silent' }),
       browser: ['ClinicOS', 'Chrome', '1.0.0'],
-      connectTimeoutMs: 30000,
+      connectTimeoutMs: 60000,
+      defaultQueryTimeoutMs: 60000,
+      keepAliveIntervalMs: 25000, // 25s ping heartbeat keeps socket alive forever
+      retryRequestDelayMs: 2000,
+      markOnlineOnConnect: true,
+      syncFullHistory: false,
     });
 
     sock.ev.on('creds.update', saveCreds);
@@ -71,6 +76,10 @@ async function initWhatsAppGateway(forceFresh = false) {
           qrCodeDataUrl = await QRCode.toDataURL(qr);
           connectionStatus = 'qr_ready';
           console.log('📱 WhatsApp Gateway: New QR Code generated!');
+          try {
+            const asciiQr = await QRCode.toString(qr, { type: 'terminal', small: true });
+            console.log(asciiQr);
+          } catch (e) {}
         } catch (err) {
           console.error('Error generating QR Data URL:', err);
         }
@@ -78,34 +87,37 @@ async function initWhatsAppGateway(forceFresh = false) {
 
       if (connection === 'close') {
         const statusCode = lastDisconnect?.error?.output?.statusCode;
-        const isLoggedOut = statusCode === DisconnectReason.loggedOut;
+        const isExplicitLogout = statusCode === DisconnectReason.loggedOut;
         
-        console.log(`📱 WhatsApp Gateway closed (statusCode: ${statusCode}, loggedOut: ${isLoggedOut})`);
+        console.log(`📱 WhatsApp Gateway connection closed (statusCode: ${statusCode}, explicitLogout: ${isExplicitLogout})`);
         
         qrCodeDataUrl = '';
         connectionStatus = 'disconnected';
         connectedPhone = '';
         isInitializing = false;
 
-        if (isLoggedOut || statusCode === 401) {
-          console.log('🗑️ WhatsApp session explicitly logged out. Wiping credentials...');
+        // ONLY wipe credentials if explicitly logged out by user action, NEVER on transient 401 disconnects or server restarts!
+        if (isExplicitLogout) {
+          console.log('🗑️ Explicit user logout detected. Wiping stored credentials...');
           if (fs.existsSync(AUTH_FOLDER)) {
             try { fs.rmSync(AUTH_FOLDER, { recursive: true, force: true }); } catch (e) {}
           }
         }
 
+        // Always schedule automatic silent reconnection with saved credentials
         if (reconnectTimer) clearTimeout(reconnectTimer);
         reconnectTimer = setTimeout(() => {
           if (connectionStatus === 'disconnected' && !isInitializing) {
+            console.log('🔄 Reconnecting WhatsApp Gateway using saved session credentials...');
             initWhatsAppGateway();
           }
-        }, 5000);
+        }, 3000);
       } else if (connection === 'open') {
         connectionStatus = 'connected';
         qrCodeDataUrl = '';
         connectedPhone = sock?.user?.id ? sock.user.id.split(':')[0] : 'Connected Phone';
         isInitializing = false;
-        console.log(`✅ WhatsApp Gateway CONNECTED as +${connectedPhone}`);
+        console.log(`✅ WhatsApp Gateway CONNECTED & PERSISTED as +${connectedPhone}`);
       }
     });
   } catch (err) {
