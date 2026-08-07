@@ -19,6 +19,7 @@ const medicineRoutes = require('./routes/medicines');
 const templateRoutes = require('./routes/templates');
 const casePaperRoutes = require('./routes/casePapers');
 const clinicRoutes = require('./routes/clinic');
+const whatsappRoutes = require('./routes/whatsapp');
 const { initBackgroundScheduler } = require('./services/whatsappService');
 const { initWhatsAppGateway } = require('./services/whatsappGateway');
 
