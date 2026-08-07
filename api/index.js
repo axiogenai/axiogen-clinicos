@@ -58,8 +58,12 @@ app.use(errorHandler);
 let dbSynced = false;
 const ensureDb = async () => {
   if (!dbSynced) {
-    await sequelize.sync({ alter: false });
-    dbSynced = true;
+    try {
+      await sequelize.sync({ alter: false });
+      dbSynced = true;
+    } catch (err) {
+      console.warn('Vercel serverless DB sync skipped (using live Oracle VM DB):', err.message);
+    }
   }
 };
 
