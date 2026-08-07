@@ -49,13 +49,19 @@ exports.createPatient = async (req, res, next) => {
     const clinicId = req.user?.clinicId || 1;
     const { id, name, age, gender, phone, village, pastHistory, allergies, notes } = req.body;
 
-    if (!name || name.trim().length < 2) {
+    const trimmedName = (name || '').trim();
+    if (!trimmedName || trimmedName.length < 2) {
       return res.status(400).json({ error: 'Patient full name is required (at least 2 characters)' });
+    }
+    if (!/^[a-zA-Z\s\.\-']+$/.test(trimmedName)) {
+      return res.status(400).json({ error: 'Patient name should only contain letters, spaces, dots or hyphens' });
     }
 
     const cleanPhone = (phone || '').replace(/\D/g, '');
-    if (cleanPhone && cleanPhone.length !== 10) {
-      return res.status(400).json({ error: 'Mobile number must be a valid 10-digit number' });
+    if (cleanPhone) {
+      if (cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
+        return res.status(400).json({ error: 'Mobile number must be a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9' });
+      }
     }
 
     // Duplicate Mobile Number Check
