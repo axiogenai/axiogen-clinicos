@@ -29,6 +29,9 @@ export const api = {
   // Auth
   login: (email: string, password: string) => apiRequest<{ user: any; token: string }>('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
   getMe: () => apiRequest<any>('/auth/me'),
+  forgotPassword: (identifier: string) => apiRequest<{ message: string; email?: string; phone?: string; otp?: string }>('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ identifier }) }),
+  verifyOTP: (identifier: string, otp: string) => apiRequest<{ success: boolean; message: string }>('/auth/verify-otp', { method: 'POST', body: JSON.stringify({ identifier, otp }) }),
+  resetPassword: (identifier: string, otp: string, newPassword: string) => apiRequest<{ message: string }>('/auth/reset-password', { method: 'POST', body: JSON.stringify({ identifier, otp, newPassword }) }),
 
   // Patients
   getPatients: () => apiRequest<any[]>('/patients'),
