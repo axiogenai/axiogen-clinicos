@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, UserPlus, X } from 'lucide-react';
+import { Search, UserPlus, X, Trash2 } from 'lucide-react';
 import type { Patient } from '../data/patients';
+import { useClinic } from '../context/ClinicContext';
 
 interface Props {
   patients: Patient[];
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export default function PatientSearch({ patients, onSelectPatient, onNewPatient }: Props) {
+  const { deletePatient } = useClinic();
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -101,16 +103,31 @@ export default function PatientSearch({ patients, onSelectPatient, onNewPatient 
                   setQuery('');
                 }}
               >
-                <div className="flex justify-between items-start">
+                <div className="flex justify-between items-center">
                   <div>
                     <p className="font-medium text-gray-900">{patient.name} <span className="text-gray-500 font-normal text-xs ml-2">{patient.age}y / {patient.gender}</span></p>
                     <p className="text-sm text-gray-500 mt-0.5">{patient.phone} • {patient.village}</p>
                   </div>
-                  {patient.pastVisits && patient.pastVisits.length > 0 && (
-                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                      {patient.pastVisits.length} past visits
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {patient.pastVisits && patient.pastVisits.length > 0 && (
+                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                        {patient.pastVisits.length} past visits
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`⚠️ Permanently delete patient '${patient.name}' (ID: ${patient.id}) from database registers?`)) {
+                          deletePatient(patient.id);
+                        }
+                      }}
+                      className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Permanently delete patient from DB"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </li>
             ))}
