@@ -84,15 +84,18 @@ app.get('/api/health', (req, res) => {
 // Error handling middleware
 app.use(errorHandler);
 
+const PORT = process.env.PORT || 5000;
+const isProd = process.env.NODE_ENV === 'production';
+
 async function startServer() {
   try {
     await sequelize.authenticate();
-    // Execute safe column migrations for production PostgreSQL
+    // Execute safe column migrations for production PostgreSQL (table name: users)
     await sequelize.query(`
-      ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "reset_otp" VARCHAR(255);
-      ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "reset_otp_expires" TIMESTAMP WITH TIME ZONE;
-      ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "reset_o_t_p" VARCHAR(255);
-      ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "reset_o_t_p_expires" TIMESTAMP WITH TIME ZONE;
+      ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "reset_otp" VARCHAR(255);
+      ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "reset_otp_expires" TIMESTAMP WITH TIME ZONE;
+      ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "reset_o_t_p" VARCHAR(255);
+      ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "reset_o_t_p_expires" TIMESTAMP WITH TIME ZONE;
     `).catch(err => console.warn('Database column migration notice:', err.message));
 
     await sequelize.sync({ alter: false });
