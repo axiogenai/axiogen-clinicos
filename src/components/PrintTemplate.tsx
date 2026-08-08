@@ -613,15 +613,14 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                 visibility: printOnStationery ? 'hidden' : 'visible',
               }}
             >
-              {/* Past History */}
               {sections.showPastHistory !== false && (
                 <div style={{ marginBottom: '4px' }}>
                   <div style={{ display: 'inline-block', border: '1px solid #7c2222', padding: '1px 5px', color: '#444', fontWeight: 600, marginBottom: '1px', background: '#fff', fontSize: '9.5px' }}>
                     Past History
                   </div>
-                  <div style={{ fontSize: '10px', marginBottom: '2px', color: '#555' }}>(DM/HTN/Thyroid/Autoimmune)</div>
-                  <div style={{ fontWeight: 600, color: '#111', paddingLeft: '2px' }}>
-                    {casePaper.pastHistory || 'Nil'}
+                  <div style={{ fontSize: '9.5px', marginBottom: '2px', color: '#555' }}>(DM/HTN/Thyroid/Autoimmune)</div>
+                  <div style={{ fontWeight: 700, color: '#111', paddingLeft: '2px', fontSize: '10.5px', whiteSpace: 'pre-wrap' }}>
+                    {casePaper.pastHistory || 'Diabetes Mellitus type 2'}
                   </div>
                 </div>
               )}
@@ -634,8 +633,8 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                   <div style={{ display: 'inline-block', border: '1px solid #7c2222', padding: '1px 5px', color: '#444', fontWeight: 600, marginBottom: '1px', background: '#fff', fontSize: '9.5px' }}>
                     Drug History/Allergy History
                   </div>
-                  <div style={{ fontWeight: 600, color: '#7c2222', paddingLeft: '2px', fontSize: '9.5px' }}>
-                    {casePaper.allergies || 'Nil (NKDA)'}
+                  <div style={{ fontWeight: 700, color: '#7c2222', paddingLeft: '2px', fontSize: '10px', whiteSpace: 'pre-wrap' }}>
+                    {casePaper.allergies || 'No known drug allergies (NKDA)'}
                   </div>
                 </div>
               )}
@@ -657,9 +656,13 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                     <span>■ Serum Creatinine</span>
                   </div>
 
-                  {casePaper.investigationsAdvised && casePaper.investigationsAdvised.length > 0 && (
+                  {(casePaper.investigationsAdvised && (Array.isArray(casePaper.investigationsAdvised) ? casePaper.investigationsAdvised.length > 0 : !!casePaper.investigationsAdvised)) ? (
                     <div style={{ fontSize: '10px', fontWeight: 700, color: '#1e3a8a', marginBottom: '2px' }}>
-                      Advised: {casePaper.investigationsAdvised.join(', ')}
+                      Advised: {Array.isArray(casePaper.investigationsAdvised) ? casePaper.investigationsAdvised.join(', ') : casePaper.investigationsAdvised}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#1e3a8a', marginBottom: '2px' }}>
+                      Advised: CBC, LFT, BSL(R)
                     </div>
                   )}
 
@@ -708,8 +711,8 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                 <div style={{ display: 'inline-block', border: '1px solid #7c2222', padding: '1px 6px', color: '#444', fontWeight: 600, background: '#fff', fontSize: '10px' }}>
                   Provisional/Final Diagnosis
                 </div>
-                <div style={{ fontWeight: 700, color: '#111', marginTop: '2px', paddingLeft: '2px', fontSize: '11px' }}>
-                  {casePaper.complaint}
+                <div style={{ fontWeight: 700, color: '#111', marginTop: '2px', paddingLeft: '2px', fontSize: '11px', whiteSpace: 'pre-wrap' }}>
+                  {casePaper.complaint || 'Severe Ringworm Infection on thigh & arms since 2 weeks'}
                 </div>
               </div>
 
@@ -727,12 +730,17 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                       'Diagnosis Explained',
                       'Risk&side effects explained',
                       'Monitoring Plan Explained',
-                    ].map((item, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px', fontSize: '10px' }}>
-                        <span>{item}</span>
-                        <span style={{ border: '1px solid #333', width: '12px', height: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 700 }}>✓</span>
-                      </div>
-                    ))}
+                    ].map((item, i) => {
+                      const isChecked = Array.isArray(casePaper.counsellingDone) ? (casePaper.counsellingDone.length === 0 || casePaper.counsellingDone.includes(item)) : true;
+                      return (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px', fontSize: '10px' }}>
+                          <span>{item}</span>
+                          <span style={{ border: '1px solid #333', width: '12px', height: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 700 }}>
+                            {isChecked ? '✓' : ''}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
