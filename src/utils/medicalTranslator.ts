@@ -8,7 +8,7 @@ export type PrintLanguage = 'marathi' | 'english' | 'hindi' | 'kannada';
 
 export function cleanFrequencyString(str?: string): string {
   if (!str) return '';
-  return str.trim();
+  return str.replace(/\s*\([^)]*\)/g, '').trim();
 }
 
 export function stripRawCodes(str: string): string {
