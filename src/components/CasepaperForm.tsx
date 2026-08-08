@@ -632,51 +632,86 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
             <span>Import Medicines CSV</span>
           </button>
         </div>
-      </div>
-
       {/* ── Main 3-column grid ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
         
-        {/* ── LEFT SIDEBAR: PATIENT HISTORY ── */}
+        {/* ── LEFT SIDEBAR: CASE PAPER FIELDS ── */}
         <div className="space-y-5">
-
-          {/* Patient History Card */}
+          {/* Patient History Card — Left Sidebar Case Paper Fields */}
           <div className="section-card">
             <h3 className="font-serif font-bold text-[#1a1c1a] mb-4 text-sm flex items-center gap-2">
               <span className="w-1.5 h-4 rounded-full bg-[#047857] inline-block"></span>
-              Patient History
+              Case Paper Sidebar Fields
             </h3>
             
             <div className="space-y-4">
               <div>
-                <label className="form-label">Chief Complaint</label>
-                <textarea 
-                  value={casePaper.complaint}
-                  onChange={(e) => onUpdateCasePaper({ ...casePaper, complaint: e.target.value })}
-                  className="form-input"
-                  rows={2}
-                />
-              </div>
-
-              <div>
-                <label className="form-label">Past History</label>
+                <label className="form-label font-bold text-[#1a1c1a]">1. Past History (DM/HTN/Thyroid/Autoimmune)</label>
                 <textarea 
                   value={casePaper.pastHistory}
                   onChange={(e) => onUpdateCasePaper({ ...casePaper, pastHistory: e.target.value })}
-                  className="form-input"
+                  className="form-input font-medium"
+                  placeholder="Diabetes Mellitus type 2"
                   rows={2}
                 />
               </div>
 
               <div>
-                <label className="form-label form-label-red">⚠ Allergies</label>
+                <label className="form-label font-bold text-red-700">2. Drug History / Allergy History</label>
                 <textarea 
                   value={casePaper.allergies}
                   onChange={(e) => onUpdateCasePaper({ ...casePaper, allergies: e.target.value })}
-                  className="form-input border-red-200 bg-[#fff5f5] focus:border-red-400 text-red-800"
-                  placeholder="No known allergies"
+                  className="form-input border-red-200 bg-[#fff5f5] focus:border-red-400 text-red-800 font-medium"
+                  placeholder="No known drug allergies (NKDA)"
                   rows={2}
                 />
+              </div>
+
+              <div>
+                <label className="form-label font-bold text-[#1e3a8a]">3. Investigations Advised</label>
+                <textarea 
+                  value={Array.isArray(casePaper.investigationsAdvised) ? casePaper.investigationsAdvised.join(', ') : (casePaper.investigationsAdvised || '')}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const items = val.split(',').map(s => s.trim()).filter(Boolean);
+                    onUpdateCasePaper({ ...casePaper, investigationsAdvised: items });
+                  }}
+                  className="form-input text-[#1e3a8a] font-medium"
+                  placeholder="Advised: CBC, LFT, BSL(R)"
+                  rows={2}
+                />
+              </div>
+
+              <div>
+                <label className="form-label font-bold text-[#1a1c1a]">4. Provisional / Final Diagnosis</label>
+                <textarea 
+                  value={casePaper.complaint}
+                  onChange={(e) => onUpdateCasePaper({ ...casePaper, complaint: e.target.value })}
+                  className="form-input font-medium"
+                  placeholder="Severe Ringworm Infection on thigh & arms since 2 weeks"
+                  rows={2}
+                />
+              </div>
+
+              <div>
+                <label className="form-label font-bold text-[#047857]">5. Patient Counselling Documentation</label>
+                <div className="space-y-1.5 bg-[#faf9f6] p-2.5 rounded-xl border border-[#e4e2e1]">
+                  {COUNSELLING.map(item => {
+                    const currentArr = Array.isArray(casePaper.counsellingDone) ? casePaper.counsellingDone : [];
+                    const isChecked = currentArr.includes(item);
+                    return (
+                      <label key={item} className="flex items-center justify-between text-xs font-medium cursor-pointer p-1 hover:bg-[#f2eee3] rounded-lg">
+                        <span>{item}</span>
+                        <input 
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleCounselling(item)}
+                          className="w-4 h-4 accent-[#047857] rounded cursor-pointer shrink-0"
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
 
               <button
@@ -1259,5 +1294,6 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
       )}
 
     </div>
+  </div>
   );
 }
