@@ -3,6 +3,7 @@ import { Lock, UserCheck, ShieldAlert, ArrowRight, KeyRound, CheckCircle2, Refre
 import { useClinic } from '../context/ClinicContext';
 import { api, apiRequest } from '../api/client';
 import { supabaseAuth } from '../lib/supabase';
+import logoHd from '../assets/logo-hd.png';
 
 interface Props {
   onSuccess: () => void;
@@ -237,7 +238,7 @@ export default function LoginView({ onSuccess }: Props) {
         <div className="text-center space-y-2">
           <div className="flex justify-center items-center py-1">
             <img
-              src="/logo-symbol.png"
+              src={logoHd}
               alt="Shinagare Clinic Emblem"
               className="h-16 w-auto mx-auto object-contain drop-shadow-sm"
             />
