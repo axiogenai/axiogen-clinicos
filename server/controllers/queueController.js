@@ -99,6 +99,33 @@ exports.addToQueue = async (req, res, next) => {
       status: 'waiting'
     });
 
+    // Auto-sync into OpdRegister database table
+    try {
+      const { OpdRegister } = require('../models');
+      const [yStr, mStr, dStr] = currentDate.split('-');
+      await OpdRegister.findOrCreate({
+        where: { clinicId, date: currentDate, queueId: idToUse },
+        defaults: {
+          clinicId,
+          date: currentDate,
+          year: parseInt(yStr, 10),
+          month: parseInt(mStr, 10),
+          day: parseInt(dStr, 10),
+          queueId: idToUse,
+          patientId: patientId || null,
+          patientName: name,
+          age: age ? parseInt(age, 10) : null,
+          phone: phone ? phone.replace(/\D/g, '') : '',
+          village: village || '',
+          complaint: complaint || '',
+          timeAdded,
+          status: 'waiting'
+        }
+      });
+    } catch (e) {
+      console.warn('OpdRegister auto-sync notice:', e.message);
+    }
+
     await AuditLog.create({
       clinicId,
       userId: req.user?.id || 1,
