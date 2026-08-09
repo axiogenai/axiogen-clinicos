@@ -149,9 +149,16 @@ async function sendWhatsAppMessage(toPhone, messageText) {
   if (cleanNumber.length === 10) {
     cleanNumber = `91${cleanNumber}`;
   }
-  const jid = `${cleanNumber}@s.whatsapp.net`;
 
-  const result = await sock.sendMessage(jid, { text: messageText });
+  let targetJid = `${cleanNumber}@s.whatsapp.net`;
+  try {
+    const results = await sock.onWhatsApp(cleanNumber);
+    if (results && results[0] && results[0].exists && results[0].jid) {
+      targetJid = results[0].jid;
+    }
+  } catch (e) {}
+
+  const result = await sock.sendMessage(targetJid, { text: messageText });
   return result;
 }
 
