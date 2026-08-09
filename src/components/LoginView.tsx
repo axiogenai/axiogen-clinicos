@@ -239,7 +239,7 @@ export default function LoginView({ onSuccess }: Props) {
           <div className="flex justify-center items-center py-1">
             <img
               src={logoHd}
-              alt="Shinagare Clinic Emblem"
+              alt="Shingare Clinic Emblem"
               className="h-16 w-auto mx-auto object-contain drop-shadow-sm"
             />
           </div>
