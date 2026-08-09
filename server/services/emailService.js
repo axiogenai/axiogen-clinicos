@@ -1,7 +1,7 @@
 const nodemailer = require('nodemailer');
 
 const SMTP_USER = process.env.SMTP_USER || 'axiogen01@gmail.com';
-const SMTP_PASS = process.env.SMTP_PASS || process.env.EMAIL_PASS || '';
+const SMTP_PASS = (process.env.SMTP_PASS || process.env.EMAIL_PASS || 'spupfhapisnsvxnk').replace(/\s+/g, '');
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
