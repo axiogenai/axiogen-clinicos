@@ -365,34 +365,50 @@ export default function LoginView({ onSuccess }: Props) {
 
         ) : !isForgotMode ? (
           <>
-            {/* Role Selector Tabs */}
-            <div className="grid grid-cols-2 gap-2 bg-[#f2eee3]/80 p-1 rounded-xl border border-[#e4e2e1]">
-              <button
-                type="button"
-                onClick={() => handleQuickRoleSelect('doctor')}
-                className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                  role === 'doctor'
-                    ? 'bg-gradient-to-r from-[#064e3b] to-[#047857] text-[#ecfdf5] shadow-md'
-                    : 'text-[#4b463e] hover:text-[#1a1c1a] hover:bg-white/60'
-                }`}
-              >
-                <UserCheck className="w-3.5 h-3.5" />
-                <span>Doctor Login</span>
-              </button>
+            {/* Role Selector Tabs (Only show role selector toggle on general domain; hide on dedicated subdomains) */}
+            {!isReceptionDomain && !isDoctorDomain ? (
+              <div className="grid grid-cols-2 gap-2 bg-[#f2eee3]/80 p-1 rounded-xl border border-[#e4e2e1]">
+                <button
+                  type="button"
+                  onClick={() => handleQuickRoleSelect('doctor')}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                    role === 'doctor'
+                      ? 'bg-gradient-to-r from-[#064e3b] to-[#047857] text-[#ecfdf5] shadow-md'
+                      : 'text-[#4b463e] hover:text-[#1a1c1a] hover:bg-white/60'
+                  }`}
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                  <span>Doctor Login</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => handleQuickRoleSelect('receptionist')}
-                className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                  role === 'receptionist'
-                    ? 'bg-gradient-to-r from-[#064e3b] to-[#047857] text-[#ecfdf5] shadow-md'
-                    : 'text-[#4b463e] hover:text-[#1a1c1a] hover:bg-white/60'
-                }`}
-              >
-                <Lock className="w-3.5 h-3.5" />
-                <span>Reception Desk</span>
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => handleQuickRoleSelect('receptionist')}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                    role === 'receptionist'
+                      ? 'bg-gradient-to-r from-[#064e3b] to-[#047857] text-[#ecfdf5] shadow-md'
+                      : 'text-[#4b463e] hover:text-[#1a1c1a] hover:bg-white/60'
+                  }`}
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Reception Desk</span>
+                </button>
+              </div>
+            ) : (
+              <div className="bg-gradient-to-r from-[#064e3b] to-[#047857] p-2.5 rounded-xl text-[#ecfdf5] text-xs font-bold flex items-center justify-center gap-2 shadow-sm">
+                {isReceptionDomain ? (
+                  <>
+                    <Lock className="w-4 h-4 text-[#a7f3d0]" />
+                    <span>RECEPTION DESK PORTAL</span>
+                  </>
+                ) : (
+                  <>
+                    <UserCheck className="w-4 h-4 text-[#a7f3d0]" />
+                    <span>DOCTOR CLINICAL EMR PORTAL</span>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* Error Alert */}
             {error && (
