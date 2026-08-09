@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Pill, FlaskConical, Lightbulb, AlertTriangle, X, Check, Eye } from 'lucide-react';
 import type { CaseTemplate, TemplateMedicine } from '../data/templates';
+import type { Medicine } from '../data/medicines';
 import { medicines as medicinesDB } from '../data/medicines';
+import { api } from '../api/client';
 import MedicineEditorRow from './MedicineEditorRow';
 import MedicineSearchModal from './MedicineSearchModal';
 
@@ -30,10 +32,29 @@ export default function TemplateEditor({ template, onSave, onCancel, onPreview }
     createdDate: template?.createdDate || new Date().toISOString().split('T')[0],
     updatedDate: template?.updatedDate || new Date().toISOString().split('T')[0],
   }));
+  const [dbMedicines, setDbMedicines] = useState<Medicine[]>(medicinesDB);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [customInv, setCustomInv] = useState('');
   const [customAdvice, setCustomAdvice] = useState('');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  useEffect(() => {
+    api.getMedicines().then((fetched) => {
+      if (fetched && fetched.length > 0) {
+        const normalized: Medicine[] = fetched.map((m: any, idx: number) => ({
+          id: m.id || m.productId || `med_${idx}`,
+          name: m.name || m['Medicine Name'] || m.productId || `Medicine #${idx + 1}`,
+          brand: m.brand || m['Brand'] || '',
+          strength: m.strength || m['Strength'] || '',
+          form: m.form || m['Form'] || 'Tablet',
+          category: m.category || m['Category'] || 'General',
+          defaultFrequency: m.frequency || m.defaultFrequency || 'Twice daily',
+          defaultDuration: m.duration || m.defaultDuration || '7 Days',
+        }));
+        setDbMedicines(normalized);
+      }
+    }).catch(() => {});
+  }, []);
 
   const handleAddMedicineFromModal = (med: TemplateMedicine & { medicineName: string }) => {
     setFormData((prev: CaseTemplate) => ({
@@ -324,7 +345,7 @@ export default function TemplateEditor({ template, onSave, onCancel, onPreview }
       {/* Medicine Search Modal */}
       {showSearchModal && (
         <MedicineSearchModal
-          medicines={medicinesDB}
+          medicines={dbMedicines}
           onAdd={handleAddMedicineFromModal}
           onClose={() => setShowSearchModal(false)}
         />
