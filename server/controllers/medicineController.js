@@ -37,8 +37,9 @@ exports.searchMedicines = async (req, res, next) => {
 
     const query = q.trim();
 
-    // 1. Fetch prefix matches first (either starts with query or has Tab./Cap./Syp./Cream prefix followed by query)
-    const prefixMatches = await Medicine.findAll({
+    // STRICT PREFIX ONLY: show medicines whose name starts with query
+    // Includes common form prefixes so 'Tab. Amox', 'Cap. Amox' etc also match when user types 'Amox'
+    const results = await Medicine.findAll({
       where: {
         [Op.or]: [
           { name: { [likeOp]: `${query}%` } },
@@ -60,24 +61,7 @@ exports.searchMedicines = async (req, res, next) => {
       limit: 1000
     });
 
-    if (prefixMatches.length > 0) {
-      return res.json(prefixMatches);
-    }
-
-    // 2. Only fallback to middle matches if NO prefix matches exist at all
-    const middleMatches = await Medicine.findAll({
-      where: {
-        [Op.or]: [
-          { name: { [likeOp]: `%${query}%` } },
-          { brand: { [likeOp]: `%${query}%` } },
-          { category: { [likeOp]: `%${query}%` } }
-        ]
-      },
-      order: [['name', 'ASC']],
-      limit: 1000
-    });
-
-    res.json(middleMatches);
+    res.json(results);
   } catch (err) {
     next(err);
   }
@@ -168,4 +152,3 @@ exports.deleteMedicine = async (req, res, next) => {
     next(err);
   }
 };
-
