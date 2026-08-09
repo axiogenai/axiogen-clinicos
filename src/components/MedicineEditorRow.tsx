@@ -30,25 +30,40 @@ export default function MedicineEditorRow({ item, index, onUpdate, onRemove }: M
           type="text"
           value={item.frequency}
           onChange={(e) => onUpdate(index, 'frequency', e.target.value)}
-          placeholder="Frequency (e.g. Twice daily)"
-          className="w-full sm:w-48 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+          placeholder="वारंवारता (उदा. सकाळी १ व रात्री १)"
+          className="w-full sm:w-56 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
           list={`freq-options-${index}`}
         />
         <datalist id={`freq-options-${index}`}>
-          <option value="Once daily" />
-          <option value="Twice daily" />
-          <option value="Thrice daily" />
+          <option value="सकाळी १ व रात्री १ घेणे" />
+          <option value="सकाळी १ घेणे" />
+          <option value="रात्री १ घेणे" />
+          <option value="दुपारी १ घेणे" />
+          <option value="सकाळी १, दुपारी १ व रात्री १ घेणे" />
+          <option value="दिवसातून ४ वेळा घेणे" />
           <option value="१ गोळी सकाळी १ गोळी रात्री घेणे" />
           <option value="१/२ गोळी सकाळी घेणे" />
           <option value="उपाशीपोटी घेणे" />
           <option value="जेवणानंतर घेणे" />
-          <option value="सकाळी लावणे" />
-          <option value="रात्री लावणे" />
-          <option value="चेहऱ्यावर लावणे" />
+          <option value="गोळी टेपरिंग: ७ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे" />
+          <option value="गोळी टेपरिंग: ५ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे" />
+          <option value="गोळी टेपरिंग: ७ दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे" />
+          <option value="क्रीम टेपरिंग: ७ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे" />
+          <option value="क्रीम टेपरिंग: ५ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे" />
+          <option value="दर सोमवारी १ गोळी घेणे" />
+          <option value="दर बुधवारी १ गोळी घेणे" />
+          <option value="दर शनिवारी १ गोळी घेणे" />
+          <option value="आठवड्यातून एकदा घेणे" />
+          <option value="रात्री झोपताना घेणे" />
+          <option value="सकाळी उपाशीपोटी घेणे" />
+          <option value="गरज असेल तेव्हा घेणे" />
+          <option value="त्रास झाल्यास घेणे (SOS)" />
+          <option value="सकाळी लावणे १-२ तास ठेवणे" />
+          <option value="काळ्या डागावर लावणे" />
+          <option value="pimples (मोड्यांवर) लावणे" />
+          <option value="full फेस लावणे" />
           <option value="डोक्यात लावणे" />
-          <option value="Once weekly" />
-          <option value="At bedtime" />
-          <option value="SOS" />
+          <option value="चेहऱ्यावर लावणे" />
         </datalist>
         
         <input
