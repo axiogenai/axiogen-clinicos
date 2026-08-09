@@ -42,18 +42,22 @@ async function ensureDefaultAccounts() {
     const { DataTypes, Op } = require('sequelize');
     const queryInterface = sequelize.getQueryInterface();
 
-    try {
-      const tableInfo = await queryInterface.describeTable('Users').catch(() => ({}));
-      if (tableInfo && !tableInfo['reset_otp'] && !tableInfo['reset_o_t_p']) {
-        await queryInterface.addColumn('Users', 'reset_otp', { type: DataTypes.STRING, allowNull: true }).catch(() => {});
-      }
-      if (tableInfo && !tableInfo['reset_otp_expires'] && !tableInfo['reset_o_t_p_expires']) {
-        await queryInterface.addColumn('Users', 'reset_otp_expires', { type: DataTypes.DATE, allowNull: true }).catch(() => {});
-      }
-      if (tableInfo && !tableInfo['passcode']) {
-        await queryInterface.addColumn('Users', 'passcode', { type: DataTypes.STRING, allowNull: true }).catch(() => {});
-      }
-    } catch (e) {}
+    for (const tableName of ['users', 'Users']) {
+      try {
+        const tableInfo = await queryInterface.describeTable(tableName).catch(() => null);
+        if (tableInfo) {
+          if (!tableInfo['reset_otp'] && !tableInfo['reset_o_t_p']) {
+            await queryInterface.addColumn(tableName, 'reset_otp', { type: DataTypes.STRING, allowNull: true }).catch(() => {});
+          }
+          if (!tableInfo['reset_otp_expires'] && !tableInfo['reset_o_t_p_expires']) {
+            await queryInterface.addColumn(tableName, 'reset_otp_expires', { type: DataTypes.DATE, allowNull: true }).catch(() => {});
+          }
+          if (!tableInfo['passcode']) {
+            await queryInterface.addColumn(tableName, 'passcode', { type: DataTypes.STRING, allowNull: true }).catch(() => {});
+          }
+        }
+      } catch (e) {}
+    }
 
     // 1. Doctor Account: shingare.pramod17@gmail.com, 9561896943, password clinic123
     let doc = await User.findOne({
@@ -511,14 +515,25 @@ exports.verifyPasscode = async (req, res, next) => {
 // ── Forgot Doctor Session Passcode: Send OTP to Doctor Email & WhatsApp ──
 exports.forgotPasscode = async (req, res, next) => {
   try {
-    const user = await User.findByPk(req.user.id);
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    let user;
+    try {
+      user = await User.findByPk(req.user.id);
+    } catch (e) {
+      console.warn('findByPk notice in forgotPasscode:', e.message);
+    }
 
     // Generate secure 6-digit OTP code
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    user.resetOTP = otp;
-    user.resetOTPExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 min
-    await user.save();
+
+    if (user) {
+      try {
+        user.resetOTP = otp;
+        user.resetOTPExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+        await user.save();
+      } catch (e) {
+        console.warn('save user OTP notice:', e.message);
+      }
+    }
 
     const targetEmail = 'shingare.pramod17@gmail.com';
     const targetPhone = '9561896943';
