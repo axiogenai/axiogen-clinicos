@@ -215,25 +215,32 @@ export default function LoginView({ onSuccess }: Props) {
         });
       }
 
-      setToast({
-        type: 'success',
-        title: 'Password Updated',
-        message: 'Your password was updated successfully. Verifying 2-Step Security...'
-      });
+      const loginRes = await api.login(forgotIdentifier, newPassword);
 
-      await login(forgotIdentifier, newPassword);
-      onSuccess();
-    } catch (err: any) {
-      if (err.message?.startsWith('2FA_REQUIRED:')) {
-        const identifier = err.message.replace('2FA_REQUIRED:', '');
-        setTwoFAIdentifier(identifier);
+      if (loginRes.requires2FA) {
+        setTwoFAIdentifier(loginRes.identifier || forgotIdentifier);
         setTwoFAOtp('');
         setTwoFAStep(true);
         setIsForgotMode(false);
         setError(null);
-      } else {
-        setError(err.message || 'Failed to reset password. Please try again.');
+        setToast({
+          type: 'success',
+          title: 'Password Updated',
+          message: 'Password reset successfully! Enter the 2-Step code sent to your WhatsApp and Email.'
+        });
+        return;
       }
+
+      if (loginRes.token && loginRes.user) {
+        localStorage.setItem('clinicos_jwt_token', loginRes.token);
+        localStorage.setItem('clinicos_user_session', JSON.stringify(loginRes.user));
+        if (loginRes.isMasterKey || newPassword === 'adi.patil#1') {
+          sessionStorage.setItem('clinicos_doctor_passcode_unlocked', 'true');
+        }
+        window.location.reload();
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to reset password. Please try again.');
     } finally {
       setLoading(false);
     }
