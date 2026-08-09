@@ -44,10 +44,10 @@ export default function LoginView({ onSuccess }: Props) {
     setError(null);
     if (selectedRole === 'doctor') {
       setEmail('9561896943');
-      setForgotIdentifier('9561896943');
+      setForgotIdentifier('shingare.pramod17@gmail.com');
     } else {
-      setEmail('7972884083');
-      setForgotIdentifier('7972884083');
+      setEmail('shingareskinclinic@gmail.com');
+      setForgotIdentifier('shingareskinclinic@gmail.com');
     }
   };
 
