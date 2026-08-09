@@ -155,14 +155,14 @@ export default function ComingSoonLandingPage() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-5 text-xs text-[#44403c] w-full md:w-auto border-t md:border-t-0 border-[#f0ede6] pt-3.5 md:pt-0">
-            <div className="flex items-center gap-2">
-              <Phone className="w-4 h-4 text-[#047857]" />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-5 text-[11px] sm:text-xs text-[#44403c] w-full md:w-auto border-t md:border-t-0 border-[#f0ede6] pt-3.5 md:pt-0 min-w-0">
+            <div className="flex items-center gap-2 shrink-0">
+              <Phone className="w-4 h-4 text-[#047857] shrink-0" />
               <span className="font-bold text-[#1a1c1a]">+91 9561896943</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Mail className="w-4 h-4 text-[#047857]" />
-              <span className="font-mono text-[#57534e]">shingare.pramod17@gmail.com</span>
+            <div className="flex items-center gap-2 min-w-0 w-full">
+              <Mail className="w-4 h-4 text-[#047857] shrink-0" />
+              <span className="font-mono text-[#57534e] break-all">shingare.pramod17@gmail.com</span>
             </div>
           </div>
         </div>
