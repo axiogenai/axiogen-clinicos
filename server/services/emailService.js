@@ -1,6 +1,11 @@
+const { createClient } = require('@supabase/supabase-js');
 const nodemailer = require('nodemailer');
 
-// Reusable email transporter
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://rykurrsenvqernwnofpa.supabase.co';
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.placeholder';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -10,6 +15,21 @@ const transporter = nodemailer.createTransport({
 });
 
 async function sendOTPEmail(toEmail, otp) {
+  // 1. Send via Supabase Password Recovery
+  try {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(toEmail, {
+      redirectTo: `${process.env.FRONTEND_URL || 'https://shinagareclinicos.vercel.app'}/reset-password`
+    });
+    if (!error) {
+      console.log(`⚡ Supabase Password Reset email sent to ${toEmail}`);
+    } else {
+      console.log(`ℹ️ Supabase reset dispatch note:`, error.message);
+    }
+  } catch (err) {
+    console.log(`ℹ️ Supabase email trigger:`, err.message);
+  }
+
+  // 2. Send Direct HTML Email
   try {
     const info = await transporter.sendMail({
       from: '"शिनगारे स्किन क्लिनिक" <shingareskinclinic@gmail.com>',
@@ -24,7 +44,7 @@ async function sendOTPEmail(toEmail, otp) {
             <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #047857;">${otp}</span>
           </div>
           <p style="color: #4b5563; font-size: 14px; text-align: center; line-height: 1.5;">
-            This 6-digit verification code will expire in <strong>15 minutes</strong>.<br/>
+            This 6-digit verification code is: <strong>${otp}</strong> (expires in 15 minutes).<br/>
             If you did not request this password reset, please ignore this email.
           </p>
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
@@ -34,7 +54,7 @@ async function sendOTPEmail(toEmail, otp) {
         </div>
       `
     });
-    console.log(`📧 OTP Email dispatched to ${toEmail}: ${info.messageId}`);
+    console.log(`📧 Direct OTP Email dispatched to ${toEmail}: ${info.messageId}`);
     return true;
   } catch (err) {
     console.log(`📧 OTP Email queued for ${toEmail} (OTP: ${otp})`);
