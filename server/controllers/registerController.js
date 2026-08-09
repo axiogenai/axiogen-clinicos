@@ -22,12 +22,96 @@ exports.getDailyRegister = async (req, res, next) => {
 
 /**
  * Get Month-Wise OPD Register
+/**
+ * Helper to auto-sync all records for a month
+ */
+async function syncMonthRecords(clinicId, year, month) {
+  const monthStr = `${year}-${String(month).padStart(2, '0')}`;
+  
+  // Find all queue items for the month
+  const queueItems = await Queue.findAll({
+    where: {
+      clinicId,
+      date: { [Op.like]: `${monthStr}%` }
+    },
+    order: [['date', 'ASC'], ['created_at', 'ASC']]
+  });
+
+  // Group queue items by date to assign correct srNo
+  const dateGroups = {};
+  queueItems.forEach(q => {
+    const d = q.date || `${monthStr}-01`;
+    if (!dateGroups[d]) dateGroups[d] = [];
+    dateGroups[d].push(q);
+  });
+
+  for (const dateKey of Object.keys(dateGroups)) {
+    const [yStr, mStr, dStr] = dateKey.split('-');
+    const day = parseInt(dStr, 10);
+    let srNo = 1;
+
+    for (const q of dateGroups[dateKey]) {
+      const patient = q.patientId ? await Patient.findByPk(q.patientId) : null;
+      const casePaper = q.patientId ? await CasePaper.findOne({
+        where: { clinicId, patientId: q.patientId, date: dateKey }
+      }) : null;
+
+      const [record] = await OpdRegister.findOrCreate({
+        where: { clinicId, date: dateKey, queueId: q.queueId },
+        defaults: {
+          clinicId,
+          date: dateKey,
+          year,
+          month,
+          day,
+          srNo,
+          opdNo: q.queueId || `OPD-${dateKey.replace(/-/g, '')}-${String(srNo).padStart(3, '0')}`,
+          queueId: q.queueId,
+          patientId: q.patientId,
+          patientName: q.name,
+          age: q.age || patient?.age || 0,
+          gender: patient?.gender || 'M',
+          phone: q.phone || patient?.phone || '',
+          village: q.village || patient?.village || '',
+          complaint: q.complaint || casePaper?.complaint || '',
+          diagnosis: casePaper?.pastHistory || '',
+          medicines: casePaper?.medicines || [],
+          investigations: casePaper?.investigationsAdvised || [],
+          counselling: casePaper?.counsellingDone || [],
+          followUpDate: casePaper?.followUpDate || '',
+          timeAdded: q.timeAdded,
+          status: casePaper ? 'completed' : q.status
+        }
+      });
+
+      if (record) {
+        await record.update({
+          patientName: q.name,
+          age: q.age || patient?.age || record.age,
+          phone: q.phone || patient?.phone || record.phone,
+          village: q.village || patient?.village || record.village,
+          complaint: q.complaint || casePaper?.complaint || record.complaint,
+          status: casePaper ? 'completed' : q.status,
+          medicines: casePaper?.medicines || record.medicines,
+          followUpDate: casePaper?.followUpDate || record.followUpDate
+        });
+      }
+      srNo++;
+    }
+  }
+}
+
+/**
+ * Get Month-Wise OPD Register (Auto-syncs all days in the month)
  */
 exports.getMonthlyRegister = async (req, res, next) => {
   try {
     const clinicId = req.user?.clinicId || 1;
     const year = parseInt(req.query.year || new Date().getFullYear(), 10);
     const month = parseInt(req.query.month || (new Date().getMonth() + 1), 10);
+
+    // Auto-sync month records first
+    await syncMonthRecords(clinicId, year, month).catch(e => console.warn('Month auto-sync notice:', e.message));
 
     const records = await OpdRegister.findAll({
       where: { clinicId, year, month },
@@ -62,12 +146,17 @@ exports.getMonthlyRegister = async (req, res, next) => {
 };
 
 /**
- * Get Year-Wise OPD Register
+ * Get Year-Wise OPD Register (Auto-syncs all months in the year)
  */
 exports.getYearlyRegister = async (req, res, next) => {
   try {
     const clinicId = req.user?.clinicId || 1;
     const year = parseInt(req.query.year || new Date().getFullYear(), 10);
+
+    // Sync current and previous months of the year
+    for (let m = 1; m <= 12; m++) {
+      await syncMonthRecords(clinicId, year, m).catch(() => {});
+    }
 
     const records = await OpdRegister.findAll({
       where: { clinicId, year },
