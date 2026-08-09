@@ -30,7 +30,7 @@ export default function LoginView({ onSuccess }: Props) {
   // Forgot Password States
   const [isForgotMode, setIsForgotMode] = useState(false);
   const [forgotStep, setForgotStep] = useState<1 | 2 | 3>(1); // 1 = Request OTP, 2 = Verify OTP, 3 = Reset Password
-  const [forgotIdentifier, setForgotIdentifier] = useState('9561896943');
+  const [forgotIdentifier, setForgotIdentifier] = useState('shingare.pramod17@gmail.com');
   const [otpCode, setOtpCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -463,18 +463,18 @@ export default function LoginView({ onSuccess }: Props) {
               <form onSubmit={handleRequestOTP} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-[#4b463e] mb-1">
-                    Registered Mobile Number or Email
+                    Registered Email Address
                   </label>
                   <input
-                    type="text"
+                    type="email"
                     required
                     value={forgotIdentifier}
                     onChange={(e) => setForgotIdentifier(e.target.value)}
-                    placeholder="e.g. 9561896943 or email"
+                    placeholder="shingare.pramod17@gmail.com"
                     className="w-full px-3 py-2 text-sm bg-white border border-[#cdc6ba] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#047857] text-[#1a1c1a] font-medium"
                   />
                   <p className="text-[11px] text-[#7c766d] mt-1.5 leading-relaxed">
-                    A 6-digit verification code will be dispatched to your registered <strong>WhatsApp</strong> and <strong>Email</strong>.
+                    A 6-digit verification code will be dispatched to your registered <strong>Email</strong> and <strong>WhatsApp</strong>.
                   </p>
                 </div>
 
