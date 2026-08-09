@@ -206,7 +206,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
     loadFromDatabase();
 
     // Connect to SSE stream for instant 0ms queue push updates
-    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const apiBase = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' && (window.location.hostname.includes('vercel.app') || window.location.protocol === 'https:') ? 'https://shinagare-clinicos.duckdns.org/api' : '/api');
     const sseToken = localStorage.getItem('clinicos_jwt_token');
     let evtSource: EventSource | null = null;
 
