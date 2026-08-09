@@ -40,7 +40,7 @@ export default function ComingSoonLandingPage() {
             href="https://team.axiogen.in"
             target="_blank"
             rel="noopener noreferrer"
-            className="font-bold text-[#047857] hover:underline"
+            className="font-bold text-[#1a1c1a] hover:text-[#047857] hover:underline transition-colors"
           >
             team.axiogen.in
           </a>
