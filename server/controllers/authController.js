@@ -475,8 +475,9 @@ exports.resetPassword = async (req, res, next) => {
       return res.status(400).json({ error: 'Invalid 6-digit OTP code' });
     }
 
-    // Update password (bcrypt beforeUpdate hook automatically hashes)
-    user.passwordHash = newPassword;
+    // Update password (bcrypt hash explicitly)
+    const bcrypt = require('bcryptjs');
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
     user.resetOTP = null;
     user.resetOTPExpires = null;
     await user.save();
