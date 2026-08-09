@@ -8,7 +8,12 @@ export type PrintLanguage = 'marathi' | 'english' | 'hindi' | 'kannada';
 
 export function cleanFrequencyString(str?: string): string {
   if (!str) return '';
-  return str.replace(/\s*\([^)]*\)/g, '').trim();
+  // Specifically strip bracketed frequency explanations like (दिवसातून २ वेळा), (दिवसातून एकदा), (दिन में २ बार), (BD -> OD), etc.
+  return str
+    .replace(/\s*\((?:दिवसातून|दिन में|दिसून|दर|प्रति|दिन|times|वेळा)[^)]*\)?/gi, '')
+    .replace(/\s*\([^)]*\)/g, '')
+    .replace(/\s*\(.*$/g, '') // unclosed trailing bracket
+    .trim();
 }
 
 export function stripRawCodes(str: string): string {
