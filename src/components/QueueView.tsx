@@ -10,7 +10,7 @@ interface QueueViewProps {
   onSelectPatient: (queueItem: QueueItem, patient: Patient) => void;
 }
 
-const EMPTY_FORM = { name: '', age: '', gender: 'F' as 'M' | 'F', phone: '', complaint: '' };
+const EMPTY_FORM = { name: '', age: '', phone: '' };
 
 export default function QueueView({ queue, patients, onSelectPatient }: QueueViewProps) {
   const { deletePatient, registerAndEnqueue, patients: allPatients } = useClinic();
@@ -33,7 +33,6 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
     const name = regForm.name.trim();
     if (!name || name.length < 2) errors.name = 'Full name required';
     if (!regForm.age || isNaN(Number(regForm.age)) || Number(regForm.age) < 1) errors.age = 'Valid age required';
-    if (!regForm.complaint.trim()) errors.complaint = 'Chief complaint required';
     if (Object.keys(errors).length > 0) { setRegErrors(errors); return; }
 
     setRegLoading(true);
@@ -41,9 +40,8 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
       const patientData = {
         name,
         age: Number(regForm.age),
-        gender: regForm.gender,
         phone: regForm.phone.replace(/\D/g, ''),
-        complaint: regForm.complaint.trim(),
+        complaint: 'Walk-in consultation',
       };
       await registerAndEnqueue(patientData, duplicatePatient || undefined);
       setRegForm(EMPTY_FORM);
@@ -575,60 +573,31 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                 {regErrors.name && <span className="text-xs text-red-500 mt-0.5 block">{regErrors.name}</span>}
               </div>
 
-              {/* Age & Gender */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Age *</label>
-                  <input
-                    type="number"
-                    value={regForm.age}
-                    onChange={e => setRegForm(f => ({ ...f, age: e.target.value }))}
-                    placeholder="Age in years"
-                    min={1} max={120}
-                    className={`form-input text-sm ${regErrors.age ? 'border-red-400 bg-red-50' : ''}`}
-                  />
-                  {regErrors.age && <span className="text-xs text-red-500 mt-0.5 block">{regErrors.age}</span>}
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Gender</label>
-                  <select
-                    value={regForm.gender}
-                    onChange={e => setRegForm(f => ({ ...f, gender: e.target.value as 'M' | 'F' }))}
-                    className="form-input text-sm bg-white"
-                  >
-                    <option value="F">Female</option>
-                    <option value="M">Male</option>
-                  </select>
-                </div>
+              {/* Age */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Age *</label>
+                <input
+                  type="number"
+                  value={regForm.age}
+                  onChange={e => setRegForm(f => ({ ...f, age: e.target.value }))}
+                  placeholder="Age in years"
+                  min={1} max={120}
+                  className={`form-input text-sm ${regErrors.age ? 'border-red-400 bg-red-50' : ''}`}
+                />
+                {regErrors.age && <span className="text-xs text-red-500 mt-0.5 block">{regErrors.age}</span>}
               </div>
 
               {/* Phone */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Mobile Number</label>
-                <div className="relative">
-                  <Phone className="w-3.5 h-3.5 text-[#7c766d] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <input
-                    type="tel"
-                    value={regForm.phone}
-                    onChange={e => setRegForm(f => ({ ...f, phone: e.target.value }))}
-                    placeholder="10-digit mobile"
-                    maxLength={10}
-                    className="form-input text-sm pl-8"
-                  />
-                </div>
-              </div>
-
-              {/* Chief Complaint */}
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Chief Complaint *</label>
                 <input
-                  type="text"
-                  value={regForm.complaint}
-                  onChange={e => setRegForm(f => ({ ...f, complaint: e.target.value }))}
-                  placeholder="e.g. Acne, Hair fall, Rash..."
-                  className={`form-input text-sm ${regErrors.complaint ? 'border-red-400 bg-red-50' : ''}`}
+                  type="tel"
+                  value={regForm.phone}
+                  onChange={e => setRegForm(f => ({ ...f, phone: e.target.value }))}
+                  placeholder="10-digit mobile number"
+                  maxLength={10}
+                  className="form-input text-sm"
                 />
-                {regErrors.complaint && <span className="text-xs text-red-500 mt-0.5 block">{regErrors.complaint}</span>}
               </div>
             </div>
 
