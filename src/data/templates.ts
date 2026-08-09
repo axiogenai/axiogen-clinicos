@@ -27,10 +27,10 @@ export const templates: CaseTemplate[] = [
     isFavorite: true,
     createdDate: '2026-07-20',
     medicines: [
-      { medicineId: 'med_ab_03', dosage: '100mg', frequency: 'Twice daily', duration: '14 Days' }, // Doxycycline
-      { medicineId: 'med_rt_03', dosage: '0.1%', frequency: 'At bedtime', duration: '30 Days' }, // Adapalene Gel
-      { medicineId: 'med_ac_02', dosage: '1%', frequency: 'Twice daily', duration: '30 Days' }, // Clindamycin Gel
-      { medicineId: 'med_ms_01', dosage: 'SPF 50', frequency: 'Twice daily', duration: '30 Days' } // Sunscreen
+      { medicineId: 'med_ab_03', dosage: '100mg', frequency: 'सकाळी १ व रात्री १ घेणे', duration: '14 Days' }, // Doxycycline
+      { medicineId: 'med_rt_03', dosage: '0.1%', frequency: 'रात्री झोपताना लावणे', duration: '30 Days' }, // Adapalene Gel
+      { medicineId: 'med_ac_02', dosage: '1%', frequency: 'सकाळी १ व रात्री १ लावणे', duration: '30 Days' }, // Clindamycin Gel
+      { medicineId: 'med_ms_01', dosage: 'SPF 50', frequency: 'सकाळी लावणे', duration: '30 Days' } // Sunscreen
     ],
     investigationsAdvised: [],
     counsellingPoints: [
@@ -46,9 +46,9 @@ export const templates: CaseTemplate[] = [
     isFavorite: false,
     createdDate: '2026-07-20',
     medicines: [
-      { medicineId: 'med_rt_01', dosage: '20mg', frequency: 'OD (1-0-0)', duration: '30 Days' }, // Isotretinoin
-      { medicineId: 'med_ms_01', dosage: 'SPF 50', frequency: 'BD (Daytime)', duration: '30 Days' }, // Sunscreen
-      { medicineId: 'med_ms_02', dosage: 'Apply liberally', frequency: 'BD', duration: '30 Days' } // Moisturizer
+      { medicineId: 'med_rt_01', dosage: '20mg', frequency: 'सकाळी १ घेणे', duration: '30 Days' }, // Isotretinoin
+      { medicineId: 'med_ms_01', dosage: 'SPF 50', frequency: 'सकाळी लावणे', duration: '30 Days' }, // Sunscreen
+      { medicineId: 'med_ms_02', dosage: 'मलम', frequency: 'सकाळी व रात्री लावणे', duration: '30 Days' } // Moisturizer
     ],
     investigationsAdvised: ['Lipid Profile', 'Liver Function Test (LFT)'],
     counsellingPoints: [
@@ -64,9 +64,9 @@ export const templates: CaseTemplate[] = [
     isFavorite: true,
     createdDate: '2026-07-20',
     medicines: [
-      { medicineId: 'med_af_03', dosage: '250mg', frequency: 'OD (1-0-0)', duration: '4 Weeks' }, // Terbinafine
-      { medicineId: 'med_af_07', dosage: '1%', frequency: 'OD', duration: '2 Weeks' }, // Luliconazole cream
-      { medicineId: 'med_ah_01', dosage: '10mg', frequency: 'OD (HS)', duration: '5 Days' } // Cetirizine
+      { medicineId: 'med_af_03', dosage: '250mg', frequency: 'सकाळी १ घेणे', duration: '4 Weeks' }, // Terbinafine
+      { medicineId: 'med_af_07', dosage: '1%', frequency: 'सकाळी लावणे', duration: '2 Weeks' }, // Luliconazole cream
+      { medicineId: 'med_ah_01', dosage: '10mg', frequency: 'रात्री झोपताना घेणे', duration: '5 Days' } // Cetirizine
     ],
     investigationsAdvised: [],
     counsellingPoints: [
@@ -82,10 +82,10 @@ export const templates: CaseTemplate[] = [
     isFavorite: false,
     createdDate: '2026-07-20',
     medicines: [
-      { medicineId: 'med_hr_01', dosage: '5%', frequency: 'BD', duration: '3 Months' }, // Minoxidil
-      { medicineId: 'med_hr_02', dosage: '1mg', frequency: 'OD', duration: '3 Months' }, // Finasteride
-      { medicineId: 'med_hr_03', dosage: '5mg', frequency: 'OD', duration: '3 Months' }, // Biotin
-      { medicineId: 'med_hr_04', dosage: '50mg', frequency: 'OD', duration: '3 Months' } // Zinc
+      { medicineId: 'med_hr_01', dosage: '5%', frequency: 'सकाळी १ml रात्री १ml डोक्यात लावणे', duration: '3 Months' }, // Minoxidil
+      { medicineId: 'med_hr_02', dosage: '1mg', frequency: 'सकाळी १ घेणे', duration: '3 Months' }, // Finasteride
+      { medicineId: 'med_hr_03', dosage: '5mg', frequency: 'सकाळी १ घेणे', duration: '3 Months' }, // Biotin
+      { medicineId: 'med_hr_04', dosage: '50mg', frequency: 'सकाळी १ घेणे', duration: '3 Months' } // Zinc
     ],
     investigationsAdvised: ['CBC', 'Thyroid Profile (TSH)', 'Serum Ferritin'],
     counsellingPoints: [
@@ -101,10 +101,10 @@ export const templates: CaseTemplate[] = [
     isFavorite: false,
     createdDate: '2026-07-20',
     medicines: [
-      { medicineId: 'med_st_05', dosage: '0.1%', frequency: 'OD', duration: '2 Weeks' }, // Mometasone cream
-      { medicineId: 'med_ah_01', dosage: '10mg', frequency: 'OD (HS)', duration: '7 Days' }, // Cetirizine
-      { medicineId: 'med_ms_02', dosage: 'Apply liberally', frequency: 'TDS', duration: '30 Days' }, // Moisturizer
-      { medicineId: 'med_im_01', dosage: '0.1%', frequency: 'BD', duration: '30 Days' } // Tacrolimus
+      { medicineId: 'med_st_05', dosage: '0.1%', frequency: 'रात्री लावणे', duration: '2 Weeks' }, // Mometasone cream
+      { medicineId: 'med_ah_01', dosage: '10mg', frequency: 'रात्री झोपताना घेणे', duration: '7 Days' }, // Cetirizine
+      { medicineId: 'med_ms_02', dosage: 'मलम', frequency: 'सकाळी व रात्री लावणे', duration: '30 Days' }, // Moisturizer
+      { medicineId: 'med_im_01', dosage: '0.1%', frequency: 'सकाळी १ व रात्री १ लावणे', duration: '30 Days' } // Tacrolimus
     ],
     investigationsAdvised: [],
     counsellingPoints: [
