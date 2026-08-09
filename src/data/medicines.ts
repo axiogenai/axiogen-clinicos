@@ -1,10 +1,12 @@
 export interface Medicine {
   id: string;
   name: string;
-  strength: string;
-  form: 'Tablet' | 'Capsule' | 'Cream' | 'Ointment' | 'Gel' | 'Lotion' | 'Shampoo' | 'Solution' | 'Drops' | 'Injection' | 'Syrup' | 'Powder' | 'Soap';
-  defaultFrequency: string;
-  defaultDuration: string;
+  strength?: string;
+  form?: string;
+  brand?: string;
+  category?: string;
+  defaultFrequency?: string;
+  defaultDuration?: string;
 }
 
 export const medicines: Medicine[] = [];
