@@ -11,4 +11,9 @@ router.post('/forgot-password', authController.forgotPassword);
 router.post('/verify-otp', authController.verifyOTP);
 router.post('/reset-password', authController.resetPassword);
 
+// Doctor Passcode Lock routes
+router.post('/verify-passcode', verifyToken, authController.verifyPasscode);
+router.post('/forgot-passcode', verifyToken, authController.forgotPasscode);
+router.post('/reset-passcode', verifyToken, authController.resetPasscode);
+
 module.exports = router;
