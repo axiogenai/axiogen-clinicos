@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
-import { X, Search, ArrowRight, Plus } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { X, Search, ArrowRight, Plus, Loader2 } from 'lucide-react';
 import type { Medicine } from '../data/medicines';
 import type { TemplateMedicine } from '../data/templates';
+import { api } from '../api/client';
 
 interface MedicineSearchModalProps {
-  medicines: Medicine[];
   onAdd: (med: TemplateMedicine & { medicineName: string }) => void;
   onClose: () => void;
 }
@@ -28,47 +28,63 @@ const FREQUENCIES = [
   'Once weekly', 'As needed', 'At bedtime', 'Before breakfast', 'After meals', 'SOS'
 ];
 
-export default function MedicineSearchModal({ medicines, onAdd, onClose }: MedicineSearchModalProps) {
+function normalizeMed(m: any, idx: number): Medicine {
+  return {
+    id: m.id || m.productId || `med_${idx}`,
+    name: m.name || m['Medicine Name'] || m.productId || `Medicine #${idx + 1}`,
+    brand: m.brand || '',
+    strength: m.strength || '',
+    form: m.form || 'Tablet',
+    category: m.category || 'General',
+    defaultFrequency: m.frequency || m.defaultFrequency || 'Twice daily',
+    defaultDuration: m.duration || m.defaultDuration || '7 Days',
+  };
+}
+
+export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchModalProps) {
   const [search, setSearch] = useState('');
+  const [results, setResults] = useState<Medicine[]>([]);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
   const [selectedMed, setSelectedMed] = useState<Medicine | null>(null);
   const [dosage, setDosage] = useState('');
   const [frequency, setFrequency] = useState('Twice daily');
   const [duration, setDuration] = useState('7 days');
-  
-  const searchInputRef = useRef<HTMLInputElement>(null);
 
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Load total count + initial list on mount
   useEffect(() => {
     if (searchInputRef.current) searchInputRef.current.focus();
+
+    // Get total count for the label
+    api.getMedicineCount().then(({ count }) => setTotalCount(count)).catch(() => {});
+
+    // Load initial list (first 50 alphabetically) to show something immediately
+    setLoading(true);
+    api.searchMedicines('').then((data: any[]) => {
+      setResults(data.map(normalizeMed));
+    }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  const filtered = useMemo(() => {
-    if (search.trim() === '') {
-      return medicines;
-    }
-    const lowerQuery = search.toLowerCase().trim();
-    
-    const matches = medicines.filter((m) =>
-      (m.name || '').toLowerCase().includes(lowerQuery) ||
-      (m.strength || '').toLowerCase().includes(lowerQuery) ||
-      (m.brand || '').toLowerCase().includes(lowerQuery) ||
-      (m.category || '').toLowerCase().includes(lowerQuery)
-    );
+  // Server-side search with debounce
+  const handleSearch = useCallback((query: string) => {
+    setSearch(query);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
 
-    // Sort matching results: startsWith prioritizes name
-    matches.sort((a, b) => {
-      const aName = (a.name || '').toLowerCase();
-      const bName = (b.name || '').toLowerCase();
-
-      const aNameStarts = aName.startsWith(lowerQuery);
-      const bNameStarts = bName.startsWith(lowerQuery);
-      if (aNameStarts && !bNameStarts) return -1;
-      if (!aNameStarts && bNameStarts) return 1;
-
-      return aName.localeCompare(bName);
-    });
-
-    return matches;
-  }, [search, medicines]);
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const data: any[] = await api.searchMedicines(query.trim());
+        setResults(data.map(normalizeMed));
+      } catch {
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 250);
+  }, []);
 
   const handleSelectMed = (med: Medicine) => {
     setSelectedMed(med);
@@ -102,6 +118,8 @@ export default function MedicineSearchModal({ medicines, onAdd, onClose }: Medic
     });
   };
 
+  const countLabel = totalCount !== null ? `${totalCount.toLocaleString()} Available` : 'Loading...';
+
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden border border-gray-200 animate-in fade-in duration-200">
@@ -117,7 +135,7 @@ export default function MedicineSearchModal({ medicines, onAdd, onClose }: Medic
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  Search Drug Formulary ({medicines.length} Available)
+                  Search Drug Formulary ({countLabel})
                 </label>
                 {search.trim() && (
                   <button
@@ -131,22 +149,25 @@ export default function MedicineSearchModal({ medicines, onAdd, onClose }: Medic
                 )}
               </div>
               <div className="relative">
-                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
+                {loading
+                  ? <Loader2 className="w-4 h-4 text-indigo-400 absolute left-3 top-3.5 animate-spin" />
+                  : <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
+                }
                 <input
                   ref={searchInputRef}
                   type="text"
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search medicine (e.g. Amoxicillin, Doxycycline, Itraconazole)..."
+                  onChange={(e) => handleSearch(e.target.value)}
+                  placeholder="Search from all 42,000+ medicines..."
                   className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
 
               <div className="mt-3 max-h-64 overflow-y-auto divide-y divide-gray-100 border border-gray-200 rounded-lg">
-                {filtered.length > 0 ? (
-                  filtered.map((med) => (
+                {results.length > 0 ? (
+                  results.map((med, idx) => (
                     <div
-                      key={med.id}
+                      key={med.id || idx}
                       onClick={() => handleSelectMed(med)}
                       className="p-3 hover:bg-indigo-50 cursor-pointer transition-colors flex justify-between items-center group"
                     >
@@ -162,9 +183,9 @@ export default function MedicineSearchModal({ medicines, onAdd, onClose }: Medic
                       </span>
                     </div>
                   ))
-                ) : (
+                ) : !loading ? (
                   <div className="p-5 text-center space-y-2">
-                    <div className="text-xs text-gray-500">No exact match found for "{search}".</div>
+                    <div className="text-xs text-gray-500">No match found for "{search}".</div>
                     <button
                       type="button"
                       onClick={handleAddCustomDrug}
@@ -174,6 +195,8 @@ export default function MedicineSearchModal({ medicines, onAdd, onClose }: Medic
                       <span>Add "{search}" to Template</span>
                     </button>
                   </div>
+                ) : (
+                  <div className="p-5 text-center text-xs text-gray-400">Searching...</div>
                 )}
               </div>
             </div>
