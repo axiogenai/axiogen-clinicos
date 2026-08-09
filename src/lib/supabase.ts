@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Default Supabase project credentials (can be overridden via .env file or Vercel env vars)
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://xyzcompany.supabase.co';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5emNvbXBhbnkiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcwMDAwMDAwMCwiZXhwIjoyMDAwMDAwMDAwfQ.placeholder_key';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://rykurrsenvqernwnofpa.supabase.co';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5a3VycnNlbnZxZXJud25vZnBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NDMxMzksImV4cCI6MjEwMTUxOTEzOX0.fs5xcELvz0g9GojZRbSnSmfiZaFMHZLWfeD5yaIQhDM';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
