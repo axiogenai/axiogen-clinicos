@@ -12,17 +12,31 @@ export async function apiRequest<T>(endpoint: string, options: RequestInit = {})
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-  });
-
-  if (!response.ok) {
+  const primaryUrl = `${API_BASE}${endpoint}`;
+  try {
+    const response = await fetch(primaryUrl, { ...options, headers });
+    if (response.ok) {
+      return await response.json();
+    }
     const errorData = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(errorData.error || `HTTP error ${response.status}`);
+    if (response.status !== 404) {
+      throw new Error(errorData.error || `HTTP error ${response.status}`);
+    }
+  } catch (err: any) {
+    if (err.message && !err.message.includes('404') && !err.message.includes('Failed to fetch') && !err.message.includes('NetworkError')) {
+      throw err;
+    }
   }
 
-  return response.json();
+  // Fallback directly to Oracle VM Backend Server
+  const fallbackUrl = `http://92.4.92.239:5000/api${endpoint}`;
+  const fallbackRes = await fetch(fallbackUrl, { ...options, headers });
+  if (!fallbackRes.ok) {
+    const errorData = await fallbackRes.json().catch(() => ({ error: fallbackRes.statusText }));
+    throw new Error(errorData.error || `HTTP error ${fallbackRes.status}`);
+  }
+
+  return fallbackRes.json();
 }
 
 export const api = {
