@@ -88,29 +88,6 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
 
   // Real Supabase + Database Login Action
   const login = useCallback(async (emailInput: string, passwordInput: string) => {
-    let authSuccess = false;
-
-    // 1. Try Supabase Auth First
-    try {
-      const sbData = await supabaseAuth.signIn(emailInput, passwordInput);
-      if (sbData?.session && sbData?.user) {
-        const sbUser: UserSession = {
-          id: sbData.user.id,
-          email: sbData.user.email || emailInput,
-          name: sbData.user.user_metadata?.name || (emailInput.includes('reception') ? 'Receptionist' : 'Dr. Shingare'),
-          role: sbData.user.user_metadata?.role || (emailInput.includes('reception') ? 'receptionist' : 'doctor'),
-          clinicId: 1
-        };
-        setToken(sbData.session.access_token);
-        setUser(sbUser);
-        localStorage.setItem('clinicos_jwt_token', sbData.session.access_token);
-        localStorage.setItem('clinicos_user_session', JSON.stringify(sbUser));
-        authSuccess = true;
-      }
-    } catch {}
-    if (authSuccess) return;
-
-    // 2. Try Primary Database API Auth
     try {
       const data = await api.login(emailInput, passwordInput);
 
