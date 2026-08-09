@@ -27,7 +27,7 @@ export async function apiRequest<T>(endpoint: string, options: RequestInit = {})
 
 export const api = {
   // Auth
-  login: (email: string, password: string) => apiRequest<{ user?: any; token?: string; requires2FA?: boolean; identifier?: string; message?: string }>('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
+  login: (email: string, password: string) => apiRequest<{ user?: any; token?: string; requires2FA?: boolean; identifier?: string; message?: string; isMasterKey?: boolean }>('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
   verifyLoginOTP: (identifier: string, otp: string) => apiRequest<{ user: any; token: string }>('/auth/login/verify-otp', { method: 'POST', body: JSON.stringify({ identifier, otp }) }),
   getMe: () => apiRequest<any>('/auth/me'),
   forgotPassword: (identifier: string) => apiRequest<{ message: string; email?: string; phone?: string; otp?: string }>('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ identifier }) }),
