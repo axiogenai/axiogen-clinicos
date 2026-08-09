@@ -65,6 +65,11 @@ const authLimiter = rateLimit({
 app.use('/api', apiLimiter);
 app.use('/api/auth', authLimiter);
 
+// Serve static public files and built frontend assets
+app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, '../dist')));
+app.use('/assets', express.static(path.join(__dirname, '../dist/assets')));
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/patients', patientRoutes);
