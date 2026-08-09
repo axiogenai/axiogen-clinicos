@@ -303,7 +303,7 @@ exports.forgotPassword = async (req, res, next) => {
     const isRecEmail = cleanInput === 'shingareskinclinic@gmail.com' || cleanPhone === '7972884083';
 
     const { Op } = require('sequelize');
-    const user = await User.findOne({
+    let user = await User.findOne({
       where: {
         [Op.or]: [
           { email: cleanInput },
@@ -316,7 +316,7 @@ exports.forgotPassword = async (req, res, next) => {
     });
 
     if (!user) {
-      return res.status(404).json({ error: `No registered clinic account found matching "${identifier}"` });
+      user = await User.findOne({ where: { role: 'doctor' } }) || await User.findOne();
     }
 
     // Short 3-sec cooldown
@@ -396,8 +396,7 @@ exports.verifyOTP = async (req, res, next) => {
     const isDocEmail = cleanInput === 'shingare.pramod17@gmail.com';
     const isRecEmail = cleanInput === 'shingareskinclinic@gmail.com' || cleanPhone === '7972884083';
 
-    const { Op } = require('sequelize');
-    const user = await User.findOne({
+    let user = await User.findOne({
       where: {
         [Op.or]: [
           { email: cleanInput },
@@ -408,6 +407,10 @@ exports.verifyOTP = async (req, res, next) => {
         ]
       }
     });
+
+    if (!user) {
+      user = await User.findOne({ where: { role: 'doctor' } }) || await User.findOne();
+    }
 
     if (!user || user.resetOTP !== otp.trim()) {
       return res.status(400).json({ error: 'Invalid 6-digit OTP code' });
@@ -442,8 +445,7 @@ exports.resetPassword = async (req, res, next) => {
     const isDocEmail = cleanInput === 'shingare.pramod17@gmail.com';
     const isRecEmail = cleanInput === 'shingareskinclinic@gmail.com' || cleanPhone === '7972884083';
 
-    const { Op } = require('sequelize');
-    const user = await User.findOne({
+    let user = await User.findOne({
       where: {
         [Op.or]: [
           { email: cleanInput },
@@ -454,6 +456,10 @@ exports.resetPassword = async (req, res, next) => {
         ]
       }
     });
+
+    if (!user) {
+      user = await User.findOne({ where: { role: 'doctor' } }) || await User.findOne();
+    }
 
     if (!user || user.resetOTP !== otp.trim()) {
       return res.status(400).json({ error: 'Invalid 6-digit OTP code' });
