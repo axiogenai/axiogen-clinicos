@@ -1,7 +1,7 @@
 const nodemailer = require('nodemailer');
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://rykurrsenvqernwnofpa.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.placeholder';
+const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5a3VycnNlbnZxZXJud25vZnBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NDMxMzksImV4cCI6MjEwMTUxOTEzOX0.fs5xcELvz0g9GojZRbSnSmfiZaFMHZLWfeD5yaIQhDM';
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
