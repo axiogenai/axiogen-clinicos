@@ -1,13 +1,83 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useClinic } from '../context/ClinicContext';
 import { api } from '../api/client';
-import { Calendar, CalendarDays, BarChart2, Search, Printer, UserCheck, Clock, CheckCircle2, FileSpreadsheet, Send, MessageSquare, Save, FileText, X, Pill, Edit3, Trash2 } from 'lucide-react';
+import { Calendar, CalendarDays, BarChart2, Search, Printer, UserCheck, Clock, CheckCircle2, FileSpreadsheet, Send, MessageSquare, Save, FileText, X, Pill, Edit3, Trash2, ChevronDown, Check } from 'lucide-react';
 import PrintPreview from './PrintPreview';
 import CasepaperForm from './CasepaperForm';
 import type { Patient } from '../data/patients';
 import type { CasePaper } from '../types';
 import { calculateMedicineCount } from '../utils/countCalculator';
 import * as XLSX from 'xlsx';
+
+// Custom Styled Dropdown Component (Replaces ugly native browser select)
+function CustomDropdown<T extends string | number>({
+  value,
+  options,
+  onChange,
+  labelPrefix
+}: {
+  value: T;
+  options: { label: string; value: T }[];
+  onChange: (val: T) => void;
+  labelPrefix?: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find(o => o.value === value) || options[0];
+
+  return (
+    <div className="relative inline-block text-left" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 bg-white border border-[#cdc6ba] hover:border-[#047857] rounded-xl px-3 py-2 text-xs font-bold text-[#1a1c1a] shadow-sm transition-all cursor-pointer active:scale-95"
+      >
+        {labelPrefix && <span className="text-[#656056] font-normal">{labelPrefix}</span>}
+        <span className="text-[#047857]">{selectedOption.label}</span>
+        <ChevronDown className={`w-3.5 h-3.5 text-[#047857] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 mt-1.5 w-44 rounded-xl bg-white border border-[#e4e2e1] shadow-xl ring-1 ring-black/5 z-50 py-1.5 animate-in fade-in zoom-in-95 duration-100">
+          <div className="max-h-60 overflow-y-auto space-y-0.5 px-1 no-scrollbar">
+            {options.map((opt) => {
+              const isSelected = opt.value === value;
+              return (
+                <button
+                  key={String(opt.value)}
+                  type="button"
+                  onClick={() => {
+                    onChange(opt.value);
+                    setIsOpen(false);
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer ${
+                    isSelected
+                      ? 'bg-[#ecfdf5] text-[#047857] font-bold'
+                      : 'text-[#4b463e] hover:bg-[#faf9f6] hover:text-[#1a1c1a]'
+                  }`}
+                >
+                  <span>{opt.label}</span>
+                  {isSelected && <Check className="w-3.5 h-3.5 text-[#047857]" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function DailyPatientRegister() {
   const { queue, patients, clinicSettings, setToast, deletePatient, removeFromQueue } = useClinic();
@@ -618,45 +688,34 @@ export default function DailyPatientRegister() {
             </div>
           )}
 
-          {/* Month / Year Selectors for Archive */}
+          {/* Month / Year Custom Dropdowns for Archive */}
           {viewMode === 'monthly' && (
-            <div className="flex items-center gap-1.5 bg-white border border-[#cdc6ba] rounded-xl px-2.5 py-1.5 text-xs font-semibold text-[#1a1c1a] shadow-sm">
-              <select
+            <div className="flex items-center gap-2">
+              <CustomDropdown
                 value={selectedMonth}
-                onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                className="bg-transparent font-bold text-[#047857] focus:outline-none cursor-pointer"
-              >
-                {Array.from({ length: 12 }, (_, i) => (
-                  <option key={i + 1} value={i + 1}>
-                    {new Date(2026, i).toLocaleString('en-IN', { month: 'long' })}
-                  </option>
-                ))}
-              </select>
-              <select
+                options={Array.from({ length: 12 }, (_, i) => ({
+                  label: new Date(2026, i).toLocaleString('en-IN', { month: 'long' }),
+                  value: i + 1
+                }))}
+                onChange={(val) => setSelectedMonth(val)}
+              />
+              <CustomDropdown
                 value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="bg-transparent font-bold text-[#1a1c1a] focus:outline-none cursor-pointer"
-              >
-                {[2025, 2026, 2027, 2028].map(y => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
+                options={[2025, 2026, 2027, 2028].map(y => ({ label: String(y), value: y }))}
+                onChange={(val) => setSelectedYear(val)}
+              />
             </div>
           )}
 
-          {/* Year Selector for Yearly Summary */}
+          {/* Year Custom Dropdown for Yearly Summary */}
           {viewMode === 'yearly' && (
-            <div className="flex items-center gap-1.5 bg-white border border-[#cdc6ba] rounded-xl px-3 py-2 text-xs font-semibold text-[#1a1c1a] shadow-sm">
-              <span className="text-[#656056] text-[11px] font-medium">Select Year:</span>
-              <select
+            <div className="flex items-center gap-2">
+              <CustomDropdown
                 value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="bg-transparent font-bold text-[#047857] focus:outline-none cursor-pointer"
-              >
-                {[2025, 2026, 2027, 2028].map(y => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
+                labelPrefix="Select Year:"
+                options={[2025, 2026, 2027, 2028].map(y => ({ label: String(y), value: y }))}
+                onChange={(val) => setSelectedYear(val)}
+              />
             </div>
           )}
 
