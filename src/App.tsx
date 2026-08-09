@@ -233,7 +233,7 @@ function MainApp() {
   }, [user]);
 
   // Render Public Coming Soon Landing Page for main clinic domain
-  if (isPublicDomain && !showStaffPortal && (!user || !token)) {
+  if (isPublicDomain && !showStaffPortal) {
     return <ComingSoonLandingPage />;
   }
 
