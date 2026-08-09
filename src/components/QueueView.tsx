@@ -43,24 +43,13 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
         phone: regForm.phone.replace(/\D/g, ''),
         complaint: 'Walk-in consultation',
       };
-      await registerAndEnqueue(patientData, duplicatePatient || undefined);
+      const result = await registerAndEnqueue(patientData, duplicatePatient || undefined);
       setRegForm(EMPTY_FORM);
       setRegErrors({});
       setShowRegisterModal(false);
-      // If consultNow, find the just-added queue item and open it
-      if (consultNow) {
-        setTimeout(() => {
-          const latest = queue[queue.length - 1];
-          if (latest) {
-            const p = patients.find(p => p.id === latest.patientId) || {
-              id: latest.patientId, name: latest.name || 'Patient', age: latest.age || 0,
-              gender: (latest.gender || 'F') as 'M' | 'F',
-              phone: latest.phone || '', village: latest.village || '',
-              pastHistory: '', allergies: '', pastVisits: []
-            };
-            onSelectPatient(latest, p);
-          }
-        }, 800);
+
+      if (consultNow && result && result.queueItem && result.patient) {
+        onSelectPatient(result.queueItem, result.patient);
       }
     } catch { /* silent */ } finally {
       setRegLoading(false);
