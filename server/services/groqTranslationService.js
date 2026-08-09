@@ -98,12 +98,12 @@ function getGuidelines(lang) {
    - "QOD" -> "एक दिवस आड घेणे"
    - "Once weekly" -> "आठवड्यातून एकदा घेणे"
 
-2. TAPERING INSTRUCTIONS:
-   - "Tapering Tab: 7d (BD -> OD)" / "Tapering Tab: 7d" -> "गोळी टेपरिंग: ७ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे"
-   - "Tapering Cream: 7d (BD -> OD)" / "Tapering Cream: 7d" -> "क्रीम टेपरिंग: ७ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे"
-   - "Tapering Tab: 5d (BD -> OD)" / "Tapering Tab: 5d" -> "गोळी टेपरिंग: ५ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे"
-   - "Tapering Cream: 5d (BD -> OD)" / "Tapering Cream: 5d" -> "क्रीम टेपरिंग: ५ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे"
-   - "Tapering Tab: 7d (TDS -> BD -> OD)" -> "गोळी टेपरिंग: ७ दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे"
+2. TAPERING INSTRUCTIONS (DO NOT ADD "क्रीम टेपरिंग:" OR "गोळी टेपरिंग:" PREFIX IN PRINT):
+   - "Tapering Tab: 7d (BD -> OD)" / "Tapering Tab: 7d" -> "७ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे"
+   - "Tapering Cream: 7d (BD -> OD)" / "Tapering Cream: 7d" -> "७ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे"
+   - "Tapering Tab: 5d (BD -> OD)" / "Tapering Tab: 5d" -> "५ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे"
+   - "Tapering Cream: 5d (BD -> OD)" / "Tapering Cream: 5d" -> "५ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे"
+   - "Tapering Tab: 7d (TDS -> BD -> OD)" -> "७ दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे"
 
 3. MEAL TIMINGS & SPECIAL INSTRUCTIONS:
    - "After Meals" / "After Food" / "PC" -> "जेवणानंतर घेणे"
@@ -118,6 +118,7 @@ function getGuidelines(lang) {
 
 4. CRITICAL NEGATIVE CONSTRAINTS:
    - DO NOT USE BRACKETS like "(दिवसातून २ वेळा)", "(दिवसातून एकदा)", "(दिवसातून ३ वेळा)", "(दर ६ तासांनी)" or "(BD -> OD)".
+   - DO NOT prefix tapering instructions with "क्रीम टेपरिंग:" or "गोळी टेपरिंग:".
    - Return ONLY the clean, natural Marathi medical text.
    - NEVER output raw codes like "1-0-1", "1-1-1-1", "BD", "OD", "HS", "TDS".
    - If the input is already in Devanagari/Marathi script, keep it intact and clean.`;
@@ -148,7 +149,8 @@ ${getGuidelines(lang)}
 OUTPUT FORMAT:
 - Return ONLY the final translated string in ${lang}.
 - Do NOT add quotes, markdown formatting, explanations, or preambles.
-- NEVER include bracketed frequency explanations like "(दिवसातून २ वेळा)".`;
+- NEVER include bracketed frequency explanations like "(दिवसातून २ वेळा)".
+- NEVER include prefix headers like "क्रीम टेपरिंग:".`;
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -182,6 +184,9 @@ OUTPUT FORMAT:
 
     // Strip any bracketed explanation like (दिवसातून २ वेळा)
     translated = translated.replace(/\s*\((?:दिवसातून|दिन में|दिसून|दर|प्रति|दिन|times|वेळा)[^)]*\)?/gi, '').trim();
+
+    // Strip any tapering prefix like "क्रीम टेपरिंग:" or "गोळी टेपरिंग:"
+    translated = translated.replace(/^(?:क्रीम|गोळी|cream|tab|tablet|tapering|टेपरिंग|तपेरिंग)[\s\:\-\_]*(?:टेपरिंग|तपेरिंग|tapering)?[\s\:\-\_]*/gi, '').trim();
 
     cache.set(cacheKey, translated);
     return translated;
