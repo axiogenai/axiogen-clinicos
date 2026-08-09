@@ -28,8 +28,9 @@ export async function apiRequest<T>(endpoint: string, options: RequestInit = {})
     }
   }
 
-  // Fallback directly to Oracle VM Backend Server
-  const fallbackUrl = `http://92.4.92.239:5000/api${endpoint}`;
+  // Fallback directly to current host origin
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const fallbackUrl = `${origin}/api${endpoint}`;
   const fallbackRes = await fetch(fallbackUrl, { ...options, headers });
   if (!fallbackRes.ok) {
     const errorData = await fallbackRes.json().catch(() => ({ error: fallbackRes.statusText }));
