@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useClinic } from '../context/ClinicContext';
 import { api } from '../api/client';
-import { Calendar, Search, Printer, UserCheck, Clock, CheckCircle2, FileSpreadsheet, Send, MessageSquare, Save, FileText, X, Pill, Edit3, Trash2 } from 'lucide-react';
+import { Calendar, CalendarDays, BarChart2, Search, Printer, UserCheck, Clock, CheckCircle2, FileSpreadsheet, Send, MessageSquare, Save, FileText, X, Pill, Edit3, Trash2 } from 'lucide-react';
 import PrintPreview from './PrintPreview';
 import CasepaperForm from './CasepaperForm';
 import type { Patient } from '../data/patients';
@@ -578,33 +578,36 @@ export default function DailyPatientRegister() {
         <div className="flex items-center gap-1.5 bg-[#f0ede6] p-1 rounded-xl border border-[#e4e2e1]">
           <button
             onClick={() => setViewMode('daily')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               viewMode === 'daily'
                 ? 'bg-white text-[#047857] shadow-sm border border-[#cdc6ba]'
                 : 'text-[#656056] hover:text-[#1a1c1a]'
             }`}
           >
-            📅 Day View
+            <Calendar className="w-3.5 h-3.5 text-[#047857]" />
+            <span>Day View</span>
           </button>
           <button
             onClick={() => setViewMode('monthly')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               viewMode === 'monthly'
                 ? 'bg-white text-[#047857] shadow-sm border border-[#cdc6ba]'
                 : 'text-[#656056] hover:text-[#1a1c1a]'
             }`}
           >
-            🗓️ Month Archive
+            <CalendarDays className="w-3.5 h-3.5 text-[#047857]" />
+            <span>Month Archive</span>
           </button>
           <button
             onClick={() => setViewMode('yearly')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               viewMode === 'yearly'
                 ? 'bg-white text-[#047857] shadow-sm border border-[#cdc6ba]'
                 : 'text-[#656056] hover:text-[#1a1c1a]'
             }`}
           >
-            📊 Year Summary
+            <BarChart2 className="w-3.5 h-3.5 text-[#047857]" />
+            <span>Year Summary</span>
           </button>
         </div>
 
