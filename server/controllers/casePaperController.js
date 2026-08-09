@@ -91,6 +91,59 @@ exports.createCasePaper = async (req, res, next) => {
       }
     );
 
+    // Sync CasePaper details into OpdRegister
+    try {
+      const { OpdRegister, Patient } = require('../models');
+      const pat = targetPatientId ? await Patient.findByPk(targetPatientId) : null;
+      const reg = await OpdRegister.findOne({
+        where: {
+          clinicId,
+          date: currentDate,
+          [Op.or]: [
+            queueId ? { queueId } : null,
+            targetPatientId ? { patientId: targetPatientId } : null
+          ].filter(Boolean)
+        }
+      });
+
+      if (reg) {
+        await reg.update({
+          complaint: complaint || reg.complaint,
+          diagnosis: pastHistory || reg.diagnosis,
+          medicines: medicines || reg.medicines,
+          investigations: investigationsAdvised || reg.investigations,
+          counselling: counsellingDone || reg.counselling,
+          followUpDate: followUpDate || reg.followUpDate,
+          status: 'completed'
+        });
+      } else {
+        const [yStr, mStr, dStr] = currentDate.split('-');
+        await OpdRegister.create({
+          clinicId,
+          date: currentDate,
+          year: parseInt(yStr, 10),
+          month: parseInt(mStr, 10),
+          day: parseInt(dStr, 10),
+          queueId: queueId || `OPD-${currentDate.replace(/-/g, '')}-001`,
+          patientId: targetPatientId || null,
+          patientName: pat?.name || 'Patient',
+          age: pat?.age || 0,
+          gender: pat?.gender || 'M',
+          phone: pat?.phone || '',
+          village: pat?.village || '',
+          complaint: complaint || '',
+          diagnosis: pastHistory || '',
+          medicines: medicines || [],
+          investigations: investigationsAdvised || [],
+          counselling: counsellingDone || [],
+          followUpDate: followUpDate || '',
+          status: 'completed'
+        });
+      }
+    } catch (e) {
+      console.warn('OpdRegister case paper sync notice:', e.message);
+    }
+
     try {
       await AuditLog.create({
         clinicId,
