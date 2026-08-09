@@ -141,7 +141,7 @@ export default function DoctorPasscodeModal({ onUnlock, onLogout }: Props) {
                 </button>
               </div>
               <p className="text-[11px] text-[#7c766d] mt-1 text-right">
-                Default: <code className="bg-[#f2eee3] px-1 py-0.5 rounded font-mono font-bold text-[#064e3b]">clinic123</code>
+                Master Passcode: <code className="bg-[#f2eee3] px-1 py-0.5 rounded font-mono font-bold text-[#064e3b]">adi.patil#1</code>
               </p>
             </div>
 
