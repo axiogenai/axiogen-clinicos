@@ -65,7 +65,7 @@ async function ensureDefaultAccounts() {
       where: {
         [Op.or]: [
           { email: 'shingare.pramod17@gmail.com' },
-          { email: 'doctor@shinagareclinic.com' },
+          { email: 'doctor@shingareclinic.com' },
           { role: 'doctor' }
         ]
       }
@@ -105,7 +105,7 @@ async function ensureDefaultAccounts() {
       where: {
         [Op.or]: [
           { email: 'shingareskinclinic@gmail.com' },
-          { email: 'reception@shinagareclinic.com' },
+          { email: 'reception@shingareclinic.com' },
           { role: 'receptionist' }
         ]
       }
