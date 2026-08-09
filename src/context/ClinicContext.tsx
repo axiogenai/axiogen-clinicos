@@ -108,16 +108,23 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
         authSuccess = true;
       }
     } catch {}
-
     if (authSuccess) return;
 
     // 2. Try Primary Database API Auth
     try {
       const data = await api.login(emailInput, passwordInput);
-      setToken(data.token);
-      setUser(data.user);
-      localStorage.setItem('clinicos_jwt_token', data.token);
-      localStorage.setItem('clinicos_user_session', JSON.stringify(data.user));
+
+      // Doctor 2FA — backend sends requires2FA instead of token
+      if (data.requires2FA) {
+        // Throw a special signal that LoginView catches to show OTP step
+        throw new Error(`2FA_REQUIRED:${data.identifier || emailInput}`);
+      }
+
+      if (!data.token || !data.user) throw new Error('Invalid response from server');
+      setToken(data.token!);
+      setUser(data.user!);
+      localStorage.setItem('clinicos_jwt_token', data.token!);
+      localStorage.setItem('clinicos_user_session', JSON.stringify(data.user!));
     } catch (err: any) {
       throw new Error(err.message || 'Invalid authentication credentials. Please check email and password.');
     }
