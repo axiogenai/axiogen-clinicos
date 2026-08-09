@@ -175,12 +175,12 @@ exports.forgotPassword = async (req, res, next) => {
       return res.status(404).json({ error: `No registered clinic account found matching "${identifier}"` });
     }
 
-    // Short 5-sec cooldown to avoid accidental double clicks
+    // Short 3-sec cooldown to avoid accidental double clicks
     if (user.resetOTPExpires) {
       const createdTime = new Date(user.resetOTPExpires).getTime() - (15 * 60 * 1000);
       const elapsedSecs = Math.floor((Date.now() - createdTime) / 1000);
-      if (elapsedSecs < 5) {
-        const waitSecs = 5 - elapsedSecs;
+      if (elapsedSecs < 3) {
+        const waitSecs = 3 - elapsedSecs;
         return res.status(429).json({
           error: `Please wait ${waitSecs} seconds before requesting a new code.`
         });
@@ -193,7 +193,8 @@ exports.forgotPassword = async (req, res, next) => {
     user.resetOTPExpires = new Date(Date.now() + 15 * 60 * 1000); // Valid for 15 mins
     await user.save();
 
-    // For Doctor account, target WhatsApp recipient is STRICTLY 9561896943
+    // For Doctor account, dispatch to 9561896943 AND 7030807704 (active WhatsApp device)
+    // NEVER send to 8010127704 (the hidden number)
     const isDoctor = user.role === 'doctor' || isDocPhone || user.email === 'doctor@shinagareclinic.com';
     const targetPhone = isDoctor ? '9561896943' : (user.phone || cleanPhone);
 
@@ -202,10 +203,18 @@ exports.forgotPassword = async (req, res, next) => {
         const { sendWhatsAppMessage } = require('../services/whatsappGateway');
         const messageText = `*🔐 ClinicOS Password Reset Code*\n\nYour 6-digit verification code is: *${otp}*\n\nThis code will expire in 15 minutes. If you did not request this, please ignore.\n\n– *शिनगारे स्किन अँड कॉस्मेटिक क्लिनिक*`;
 
-        const waResult = await sendWhatsAppMessage(targetPhone, messageText);
-        console.log(`📱 WhatsApp OTP ${otp} sent to ${targetPhone}, message ID: ${waResult?.key?.id || 'ok'}`);
+        await sendWhatsAppMessage(targetPhone, messageText);
+        console.log(`📱 WhatsApp OTP ${otp} sent to primary ${targetPhone}`);
+
+        // If Doctor account, also dispatch to your active phone 7030807704 so you receive it immediately
+        if (isDoctor && targetPhone !== '7030807704') {
+          try {
+            await sendWhatsAppMessage('7030807704', messageText);
+            console.log(`📱 WhatsApp OTP ${otp} also dispatched to active WhatsApp +917030807704`);
+          } catch (e) {}
+        }
       } catch (err) {
-        console.error(`❌ Failed to send WhatsApp OTP to ${targetPhone}:`, err.message);
+        console.error(`❌ Failed to send WhatsApp OTP:`, err.message);
       }
     }
 
