@@ -109,5 +109,10 @@ export const api = {
 
   // Groq AI Translation
   translateText: (text: string, targetLang: string) => apiRequest<{ translatedText: string }>('/clinic/translate', { method: 'POST', body: JSON.stringify({ text, targetLang }) }),
-};
 
+  // Permanent OPD Register (Day-wise, Month-wise, Year-wise)
+  getDailyRegister: (date?: string) => apiRequest<any[]>(`/register/daily${date ? `?date=${date}` : ''}`),
+  getMonthlyRegister: (year?: number, month?: number) => apiRequest<any>(`/register/monthly?year=${year || new Date().getFullYear()}&month=${month || (new Date().getMonth() + 1)}`),
+  getYearlyRegister: (year?: number) => apiRequest<any>(`/register/yearly?year=${year || new Date().getFullYear()}`),
+  syncRegister: (date?: string) => apiRequest<any>('/register/sync', { method: 'POST', body: JSON.stringify({ date }) }),
+};
