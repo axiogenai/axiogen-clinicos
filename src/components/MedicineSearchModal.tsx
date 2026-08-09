@@ -159,6 +159,21 @@ const FREQ_ALIASES: Record<string, string> = {
   'हाताच्या बोटामध्ये लावणे': 'hat bota finger laavne apply'
 };
 
+const DURATIONS = [
+  '3 Days',
+  '5 Days',
+  '7 Days',
+  '10 Days',
+  '14 Days',
+  '15 Days',
+  '21 Days',
+  '1 Month',
+  '2 Months',
+  '3 Months',
+  '4 Weeks',
+  '6 Weeks'
+];
+
 function freqMatchesSearch(freq: string, query: string): boolean {
   if (!query) return true;
   const q = query.toLowerCase().trim();
@@ -191,7 +206,8 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
   const [frequency, setFrequency] = useState('सकाळी १ व रात्री १ घेणे');
   const [freqInput, setFreqInput] = useState('');
   const [freqOpen, setFreqOpen] = useState(false);
-  const [duration, setDuration] = useState('7 days');
+  const [duration, setDuration] = useState('7 Days');
+  const [durOpen, setDurOpen] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -200,10 +216,8 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
   useEffect(() => {
     if (searchInputRef.current) searchInputRef.current.focus();
 
-    // Get total count for the label
     api.getMedicineCount().then(({ count }) => setTotalCount(count)).catch(() => {});
 
-    // Load initial list (first 50 alphabetically) to show something immediately
     setLoading(true);
     api.searchMedicines('').then((data: any[]) => {
       setResults(data.map(normalizeMed));
@@ -263,9 +277,10 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
   const countLabel = totalCount !== null ? `${totalCount.toLocaleString()} Available` : 'Loading...';
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden border border-gray-200 animate-in fade-in duration-200">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      {/* Container with overflow-visible so dropdowns float outside cleanly */}
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full border border-gray-200 animate-in fade-in duration-200 relative">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center rounded-t-2xl">
           <h3 className="font-bold text-gray-900 text-base">Add Medicine to Template</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg">
             <X className="w-5 h-5" />
@@ -344,7 +359,7 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="bg-indigo-50 border border-indigo-100 p-3.5 rounded-lg flex justify-between items-center">
+              <div className="bg-indigo-50 border border-indigo-100 p-3.5 rounded-xl flex justify-between items-center">
                 <div>
                   <div className="font-bold text-indigo-900 text-sm">{selectedMed.name}</div>
                   <div className="text-xs text-indigo-700">{selectedMed.strength} • {selectedMed.form}</div>
@@ -370,8 +385,8 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                {/* Frequency with CasePaper-style search input and dropdown */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Frequency Dropdown */}
                 <div className="relative" onClick={(e) => e.stopPropagation()}>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">
                     Frequency
@@ -379,16 +394,15 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
                   <input
                     type="text"
                     value={freqOpen ? freqInput : frequency}
-                    placeholder="Type to search frequency (e.g. BD, 1-0-1, sakali...)"
-                    onFocus={() => { setFreqInput(''); setFreqOpen(true); }}
+                    placeholder="Search frequency..."
+                    onFocus={() => { setFreqInput(''); setFreqOpen(true); setDurOpen(false); }}
                     onChange={(e) => { setFreqInput(e.target.value); setFreqOpen(true); }}
-                    onBlur={() => setTimeout(() => setFreqOpen(false), 200)}
-                    className="w-full p-2.5 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full p-2.5 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                   />
                   {freqOpen && (
                     <div 
-                      className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl overflow-y-auto" 
-                      style={{ zIndex: 9999, width: '320px', maxHeight: '260px' }}
+                      className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl overflow-y-auto divide-y divide-gray-50" 
+                      style={{ zIndex: 99999, width: '100%', minWidth: '280px', maxHeight: '220px' }}
                     >
                       {FREQUENCIES.filter(f => freqMatchesSearch(f, freqInput)).map(f => (
                         <div
@@ -410,24 +424,48 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
                   )}
                 </div>
 
-                <div>
+                {/* Duration Dropdown */}
+                <div className="relative" onClick={(e) => e.stopPropagation()}>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">
                     Duration
                   </label>
                   <input
                     type="text"
                     value={duration}
+                    onFocus={() => { setDurOpen(true); setFreqOpen(false); }}
                     onChange={(e) => setDuration(e.target.value)}
-                    placeholder="e.g. 7 days"
-                    className="w-full p-2.5 border border-gray-300 rounded-lg text-sm"
+                    placeholder="e.g. 7 Days"
+                    className="w-full p-2.5 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                   />
+                  {durOpen && (
+                    <div 
+                      className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl overflow-y-auto divide-y divide-gray-50" 
+                      style={{ zIndex: 99999, width: '100%', minWidth: '160px', maxHeight: '220px' }}
+                    >
+                      {DURATIONS.map(d => (
+                        <div
+                          key={d}
+                          onMouseDown={(e) => { 
+                            e.preventDefault(); 
+                            setDuration(d); 
+                            setDurOpen(false); 
+                          }}
+                          className={`px-3 py-2 text-xs cursor-pointer transition-colors ${
+                            duration === d ? 'bg-[#ecfdf5] text-[#047857] font-semibold' : 'text-gray-800 hover:bg-indigo-50'
+                          }`}
+                        >
+                          {d}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex justify-end gap-2">
+        <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex justify-end gap-2 rounded-b-2xl">
           <button
             type="button"
             onClick={onClose}
