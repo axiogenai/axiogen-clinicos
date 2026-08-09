@@ -364,7 +364,12 @@ exports.forgotPassword = async (req, res, next) => {
 
     // 2. Dispatch via Email
     if (targetEmail) {
-      sendOTPEmail(targetEmail, otp).catch(() => {});
+      try {
+        await sendOTPEmail(targetEmail, otp);
+        console.log(`✅ OTP email successfully dispatched to ${targetEmail}`);
+      } catch (e) {
+        console.error(`❌ OTP email failed for ${targetEmail}:`, e.message);
+      }
     }
 
     const maskedPhone = targetPhone && targetPhone.length >= 4 
