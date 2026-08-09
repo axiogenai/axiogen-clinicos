@@ -346,20 +346,33 @@ export default function LoginView({ onSuccess }: Props) {
             {forgotStep === 1 ? (
               /* Step 1: Request OTP Code */
               <form onSubmit={handleRequestOTP} className="space-y-4">
-                <p className="text-xs text-[#7c766d]">
-                  Send a 6-digit verification code to registered WhatsApp ending in <strong className="font-mono text-[#1a1c1a]">{maskPhoneNumber(forgotIdentifier)}</strong>.
-                </p>
+                <div>
+                  <label className="block text-xs font-bold text-[#4b463e] mb-1">
+                    Registered Mobile Number or Email
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={forgotIdentifier}
+                    onChange={(e) => setForgotIdentifier(e.target.value)}
+                    placeholder="e.g. 9561896943 or email"
+                    className="w-full px-3 py-2 text-sm bg-white border border-[#cdc6ba] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#047857] text-[#1a1c1a] font-medium"
+                  />
+                  <p className="text-[11px] text-[#7c766d] mt-1.5 leading-relaxed">
+                    A 6-digit verification code will be dispatched to your registered <strong>WhatsApp</strong> and <strong>Email</strong>.
+                  </p>
+                </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-2.5 bg-gradient-to-r from-[#064e3b] to-[#047857] hover:from-[#022c22] hover:to-[#064e3b] text-[#ecfdf5] font-bold text-sm rounded-lg shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="w-full py-2.5 bg-gradient-to-r from-[#064e3b] to-[#047857] hover:from-[#022c22] hover:to-[#064e3b] text-[#ecfdf5] font-bold text-sm rounded-lg shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 active:scale-95"
                 >
                   {loading ? (
-                    <span>Sending OTP...</span>
+                    <span>Sending Verification Code...</span>
                   ) : (
                     <>
-                      <span>Send 6-Digit OTP Code via WhatsApp</span>
+                      <span>Send 6-Digit Verification Code</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
@@ -378,7 +391,7 @@ export default function LoginView({ onSuccess }: Props) {
               /* Step 2: Verify OTP Code FIRST */
               <form onSubmit={handleVerifyOTP} className="space-y-4">
                 <p className="text-xs text-[#7c766d]">
-                  Enter the 6-digit OTP code received on WhatsApp ending in <strong className="font-mono text-[#1a1c1a]">{maskPhoneNumber(forgotIdentifier)}</strong>.
+                  Enter the 6-digit verification code sent to <strong className="text-[#1a1c1a]">{forgotIdentifier}</strong>:
                 </p>
 
                 <div>
