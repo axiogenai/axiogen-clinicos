@@ -24,8 +24,8 @@ exports.getMedicineCount = async (req, res, next) => {
 
 exports.searchMedicines = async (req, res, next) => {
   try {
-    const { q } = req.query;
-    const likeOp = Op.iLike || Op.like;
+    const dialect = Medicine.sequelize ? Medicine.sequelize.getDialect() : 'sqlite';
+    const likeOp = dialect === 'postgres' ? Op.iLike : Op.like;
 
     if (!q || !q.trim()) {
       const defaultMeds = await Medicine.findAll({
