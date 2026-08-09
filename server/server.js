@@ -109,13 +109,15 @@ const isProd = process.env.NODE_ENV === 'production';
 async function startServer() {
   try {
     await sequelize.authenticate();
-    // Execute safe column migrations for production PostgreSQL (table name: users)
-    await sequelize.query(`
-      ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "reset_otp" VARCHAR(255);
-      ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "reset_otp_expires" TIMESTAMP WITH TIME ZONE;
-      ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "reset_o_t_p" VARCHAR(255);
-      ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "reset_o_t_p_expires" TIMESTAMP WITH TIME ZONE;
-    `).catch(err => console.warn('Database column migration notice:', err.message));
+    // Execute safe column migrations
+    if (sequelize.getDialect() === 'postgres') {
+      await sequelize.query(`
+        ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "reset_otp" VARCHAR(255);
+        ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "reset_otp_expires" TIMESTAMP WITH TIME ZONE;
+        ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "reset_o_t_p" VARCHAR(255);
+        ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "reset_o_t_p_expires" TIMESTAMP WITH TIME ZONE;
+      `).catch(err => console.warn('Database column migration notice:', err.message));
+    }
 
     await sequelize.sync({ alter: false });
 
