@@ -126,7 +126,7 @@ export default function ClinicSettingsModal({ settings, onSave, onClose }: Props
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                 value={formData.clinicNameEn}
                 onChange={(e) => setFormData({ ...formData, clinicNameEn: e.target.value })}
-                placeholder="e.g. Shinagare Skin & Cosmetic Clinic"
+                placeholder="e.g. Shingare Skin & Cosmetic Clinic"
               />
             </div>
           </div>
