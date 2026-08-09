@@ -279,6 +279,26 @@ export default function DailyPatientRegister() {
     }
   };
 
+  // Sync Daily Register into Permanent Database Table
+  const handleSyncDatabaseRegister = async () => {
+    try {
+      const res = await api.syncRegister(selectedDate);
+      if (res && res.success) {
+        setToast({
+          type: 'success',
+          title: 'Register Synced to Database',
+          message: `Synced ${res.count || 0} OPD records into permanent database register for ${selectedDate}.`
+        });
+      }
+    } catch (err: any) {
+      setToast({
+        type: 'error',
+        title: 'Sync Failed',
+        message: err.message || 'Could not sync register to database.'
+      });
+    }
+  };
+
   // Open EMR Casepaper Modal
   const handleOpenEMR = async (item: any) => {
     let matchingPatient = patients.find(p => p.id === item.patientId || p.name?.toLowerCase() === item.name?.toLowerCase());
@@ -500,6 +520,16 @@ export default function DailyPatientRegister() {
               className="bg-transparent text-[#1a1c1a] font-mono focus:outline-none cursor-pointer"
             />
           </div>
+
+          {/* Sync DB Register Button */}
+          <button
+            onClick={handleSyncDatabaseRegister}
+            className="bg-[#ecfdf5] hover:bg-[#d1fae5] text-[#047857] border border-[#a7f3d0] text-xs font-bold px-3 py-2 rounded-xl shadow-sm transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
+            title="Sync all OPD patients for selected date to backend database register"
+          >
+            <CheckCircle2 className="w-4 h-4 text-[#047857]" />
+            <span>Sync to Database</span>
+          </button>
 
           {/* Export Excel Button */}
           <button
