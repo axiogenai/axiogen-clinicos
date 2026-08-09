@@ -10,7 +10,7 @@ interface Props {
 
 export default function LoginView({ onSuccess }: Props) {
   const { login, setToast } = useClinic();
-  const [email, setEmail] = useState('8010127704');
+  const [email, setEmail] = useState('9561896943');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'doctor' | 'receptionist'>('doctor');
   const [loading, setLoading] = useState(false);
@@ -24,7 +24,7 @@ export default function LoginView({ onSuccess }: Props) {
   // Forgot Password States
   const [isForgotMode, setIsForgotMode] = useState(false);
   const [forgotStep, setForgotStep] = useState<1 | 2 | 3>(1); // 1 = Request OTP, 2 = Verify OTP, 3 = Reset Password
-  const [forgotIdentifier, setForgotIdentifier] = useState('8010127704');
+  const [forgotIdentifier, setForgotIdentifier] = useState('9561896943');
   const [otpCode, setOtpCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -43,8 +43,8 @@ export default function LoginView({ onSuccess }: Props) {
     setPassword('');
     setError(null);
     if (selectedRole === 'doctor') {
-      setEmail('8010127704');
-      setForgotIdentifier('8010127704');
+      setEmail('9561896943');
+      setForgotIdentifier('9561896943');
     } else {
       setEmail('7972884083');
       setForgotIdentifier('7972884083');
