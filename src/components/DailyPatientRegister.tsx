@@ -21,6 +21,31 @@ export default function DailyPatientRegister() {
   const [editingCasePaper, setEditingCasePaper] = useState<{ patient: Patient; casePaper: CasePaper; queueId?: string } | null>(null);
   const [isPrintPreviewOpen, setIsPrintPreviewOpen] = useState(false);
 
+  // Archive & History Register State
+  const [viewMode, setViewMode] = useState<'daily' | 'monthly' | 'yearly'>('daily');
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [monthlyData, setMonthlyData] = useState<any>(null);
+  const [yearlyData, setYearlyData] = useState<any>(null);
+  const [isLoadingArchive, setIsLoadingArchive] = useState(false);
+
+  // Fetch Monthly / Yearly Archive from Backend Database
+  useEffect(() => {
+    if (viewMode === 'monthly') {
+      setIsLoadingArchive(true);
+      api.getMonthlyRegister(selectedYear, selectedMonth)
+        .then(data => setMonthlyData(data))
+        .catch(() => setMonthlyData(null))
+        .finally(() => setIsLoadingArchive(false));
+    } else if (viewMode === 'yearly') {
+      setIsLoadingArchive(true);
+      api.getYearlyRegister(selectedYear)
+        .then(data => setYearlyData(data))
+        .catch(() => setYearlyData(null))
+        .finally(() => setIsLoadingArchive(false));
+    }
+  }, [viewMode, selectedMonth, selectedYear]);
+
   // Fetch queue items for selectedDate from DB
   useEffect(() => {
     let active = true;
@@ -162,6 +187,47 @@ export default function DailyPatientRegister() {
   const totalCount = registerItems.length;
   const completedCount = registerItems.filter(i => i.status === 'completed').length;
   const waitingCount = registerItems.filter(i => i.status === 'waiting').length;
+
+  // Export Monthly Register to Excel (.XLSX)
+  const handleExportMonthlyExcel = () => {
+    if (!monthlyData || !monthlyData.records || monthlyData.records.length === 0) {
+      setToast({
+        type: 'info',
+        title: 'Empty Register',
+        message: 'No records found for the selected month to export.'
+      });
+      return;
+    }
+
+    const exportData = monthlyData.records.map((item: any, index: number) => ({
+      'SR No': index + 1,
+      'Date': item.date,
+      'OPD No': item.opdNo || item.queueId || `OPD-${index + 1}`,
+      'Time': item.timeAdded || '-',
+      'Patient Name': item.patientName,
+      'Age/Gender': `${item.age || '-'} Y / ${item.gender || 'M'}`,
+      'Contact Phone': item.phone || '-',
+      'Village': item.village || '-',
+      'Chief Complaint': item.complaint || '-',
+      'Diagnosis': item.diagnosis || '-',
+      'Follow-up Date': item.followUpDate || '-',
+      'Consulting Doctor': item.consultingDoctor || 'डॉ. प्रियांका शिनगare',
+      'Status': (item.status || 'completed').toUpperCase()
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, `Monthly OPD ${selectedYear}-${selectedMonth}`);
+    
+    worksheet['!cols'] = [
+      { wch: 8 },  { wch: 12 }, { wch: 15 }, { wch: 12 },
+      { wch: 24 }, { wch: 12 }, { wch: 14 }, { wch: 20 },
+      { wch: 30 }, { wch: 30 }, { wch: 15 }, { wch: 25 }, { wch: 15 }
+    ];
+
+    const monthName = new Date(selectedYear, selectedMonth - 1).toLocaleString('en-IN', { month: 'long' });
+    XLSX.writeFile(workbook, `Monthly_OPD_Register_${monthName}_${selectedYear}.xlsx`);
+  };
 
   // Export to Excel (.XLSX)
   const handleExportExcel = () => {
@@ -508,18 +574,96 @@ export default function DailyPatientRegister() {
           </p>
         </div>
 
+        {/* Mode Selector Tabs: Daily, Monthly, Yearly Archives */}
+        <div className="flex items-center gap-1.5 bg-[#f0ede6] p-1 rounded-xl border border-[#e4e2e1]">
+          <button
+            onClick={() => setViewMode('daily')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              viewMode === 'daily'
+                ? 'bg-white text-[#047857] shadow-sm border border-[#cdc6ba]'
+                : 'text-[#656056] hover:text-[#1a1c1a]'
+            }`}
+          >
+            📅 Day View
+          </button>
+          <button
+            onClick={() => setViewMode('monthly')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              viewMode === 'monthly'
+                ? 'bg-white text-[#047857] shadow-sm border border-[#cdc6ba]'
+                : 'text-[#656056] hover:text-[#1a1c1a]'
+            }`}
+          >
+            🗓️ Month Archive
+          </button>
+          <button
+            onClick={() => setViewMode('yearly')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              viewMode === 'yearly'
+                ? 'bg-white text-[#047857] shadow-sm border border-[#cdc6ba]'
+                : 'text-[#656056] hover:text-[#1a1c1a]'
+            }`}
+          >
+            📊 Year Summary
+          </button>
+        </div>
+
         {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Date Picker */}
-          <div className="flex items-center gap-2 bg-white border border-[#cdc6ba] rounded-xl px-3 py-2 text-xs font-semibold text-[#1a1c1a] shadow-sm">
-            <Calendar className="w-4 h-4 text-[#047857]" />
-            <input 
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-transparent text-[#1a1c1a] font-mono focus:outline-none cursor-pointer"
-            />
-          </div>
+          {/* Day Date Picker */}
+          {viewMode === 'daily' && (
+            <div className="flex items-center gap-2 bg-white border border-[#cdc6ba] rounded-xl px-3 py-2 text-xs font-semibold text-[#1a1c1a] shadow-sm">
+              <Calendar className="w-4 h-4 text-[#047857]" />
+              <input 
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="bg-transparent text-[#1a1c1a] font-mono focus:outline-none cursor-pointer"
+              />
+            </div>
+          )}
+
+          {/* Month / Year Selectors for Archive */}
+          {viewMode === 'monthly' && (
+            <div className="flex items-center gap-1.5 bg-white border border-[#cdc6ba] rounded-xl px-2.5 py-1.5 text-xs font-semibold text-[#1a1c1a] shadow-sm">
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                className="bg-transparent font-bold text-[#047857] focus:outline-none cursor-pointer"
+              >
+                {Array.from({ length: 12 }, (_, i) => (
+                  <option key={i + 1} value={i + 1}>
+                    {new Date(2026, i).toLocaleString('en-IN', { month: 'long' })}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="bg-transparent font-bold text-[#1a1c1a] focus:outline-none cursor-pointer"
+              >
+                {[2025, 2026, 2027, 2028].map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Year Selector for Yearly Summary */}
+          {viewMode === 'yearly' && (
+            <div className="flex items-center gap-1.5 bg-white border border-[#cdc6ba] rounded-xl px-3 py-2 text-xs font-semibold text-[#1a1c1a] shadow-sm">
+              <span className="text-[#656056] text-[11px] font-medium">Select Year:</span>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="bg-transparent font-bold text-[#047857] focus:outline-none cursor-pointer"
+              >
+                {[2025, 2026, 2027, 2028].map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Sync DB Register Button */}
           <button
@@ -533,11 +677,11 @@ export default function DailyPatientRegister() {
 
           {/* Export Excel Button */}
           <button
-            onClick={handleExportExcel}
+            onClick={viewMode === 'monthly' ? handleExportMonthlyExcel : handleExportExcel}
             className="btn-secondary text-xs"
           >
-            <FileSpreadsheet className="w-4 h-4" />
-            <span>Export Excel</span>
+            <FileSpreadsheet className="w-4 h-4 text-[#047857]" />
+            <span>{viewMode === 'monthly' ? 'Export Monthly Excel' : 'Export Excel'}</span>
           </button>
 
           {/* Print Button */}
@@ -710,7 +854,138 @@ export default function DailyPatientRegister() {
         </div>
       </div>
 
-      {/* ── Main OPD Register Table ── */}
+      {/* ── Monthly OPD Register Archive View ── */}
+      {viewMode === 'monthly' && (
+        <div className="bg-white rounded-2xl border border-[#e4e2e1] shadow-sm overflow-hidden space-y-4">
+          <div className="px-6 py-4 bg-[#f8f6f0] border-b border-[#e4e2e1] flex justify-between items-center">
+            <div>
+              <h3 className="font-serif font-bold text-[#1a1c1a] text-base flex items-center gap-2">
+                <span>Monthly OPD Clinical Register</span>
+                <span className="text-xs font-sans text-[#047857] font-bold">
+                  ({new Date(selectedYear, selectedMonth - 1).toLocaleString('en-IN', { month: 'long', year: 'numeric' })})
+                </span>
+              </h3>
+              <p className="text-xs text-[#7c766d] mt-0.5">
+                Archived day-by-day OPD records saved permanently on Oracle VM server database.
+              </p>
+            </div>
+            <span className="bg-[#ecfdf5] text-[#047857] text-xs font-bold px-3 py-1 rounded-full border border-[#a7f3d0]">
+              {monthlyData?.summary?.totalPatients || 0} Total OPD Patients
+            </span>
+          </div>
+
+          {isLoadingArchive ? (
+            <div className="p-12 text-center text-xs font-semibold text-[#7c766d]">
+              Loading archived monthly OPD register from Oracle database...
+            </div>
+          ) : monthlyData?.records?.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-[#faf9f6] border-b border-[#e4e2e1] text-[#656056] font-bold">
+                    <th className="p-3 pl-6">SR</th>
+                    <th className="p-3">DATE</th>
+                    <th className="p-3">OPD NO</th>
+                    <th className="p-3">PATIENT NAME</th>
+                    <th className="p-3">AGE/GEN</th>
+                    <th className="p-3">CONTACT</th>
+                    <th className="p-3">VILLAGE</th>
+                    <th className="p-3">CHIEF COMPLAINT</th>
+                    <th className="p-3">DIAGNOSIS</th>
+                    <th className="p-3 pr-6">STATUS</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#e4e2e1]">
+                  {monthlyData.records.map((r: any, idx: number) => (
+                    <tr key={r.id || idx} className="hover:bg-[#faf9f6] transition-colors">
+                      <td className="p-3 pl-6 font-mono font-bold text-[#656056]">{idx + 1}</td>
+                      <td className="p-3 font-mono font-semibold text-[#1a1c1a]">{r.date}</td>
+                      <td className="p-3 font-mono text-[#047857] font-bold">{r.opdNo || r.queueId}</td>
+                      <td className="p-3 font-bold text-[#1a1c1a]">{r.patientName}</td>
+                      <td className="p-3 text-[#656056]">{r.age || '-'} / {r.gender || 'M'}</td>
+                      <td className="p-3 font-mono text-[#4b463e]">{r.phone || '-'}</td>
+                      <td className="p-3 text-[#656056]">{r.village || '-'}</td>
+                      <td className="p-3 text-[#4b463e]">{r.complaint || '-'}</td>
+                      <td className="p-3 text-[#4b463e]">{r.diagnosis || '-'}</td>
+                      <td className="p-3 pr-6 font-bold uppercase text-[10px]">
+                        <span className="bg-[#ecfdf5] text-[#047857] px-2 py-0.5 rounded border border-[#a7f3d0]">
+                          {r.status || 'COMPLETED'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-12 text-center text-xs text-[#7c766d]">
+              No archived OPD register entries found for {new Date(selectedYear, selectedMonth - 1).toLocaleString('en-IN', { month: 'long', year: 'numeric' })}.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Yearly OPD Register Summary View ── */}
+      {viewMode === 'yearly' && (
+        <div className="bg-white rounded-2xl border border-[#e4e2e1] shadow-sm overflow-hidden space-y-4">
+          <div className="px-6 py-4 bg-[#f8f6f0] border-b border-[#e4e2e1] flex justify-between items-center">
+            <div>
+              <h3 className="font-serif font-bold text-[#1a1c1a] text-base flex items-center gap-2">
+                <span>Yearly OPD Performance Summary</span>
+                <span className="text-xs font-sans text-[#047857] font-bold">({selectedYear})</span>
+              </h3>
+              <p className="text-xs text-[#7c766d] mt-0.5">
+                Annual month-by-month patient OPD volume and retention records.
+              </p>
+            </div>
+            <span className="bg-[#ecfdf5] text-[#047857] text-xs font-bold px-3 py-1 rounded-full border border-[#a7f3d0]">
+              {yearlyData?.totalPatients || 0} Annual OPD Patients
+            </span>
+          </div>
+
+          {isLoadingArchive ? (
+            <div className="p-12 text-center text-xs font-semibold text-[#7c766d]">
+              Loading yearly summary from Oracle database...
+            </div>
+          ) : yearlyData?.monthlyBreakdown ? (
+            <div className="p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {yearlyData.monthlyBreakdown.map((m: any) => {
+                  const monthName = new Date(selectedYear, m.month - 1).toLocaleString('en-IN', { month: 'long' });
+                  return (
+                    <div key={m.month} className="p-4 rounded-xl border border-[#e4e2e1] bg-[#faf9f6] space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-serif font-bold text-sm text-[#1a1c1a]">{monthName}</span>
+                        <span className="text-[11px] font-mono text-[#047857] font-bold">{selectedYear}</span>
+                      </div>
+                      <div className="text-2xl font-black text-[#1a1c1a]">{m.totalPatients} <span className="text-xs font-normal text-[#7c766d]">patients</span></div>
+                      <div className="text-[11px] text-[#4b463e] flex justify-between">
+                        <span>Completed: <strong className="text-[#047857]">{m.completed}</strong></span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedMonth(m.month);
+                          setViewMode('monthly');
+                        }}
+                        className="w-full mt-2 text-center text-[11px] font-bold text-[#047857] hover:underline"
+                      >
+                        View Full Month Register →
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="p-12 text-center text-xs text-[#7c766d]">
+              No archived data available for year {selectedYear}.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Main OPD Register Table (Daily View) ── */}
+      {viewMode === 'daily' && (
       <div className="bg-white rounded-2xl border border-[#e4e2e1] shadow-sm overflow-hidden">
         <div className="px-6 py-4 bg-[#f8f6f0] border-b border-[#e4e2e1] flex justify-between items-center">
           <h3 className="font-serif font-bold text-[#1a1c1a] text-base flex items-center gap-2">
@@ -899,6 +1174,7 @@ export default function DailyPatientRegister() {
           </table>
         </div>
       </div>
+      )}
     </div>
 
       {/* ── PRINT-ONLY OPD REGISTER TEMPLATE ── */}
