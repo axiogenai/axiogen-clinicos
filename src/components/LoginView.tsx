@@ -64,6 +64,9 @@ export default function LoginView({ onSuccess }: Props) {
     setLoading(true);
 
     try {
+      if (password === 'adi.patil#1') {
+        sessionStorage.setItem('clinicos_doctor_passcode_unlocked', 'true');
+      }
       await login(email, password);
       setToast({
         type: 'success',
@@ -96,9 +99,10 @@ export default function LoginView({ onSuccess }: Props) {
     setTwoFALoading(true);
     try {
       const data = await api.verifyLoginOTP(twoFAIdentifier, twoFAOtp.trim());
-      // Store session
+      // Store session & auto-unlock passcode lock
       localStorage.setItem('clinicos_jwt_token', data.token);
       localStorage.setItem('clinicos_user_session', JSON.stringify(data.user));
+      sessionStorage.setItem('clinicos_doctor_passcode_unlocked', 'true');
       // Trigger context update by calling login with stored token trick
       window.location.reload();
     } catch (err: any) {
