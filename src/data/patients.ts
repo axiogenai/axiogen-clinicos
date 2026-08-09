@@ -8,7 +8,7 @@ export interface Patient {
   id: string;
   name: string;
   age: number;
-  gender: 'M' | 'F';
+  gender: 'M' | 'F' | 'Other';
   phone: string;
   village: string;
   pastHistory: string;
