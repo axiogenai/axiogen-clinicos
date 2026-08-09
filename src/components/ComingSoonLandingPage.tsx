@@ -47,8 +47,8 @@ export default function ComingSoonLandingPage() {
         </div>
 
         {/* Status Pill Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#ecfdf5] border border-[#a7f3d0] text-[#047857] text-xs font-bold tracking-wider uppercase shadow-sm mt-4">
-          <Clock className="w-3.5 h-3.5 text-[#047857]" />
+        <div className="inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full bg-[#ecfdf5] border-2 border-[#10b981]/35 text-[#047857] text-xs sm:text-sm font-extrabold tracking-widest uppercase shadow-md mt-6">
+          <Clock className="w-4 h-4 sm:w-4.5 h-4.5 text-[#047857]" />
           <span>Official Clinic Website • Launching Soon</span>
         </div>
       </div>
