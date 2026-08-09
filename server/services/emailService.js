@@ -1,10 +1,7 @@
-const { createClient } = require('@supabase/supabase-js');
 const nodemailer = require('nodemailer');
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://rykurrsenvqernwnofpa.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.placeholder';
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.placeholder';
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -15,21 +12,31 @@ const transporter = nodemailer.createTransport({
 });
 
 async function sendOTPEmail(toEmail, otp) {
-  // 1. Send via Supabase Password Recovery
+  // 1. Send via Supabase Auth Recovery Endpoint directly via REST API
   try {
-    const { data, error } = await supabase.auth.resetPasswordForEmail(toEmail, {
-      redirectTo: `${process.env.FRONTEND_URL || 'https://shinagareclinicos.vercel.app'}/reset-password`
+    const recoveryRes = await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      },
+      body: JSON.stringify({
+        email: toEmail,
+        redirect_to: `${process.env.FRONTEND_URL || 'https://shinagareclinicos.vercel.app'}/reset-password`
+      })
     });
-    if (!error) {
-      console.log(`⚡ Supabase Password Reset email sent to ${toEmail}`);
+    if (recoveryRes.ok) {
+      console.log(`⚡ Supabase Password Reset email triggered for ${toEmail}`);
     } else {
-      console.log(`ℹ️ Supabase reset dispatch note:`, error.message);
+      const errTxt = await recoveryRes.text();
+      console.log(`ℹ️ Supabase reset recovery note:`, errTxt);
     }
   } catch (err) {
     console.log(`ℹ️ Supabase email trigger:`, err.message);
   }
 
-  // 2. Send Direct HTML Email
+  // 2. Send Direct HTML Email with 6-digit OTP code
   try {
     const info = await transporter.sendMail({
       from: '"शिनगारे स्किन क्लिनिक" <shingareskinclinic@gmail.com>',
