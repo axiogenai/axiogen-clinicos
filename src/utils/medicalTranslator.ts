@@ -8,12 +8,17 @@ export type PrintLanguage = 'marathi' | 'english' | 'hindi' | 'kannada';
 
 export function cleanFrequencyString(str?: string): string {
   if (!str) return '';
-  // Specifically strip bracketed frequency explanations like (दिवसातून २ वेळा), (दिवसातून एकदा), (दिन में २ बार), (BD -> OD), etc.
-  return str
+  // 1. Strip tapering prefixes like "क्रीम टेपरिंग:", "गोळी टेपरिंग:", "cream टेपरिंग:", "Tapering Cream:", "Tapering Tab:"
+  let res = str
+    .replace(/^(?:क्रीम|गोळी|cream|tab|tablet|tapering|टेपरिंग|तपेरिंग)[\s\:\-\_]*(?:टेपरिंग|तपेरिंग|tapering)?[\s\:\-\_]*/gi, '')
+    // 2. Strip bracketed frequency explanations like (दिवसातून २ वेळा), (दिवसातून एकदा), (दिन में २ बार), (BD -> OD), etc.
     .replace(/\s*\((?:दिवसातून|दिन में|दिसून|दर|प्रति|दिन|times|वेळा)[^)]*\)?/gi, '')
     .replace(/\s*\([^)]*\)/g, '')
     .replace(/\s*\(.*$/g, '') // unclosed trailing bracket
     .trim();
+
+  // Clean any leftover leading punctuation
+  return res.replace(/^[\:\-\s]+/, '').trim();
 }
 
 export function stripRawCodes(str: string): string {
