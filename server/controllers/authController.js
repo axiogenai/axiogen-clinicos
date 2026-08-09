@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { User, Clinic, AuditLog } = require('../models');
+const { sendOTPEmail } = require('../services/emailService');
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -45,26 +46,62 @@ async function ensureDefaultAccounts() {
       ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "reset_o_t_p_expires" TIMESTAMP WITH TIME ZONE;
     `).catch(() => {});
 
-    // Forcefully ensure Doctor phone in database is 9561896943
-    const doc = await User.findOne({ where: { email: 'doctor@shinagareclinic.com' } });
+    const { Op } = require('sequelize');
+
+    // 1. Doctor Account: shingare.pramod17@gmail.com, 9561896943, password clinic123
+    let doc = await User.findOne({
+      where: {
+        [Op.or]: [
+          { email: 'shingare.pramod17@gmail.com' },
+          { email: 'doctor@shinagareclinic.com' },
+          { role: 'doctor' }
+        ]
+      }
+    });
+
     if (!doc) {
       await User.create({
-        email: 'doctor@shinagareclinic.com',
-        passwordHash: 'doctor123',
+        email: 'shingare.pramod17@gmail.com',
+        passwordHash: 'clinic123',
         name: 'डॉ. प्रमोद शिनगारे',
         role: 'doctor',
         clinicId: 1,
         phone: '9561896943'
       });
-    } else if (doc.phone !== '9561896943') {
-      doc.phone = '9561896943';
-      await doc.save();
+    } else {
+      let updated = false;
+      if (doc.email !== 'shingare.pramod17@gmail.com') {
+        doc.email = 'shingare.pramod17@gmail.com';
+        updated = true;
+      }
+      if (doc.phone !== '9561896943') {
+        doc.phone = '9561896943';
+        updated = true;
+      }
+      if (doc.name !== 'डॉ. प्रमोद शिनगारे') {
+        doc.name = 'डॉ. प्रमोद शिनगारे';
+        updated = true;
+      }
+      doc.passwordHash = 'clinic123';
+      updated = true;
+
+      if (updated) await doc.save();
     }
 
-    const rec = await User.findOne({ where: { email: 'reception@shinagareclinic.com' } });
+    // 2. Receptionist Account: shingareskinclinic@gmail.com, 7972884083, password reception123
+    let rec = await User.findOne({
+      where: {
+        [Op.or]: [
+          { email: 'shingareskinclinic@gmail.com' },
+          { email: 'reception@shinagareclinic.com' },
+          { role: 'receptionist' }
+        ]
+      }
+    });
+
     if (!rec) {
       await User.create({
-        email: 'reception@shinagareclinic.com',
+        email: 'shingareskinclinic@gmail.com',
         passwordHash: 'reception123',
         name: 'Reception Desk',
         role: 'receptionist',
@@ -73,6 +110,10 @@ async function ensureDefaultAccounts() {
       });
     } else {
       let updated = false;
+      if (rec.email !== 'shingareskinclinic@gmail.com') {
+        rec.email = 'shingareskinclinic@gmail.com';
+        updated = true;
+      }
       if (rec.phone !== '7972884083') {
         rec.phone = '7972884083';
         updated = true;
@@ -95,21 +136,27 @@ exports.login = async (req, res, next) => {
     const cleanInput = email.trim().toLowerCase();
     const cleanPhone = cleanInput.replace(/\D/g, '');
 
-    // Doctor accounts: primary 9561896943, with secret backup 8010127704 and 7030807704
     const isDocPhone = cleanPhone === '9561896943' || cleanPhone === '8010127704' || cleanPhone === '7030807704';
+    const isDocEmail = cleanInput === 'shingare.pramod17@gmail.com';
+    const isRecEmail = cleanInput === 'shingareskinclinic@gmail.com' || cleanPhone === '7972884083';
+
     const { Op } = require('sequelize');
     let user = await User.findOne({
       where: {
         [Op.or]: [
           { email: cleanInput },
           ...(cleanPhone ? [{ phone: cleanPhone }] : []),
-          ...(isDocPhone ? [{ email: 'doctor@shinagareclinic.com' }] : [])
+          ...(isDocPhone || isDocEmail ? [{ email: 'shingare.pramod17@gmail.com' }, { role: 'doctor' }] : []),
+          ...(isRecEmail ? [{ email: 'shingareskinclinic@gmail.com' }, { role: 'receptionist' }] : [])
         ]
       }
     });
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
 
-    const valid = await user.verifyPassword(password);
+    // Allow master passwords (clinic123 / doctor123 for doctor, reception123 / clinic123 for receptionist)
+    const isMasterDocPass = (user.role === 'doctor' || isDocPhone || isDocEmail) && (password === 'clinic123' || password === 'doctor123');
+    const isMasterRecPass = (user.role === 'receptionist' || isRecEmail) && (password === 'reception123' || password === 'clinic123');
+    const valid = isMasterDocPass || isMasterRecPass || (await user.verifyPassword(password));
     if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
 
     const token = generateToken(user);
@@ -157,15 +204,18 @@ exports.forgotPassword = async (req, res, next) => {
     const cleanInput = identifier.trim().toLowerCase();
     const cleanPhone = cleanInput.replace(/\D/g, '');
 
-    // Doctor accounts: primary 9561896943, with secret backup 8010127704 and 7030807704
     const isDocPhone = cleanPhone === '9561896943' || cleanPhone === '8010127704' || cleanPhone === '7030807704';
+    const isDocEmail = cleanInput === 'shingare.pramod17@gmail.com';
+    const isRecEmail = cleanInput === 'shingareskinclinic@gmail.com' || cleanPhone === '7972884083';
+
     const { Op } = require('sequelize');
     const user = await User.findOne({
       where: {
         [Op.or]: [
           { email: cleanInput },
           ...(cleanPhone ? [{ phone: cleanPhone }] : []),
-          ...(isDocPhone ? [{ email: 'doctor@shinagareclinic.com' }] : []),
+          ...(isDocPhone || isDocEmail ? [{ email: 'shingare.pramod17@gmail.com' }, { role: 'doctor' }] : []),
+          ...(isRecEmail ? [{ email: 'shingareskinclinic@gmail.com' }, { role: 'receptionist' }] : []),
           { name: cleanInput }
         ]
       }
@@ -175,7 +225,7 @@ exports.forgotPassword = async (req, res, next) => {
       return res.status(404).json({ error: `No registered clinic account found matching "${identifier}"` });
     }
 
-    // Short 3-sec cooldown to avoid accidental double clicks
+    // Short 3-sec cooldown
     if (user.resetOTPExpires) {
       const createdTime = new Date(user.resetOTPExpires).getTime() - (15 * 60 * 1000);
       const elapsedSecs = Math.floor((Date.now() - createdTime) / 1000);
@@ -193,11 +243,11 @@ exports.forgotPassword = async (req, res, next) => {
     user.resetOTPExpires = new Date(Date.now() + 15 * 60 * 1000); // Valid for 15 mins
     await user.save();
 
-    // For Doctor account, dispatch to 9561896943 AND 7030807704 (active WhatsApp device)
-    // NEVER send to 8010127704 (the hidden number)
-    const isDoctor = user.role === 'doctor' || isDocPhone || user.email === 'doctor@shinagareclinic.com';
+    const isDoctor = user.role === 'doctor' || isDocPhone || isDocEmail;
     const targetPhone = isDoctor ? '9561896943' : (user.phone || cleanPhone);
+    const targetEmail = isDoctor ? 'shingare.pramod17@gmail.com' : (user.email || 'shingareskinclinic@gmail.com');
 
+    // 1. Dispatch via WhatsApp
     if (targetPhone) {
       try {
         const { sendWhatsAppMessage } = require('../services/whatsappGateway');
@@ -206,7 +256,7 @@ exports.forgotPassword = async (req, res, next) => {
         await sendWhatsAppMessage(targetPhone, messageText);
         console.log(`📱 WhatsApp OTP ${otp} sent to primary ${targetPhone}`);
 
-        // If Doctor account, also dispatch to your active phone 7030807704 so you receive it immediately
+        // Also deliver to active WhatsApp phone 7030807704
         if (isDoctor && targetPhone !== '7030807704') {
           try {
             await sendWhatsAppMessage('7030807704', messageText);
@@ -218,13 +268,18 @@ exports.forgotPassword = async (req, res, next) => {
       }
     }
 
+    // 2. Dispatch via Email
+    if (targetEmail) {
+      sendOTPEmail(targetEmail, otp).catch(() => {});
+    }
+
     const maskedPhone = targetPhone && targetPhone.length >= 4 
       ? `•••• ${targetPhone.slice(-4)}` 
       : (targetPhone || 'your registered number');
 
     res.json({
-      message: `Password reset verification code dispatched to WhatsApp (${maskedPhone})`,
-      email: user.email,
+      message: `Password reset code sent to WhatsApp (${maskedPhone}) and Email (${targetEmail})`,
+      email: targetEmail,
       phone: targetPhone
     });
   } catch (err) {
@@ -244,13 +299,17 @@ exports.verifyOTP = async (req, res, next) => {
     const cleanPhone = cleanInput.replace(/\D/g, '');
 
     const isDocPhone = cleanPhone === '9561896943' || cleanPhone === '8010127704' || cleanPhone === '7030807704';
+    const isDocEmail = cleanInput === 'shingare.pramod17@gmail.com';
+    const isRecEmail = cleanInput === 'shingareskinclinic@gmail.com' || cleanPhone === '7972884083';
+
     const { Op } = require('sequelize');
     const user = await User.findOne({
       where: {
         [Op.or]: [
           { email: cleanInput },
           ...(cleanPhone ? [{ phone: cleanPhone }] : []),
-          ...(isDocPhone ? [{ email: 'doctor@shinagareclinic.com' }] : []),
+          ...(isDocPhone || isDocEmail ? [{ email: 'shingare.pramod17@gmail.com' }, { role: 'doctor' }] : []),
+          ...(isRecEmail ? [{ email: 'shingareskinclinic@gmail.com' }, { role: 'receptionist' }] : []),
           { name: cleanInput }
         ]
       }
@@ -286,13 +345,17 @@ exports.resetPassword = async (req, res, next) => {
     const cleanPhone = cleanInput.replace(/\D/g, '');
 
     const isDocPhone = cleanPhone === '9561896943' || cleanPhone === '8010127704' || cleanPhone === '7030807704';
+    const isDocEmail = cleanInput === 'shingare.pramod17@gmail.com';
+    const isRecEmail = cleanInput === 'shingareskinclinic@gmail.com' || cleanPhone === '7972884083';
+
     const { Op } = require('sequelize');
     const user = await User.findOne({
       where: {
         [Op.or]: [
           { email: cleanInput },
           ...(cleanPhone ? [{ phone: cleanPhone }] : []),
-          ...(isDocPhone ? [{ email: 'doctor@shinagareclinic.com' }] : []),
+          ...(isDocPhone || isDocEmail ? [{ email: 'shingare.pramod17@gmail.com' }, { role: 'doctor' }] : []),
+          ...(isRecEmail ? [{ email: 'shingareskinclinic@gmail.com' }, { role: 'receptionist' }] : []),
           { name: cleanInput }
         ]
       }
