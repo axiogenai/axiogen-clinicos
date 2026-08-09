@@ -68,9 +68,11 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
         newErrors.phone = 'Mobile number must start with 6, 7, 8, or 9 (valid Indian mobile)';
       }
 
-      const numAge = Number(formData.age);
-      if (!formData.age.trim() || isNaN(numAge) || !Number.isInteger(numAge) || numAge < 0 || numAge > 120) {
-        newErrors.age = 'Age must be a valid whole number between 0 and 120';
+      if (formData.age.trim()) {
+        const numAge = Number(formData.age);
+        if (isNaN(numAge) || !Number.isInteger(numAge) || numAge < 0 || numAge > 120) {
+          newErrors.age = 'Age must be a valid whole number between 0 and 120';
+        }
       }
 
       const trimmedVillage = formData.village.trim();
@@ -209,7 +211,7 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="form-label">Age <span className="text-red-500">*</span></label>
+                  <label className="form-label">Age (Optional)</label>
                   <input 
                      type="number" 
                     className={`form-input ${errors.age ? 'error' : ''}`}
