@@ -10,7 +10,7 @@ const verifyToken = (req, res, next) => {
   }
 
   if (token === 'mock_offline_jwt_token') {
-    req.user = { id: 1, clinicId: 1, role: 'doctor', email: 'doctor@shinagareclinic.com' };
+    req.user = { id: 1, clinicId: 1, role: 'doctor', email: 'shingare.pramod17@gmail.com' };
     return next();
   }
 
