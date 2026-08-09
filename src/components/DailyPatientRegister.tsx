@@ -563,15 +563,7 @@ export default function DailyPatientRegister() {
       {/* ── Top Header Banner (On-Brand Warm Ivory Styling) ── */}
       <div className="bg-[#faf9f6] rounded-2xl p-6 border border-[#e4e2e1] shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="bg-[#ecfdf5] text-[#047857] border border-[#a7f3d0] text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full">
-              OFFICIAL CLINICAL RECORD • 7-DAY AUTOMATIC RETENTION
-            </span>
-          </div>
-          <h2 className="text-2xl font-serif font-bold text-[#1a1c1a] mt-1.5">Daily Patient OPD Register</h2>
-          <p className="text-xs text-[#7c766d] mt-0.5">
-            Active OPD queue items are automatically retained for 7 days before auto-purge. Permanent register workbooks are saved to Excel backups.
-          </p>
+          <h2 className="text-2xl font-serif font-bold text-[#1a1c1a]">Patient OPD Register</h2>
         </div>
 
         {/* Mode Selector Tabs: Daily, Monthly, Yearly Archives */}
