@@ -43,7 +43,7 @@ export default function MedicineSearchModal({ medicines, onAdd, onClose }: Medic
 
   const filtered = useMemo(() => {
     if (search.trim() === '') {
-      return medicines.slice(0, 100);
+      return medicines;
     }
     const lowerQuery = search.toLowerCase().trim();
     
