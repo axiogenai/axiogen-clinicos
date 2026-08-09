@@ -39,15 +39,21 @@ exports.register = async (req, res, next) => {
 async function ensureDefaultAccounts() {
   try {
     const sequelize = require('../config/database');
-    await sequelize.query(`
-      ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "reset_otp" VARCHAR(255);
-      ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "reset_otp_expires" TIMESTAMP WITH TIME ZONE;
-      ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "reset_o_t_p" VARCHAR(255);
-      ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "reset_o_t_p_expires" TIMESTAMP WITH TIME ZONE;
-      ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "passcode" VARCHAR(255);
-    `).catch(() => {});
+    const { DataTypes, Op } = require('sequelize');
+    const queryInterface = sequelize.getQueryInterface();
 
-    const { Op } = require('sequelize');
+    try {
+      const tableInfo = await queryInterface.describeTable('Users').catch(() => ({}));
+      if (tableInfo && !tableInfo['reset_otp'] && !tableInfo['reset_o_t_p']) {
+        await queryInterface.addColumn('Users', 'reset_otp', { type: DataTypes.STRING, allowNull: true }).catch(() => {});
+      }
+      if (tableInfo && !tableInfo['reset_otp_expires'] && !tableInfo['reset_o_t_p_expires']) {
+        await queryInterface.addColumn('Users', 'reset_otp_expires', { type: DataTypes.DATE, allowNull: true }).catch(() => {});
+      }
+      if (tableInfo && !tableInfo['passcode']) {
+        await queryInterface.addColumn('Users', 'passcode', { type: DataTypes.STRING, allowNull: true }).catch(() => {});
+      }
+    } catch (e) {}
 
     // 1. Doctor Account: shingare.pramod17@gmail.com, 9561896943, password clinic123
     let doc = await User.findOne({
