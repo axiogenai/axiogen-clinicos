@@ -10,6 +10,7 @@
     "build": "echo 'No build step required'"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.2",
     "@whiskeysockets/baileys": "^7.0.0-rc14",
     "bcryptjs": "^3.0.3",
     "compression": "^1.8.1",
@@ -19,6 +20,7 @@
     "express-rate-limit": "^8.6.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^9.0.5",
     "pg": "^8.13.1",
     "pg-hstore": "^2.3.4",
     "qrcode": "^1.5.4",
