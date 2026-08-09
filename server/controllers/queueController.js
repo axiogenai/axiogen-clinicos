@@ -117,11 +117,13 @@ exports.addToQueue = async (req, res, next) => {
 
 exports.updateQueueStatus = async (req, res, next) => {
   try {
-    const { status } = req.body;
+    const updateData = { ...req.body };
+    if (updateData.phone) updateData.phone = updateData.phone.replace(/\D/g, '');
+    if (updateData.age) updateData.age = parseInt(updateData.age, 10);
     const id = req.params.id;
 
     const [updatedCount] = await Queue.update(
-      { status },
+      updateData,
       {
         where: {
           [Op.or]: [
@@ -133,8 +135,34 @@ exports.updateQueueStatus = async (req, res, next) => {
       }
     );
 
-    console.log(`✅ [QUEUE STATUS UPDATED] Updated ${updatedCount} queue items matching '${id}' to status: '${status}'`);
-    res.json({ success: true, updatedCount, status });
+    // If patientId is present and patient details were provided, update Patient record too
+    const pId = req.body.patientId || id;
+    if (pId) {
+      try {
+        const patientFields = {};
+        if (req.body.name) patientFields.name = req.body.name;
+        if (req.body.age) patientFields.age = parseInt(req.body.age, 10);
+        if (req.body.gender) patientFields.gender = req.body.gender;
+        if (req.body.phone) patientFields.phone = req.body.phone.replace(/\D/g, '');
+        if (req.body.village) patientFields.village = req.body.village;
+        if (req.body.pastHistory) patientFields.pastHistory = req.body.pastHistory;
+        if (req.body.allergies) patientFields.allergies = req.body.allergies;
+
+        if (Object.keys(patientFields).length > 0) {
+          await Patient.update(patientFields, {
+            where: {
+              [Op.or]: [
+                { id: pId },
+                ...(req.body.phone ? [{ phone: req.body.phone.replace(/\D/g, '') }] : [])
+              ]
+            }
+          });
+        }
+      } catch (e) {}
+    }
+
+    console.log(`✅ [QUEUE STATUS/DETAILS UPDATED] Updated queue item '${id}'`);
+    res.json({ success: true, updatedCount, data: updateData });
     broadcastQueueUpdate(); // Push real-time update to all connected browsers
   } catch (err) {
     next(err);
