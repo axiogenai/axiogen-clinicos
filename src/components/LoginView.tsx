@@ -234,7 +234,13 @@ export default function LoginView({ onSuccess }: Props) {
         <div className="text-center space-y-2">
           <div className="flex justify-center items-center py-1">
             <img
-              src={logoImg}
+              src={logoImg || "/logo-symbol.png"}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                if (!target.src.endsWith('/logo.png')) {
+                  target.src = '/logo.png';
+                }
+              }}
               alt="Shinagare Clinic Emblem"
               className="h-16 w-auto mx-auto object-contain drop-shadow-sm"
             />
