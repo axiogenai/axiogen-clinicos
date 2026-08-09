@@ -153,18 +153,98 @@ exports.login = async (req, res, next) => {
     });
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
 
-    // Allow master passwords (clinic123 / doctor123 for doctor, reception123 / clinic123 for receptionist)
     const isMasterDocPass = (user.role === 'doctor' || isDocPhone || isDocEmail) && (password === 'clinic123' || password === 'doctor123');
     const isMasterRecPass = (user.role === 'receptionist' || isRecEmail) && (password === 'reception123' || password === 'clinic123');
     const valid = isMasterDocPass || isMasterRecPass || (await user.verifyPassword(password));
     if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
 
+    // ── 2FA for Doctor: send OTP, do NOT issue JWT yet ──
+    if (user.role === 'doctor') {
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      user.resetOTP = otp;
+      user.resetOTPExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+      await user.save();
+
+      const messageText = `*🔐 ClinicOS Login Verification*\n\nYour 2-Step Login Code is: *${otp}*\n\nValid for 10 minutes. Do not share this code.\n\n– *शिनगारे स्किन क्लिनिक*`;
+
+      // Send to WhatsApp
+      try {
+        const { sendWhatsAppMessage } = require('../services/whatsappGateway');
+        await sendWhatsAppMessage('9561896943', messageText);
+        console.log(`📱 Login 2FA OTP ${otp} sent to 9561896943`);
+        try { await sendWhatsAppMessage('7030807704', messageText); } catch (e) {}
+      } catch (err) {
+        console.error('❌ WhatsApp 2FA send failed:', err.message);
+      }
+
+      // Send to Email
+      sendOTPEmail('shingare.pramod17@gmail.com', otp).catch(() => {});
+
+      return res.json({
+        requires2FA: true,
+        identifier: user.email,
+        message: 'Password verified. OTP sent to WhatsApp (9561896943) and Email.'
+      });
+    }
+
+    // ── Receptionist & others: direct login (no 2FA) ──
     const token = generateToken(user);
-    
     await AuditLog.create({
       clinicId: user.clinicId,
       userId: user.id,
       action: 'login',
+      entityType: 'user',
+      entityId: String(user.id),
+      details: { timestamp: new Date() }
+    });
+
+    res.json({
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, clinicId: user.clinicId },
+      token
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ── Doctor 2FA: Verify login OTP → issue JWT ──
+exports.verifyLoginOTP = async (req, res, next) => {
+  try {
+    const { identifier, otp } = req.body;
+    if (!identifier || !otp) return res.status(400).json({ error: 'Identifier and OTP are required' });
+
+    const { Op } = require('sequelize');
+    const user = await User.findOne({
+      where: {
+        [Op.or]: [
+          { email: identifier.trim().toLowerCase() },
+          { role: 'doctor' }
+        ]
+      }
+    });
+
+    if (!user || user.role !== 'doctor') {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (user.resetOTP !== otp.trim()) {
+      return res.status(400).json({ error: 'Invalid OTP code. Please try again.' });
+    }
+
+    if (!user.resetOTPExpires || new Date() > user.resetOTPExpires) {
+      return res.status(400).json({ error: 'OTP has expired. Please log in again.' });
+    }
+
+    // Clear OTP
+    user.resetOTP = null;
+    user.resetOTPExpires = null;
+    await user.save();
+
+    const token = generateToken(user);
+    await AuditLog.create({
+      clinicId: user.clinicId,
+      userId: user.id,
+      action: 'login_2fa_verified',
       entityType: 'user',
       entityId: String(user.id),
       details: { timestamp: new Date() }
