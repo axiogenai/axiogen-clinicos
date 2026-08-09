@@ -4,7 +4,7 @@ const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.SMTP_USER || 'shingare.pramod17@gmail.com',
+    user: process.env.SMTP_USER || 'shingareskinclinic@gmail.com',
     pass: process.env.SMTP_PASS || process.env.EMAIL_PASS || ''
   }
 });
@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
 async function sendOTPEmail(toEmail, otp) {
   try {
     const info = await transporter.sendMail({
-      from: '"शिनगारे स्किन क्लिनिक" <shingare.pramod17@gmail.com>',
+      from: '"शिनगारे स्किन क्लिनिक" <shingareskinclinic@gmail.com>',
       to: toEmail,
       subject: `🔐 ClinicOS Password Reset OTP: ${otp}`,
       html: `
