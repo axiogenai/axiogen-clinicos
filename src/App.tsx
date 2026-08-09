@@ -254,13 +254,7 @@ function MainApp() {
             {/* Brand Mark */}
             <div className="flex items-center gap-2.5 shrink-0">
               <img
-                src={logoImg || "/logo-symbol.png"}
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  if (!target.src.endsWith('/logo.png')) {
-                    target.src = '/logo.png';
-                  }
-                }}
+                src={logoImg}
                 alt="Shinagare Skin & Cosmetic Clinic Logo"
                 className="h-9 w-auto object-contain shrink-0 drop-shadow-sm"
               />
