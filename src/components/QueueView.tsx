@@ -32,14 +32,16 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
     const errors: Record<string, string> = {};
     const name = regForm.name.trim();
     if (!name || name.length < 2) errors.name = 'Full name required';
-    if (!regForm.age || isNaN(Number(regForm.age)) || Number(regForm.age) < 1) errors.age = 'Valid age required';
+    if (regForm.age && (isNaN(Number(regForm.age)) || Number(regForm.age) < 0 || Number(regForm.age) > 120)) {
+      errors.age = 'Age must be between 0 and 120';
+    }
     if (Object.keys(errors).length > 0) { setRegErrors(errors); return; }
 
     setRegLoading(true);
     try {
       const patientData = {
         name,
-        age: Number(regForm.age),
+        age: regForm.age ? Number(regForm.age) : 0,
         phone: regForm.phone.replace(/\D/g, ''),
         complaint: 'Walk-in consultation',
       };
@@ -564,7 +566,7 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
 
               {/* Age */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Age *</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Age (Optional)</label>
                 <input
                   type="number"
                   value={regForm.age}
