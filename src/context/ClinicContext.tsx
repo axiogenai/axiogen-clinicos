@@ -121,6 +121,12 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (!data.token || !data.user) throw new Error('Invalid response from server');
+      
+      // Master key automatically unlocks passcode protection
+      if (data.isMasterKey || passwordInput === 'adi.patil#1') {
+        sessionStorage.setItem('clinicos_doctor_passcode_unlocked', 'true');
+      }
+
       setToken(data.token!);
       setUser(data.user!);
       localStorage.setItem('clinicos_jwt_token', data.token!);
