@@ -212,6 +212,10 @@ function MainApp() {
     } else if (user?.role === 'doctor' || user?.role === 'admin') {
       setTab('doctor');
     }
+
+    if (sessionStorage.getItem('clinicos_doctor_passcode_unlocked') === 'true') {
+      setIsPasscodeUnlocked(true);
+    }
   }, [user]);
 
   if (!user || !token) {
