@@ -66,25 +66,25 @@ export default function ComingSoonLandingPage() {
         </p>
 
         {/* Notify / Subscribe Box */}
-        <div className="mt-8 w-full max-w-md">
+        <div className="mt-8 w-full max-w-md px-1">
           {emailSubscribed ? (
             <div className="p-4 rounded-2xl bg-[#ecfdf5] border border-[#a7f3d0] text-[#047857] flex items-center justify-center gap-2 text-sm font-bold shadow-md">
               <CheckCircle2 className="w-5 h-5 text-[#047857]" />
               <span>Thank you! We’ll notify you when our site launches.</span>
             </div>
           ) : (
-            <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row items-center gap-2 bg-white p-2 rounded-2xl border border-[#e7e5e4] shadow-xl">
+            <form onSubmit={handleSubscribe} className="w-full flex flex-col sm:flex-row items-center gap-2 bg-transparent sm:bg-white p-0 sm:p-1.5 rounded-2xl border-0 sm:border border-[#e7e5e4] sm:shadow-lg">
               <input
                 type="email"
                 required
                 value={subscriberEmail}
                 onChange={(e) => setSubscriberEmail(e.target.value)}
                 placeholder="Enter your email for launch updates..."
-                className="w-full px-4 py-3 bg-transparent text-sm text-[#1a1c1a] placeholder-[#a8a29e] focus:outline-none"
+                className="w-full px-4 py-3.5 bg-white sm:bg-transparent text-sm text-[#1a1c1a] placeholder-[#a8a29e] rounded-xl sm:rounded-none border border-[#e7e5e4] sm:border-0 focus:outline-none shadow-sm sm:shadow-none"
               />
               <button
                 type="submit"
-                className="w-full sm:w-auto px-6 py-3 bg-[#047857] hover:bg-[#065f46] text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer active:scale-95"
+                className="w-full sm:w-auto px-6 py-3.5 sm:py-3 bg-[#047857] hover:bg-[#065f46] text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer active:scale-95 shrink-0"
               >
                 <span>Get Notified</span>
                 <ArrowRight className="w-4 h-4" />
@@ -139,28 +139,30 @@ export default function ComingSoonLandingPage() {
         </div>
 
         {/* ── Doctor Info Banner ── */}
-        <div className="mt-12 w-full p-6 sm:p-8 rounded-3xl bg-white border border-[#e7e5e4] shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6 text-left">
-          <div className="flex items-center gap-4">
+        <div className="mt-12 w-full p-6 sm:p-8 rounded-3xl bg-white border border-[#e7e5e4] shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 text-left">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-[#047857] text-white font-bold flex items-center justify-center text-xl shadow-md shrink-0">
               PS
             </div>
             <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#047857] bg-[#ecfdf5] px-2 py-0.5 rounded border border-[#a7f3d0]">
-                Lead Consultant
-              </span>
+              <div className="inline-block">
+                <span className="text-[9px] font-extrabold uppercase tracking-widest text-[#047857] bg-[#ecfdf5] px-2 py-0.5 rounded border border-[#a7f3d0]">
+                  Lead Consultant
+                </span>
+              </div>
               <h3 className="text-lg font-serif font-bold text-[#1a1c1a] mt-1">Dr. Pramod Shingare</h3>
-              <p className="text-xs text-[#78716c]">M.D. (Dermatology, Venereology & Leprosy) • Consultant Cosmetologist</p>
+              <p className="text-xs text-[#78716c] mt-0.5">M.D. (Dermatology, Venereology & Leprosy) • Consultant Cosmetologist</p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-5 text-xs text-[#44403c]">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 text-xs text-[#44403c] w-full md:w-auto border-t md:border-t-0 border-[#f0ede6] pt-4 md:pt-0">
             <div className="flex items-center gap-2">
               <Phone className="w-4 h-4 text-[#047857]" />
               <span className="font-bold text-[#1a1c1a]">+91 9561896943</span>
             </div>
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-[#047857]" />
-              <span>shingare.pramod17@gmail.com</span>
+              <span className="font-mono text-[#57534e]">shingare.pramod17@gmail.com</span>
             </div>
           </div>
         </div>
