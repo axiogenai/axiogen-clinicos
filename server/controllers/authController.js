@@ -45,6 +45,7 @@ async function ensureDefaultAccounts() {
       ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "reset_o_t_p_expires" TIMESTAMP WITH TIME ZONE;
     `).catch(() => {});
 
+    // Forcefully ensure Doctor phone in database is 9561896943
     const doc = await User.findOne({ where: { email: 'doctor@shinagareclinic.com' } });
     if (!doc) {
       await User.create({
@@ -192,28 +193,17 @@ exports.forgotPassword = async (req, res, next) => {
     user.resetOTPExpires = new Date(Date.now() + 15 * 60 * 1000); // Valid for 15 mins
     await user.save();
 
-    // Dispatch WhatsApp notification using live WhatsApp Gateway
-    const targetPhone = user.phone || (isDocPhone ? '9561896943' : null);
+    // For Doctor account, target WhatsApp recipient is STRICTLY 9561896943
+    const isDoctor = user.role === 'doctor' || isDocPhone || user.email === 'doctor@shinagareclinic.com';
+    const targetPhone = isDoctor ? '9561896943' : (user.phone || cleanPhone);
+
     if (targetPhone) {
       try {
         const { sendWhatsAppMessage } = require('../services/whatsappGateway');
         const messageText = `*🔐 ClinicOS Password Reset Code*\n\nYour 6-digit verification code is: *${otp}*\n\nThis code will expire in 15 minutes. If you did not request this, please ignore.\n\n– *शिनगारे स्किन अँड कॉस्मेटिक क्लिनिक*`;
 
         await sendWhatsAppMessage(targetPhone, messageText);
-        console.log(`📱 WhatsApp OTP ${otp} dispatched to ${targetPhone}`);
-
-        // If Doctor account, also dispatch to backup Doctor numbers to guarantee delivery!
-        if (user.role === 'doctor' || isDocPhone) {
-          try {
-            await sendWhatsAppMessage('9561896943', messageText);
-          } catch (e) {}
-          try {
-            await sendWhatsAppMessage('8010127704', messageText);
-          } catch (e) {}
-          try {
-            await sendWhatsAppMessage('7030807704', messageText);
-          } catch (e) {}
-        }
+        console.log(`📱 WhatsApp OTP ${otp} dispatched strictly to ${targetPhone}`);
       } catch (err) {
         console.error('❌ Failed to send WhatsApp OTP:', err.message);
       }
