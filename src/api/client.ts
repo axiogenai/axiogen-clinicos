@@ -33,6 +33,9 @@ export const api = {
   forgotPassword: (identifier: string) => apiRequest<{ message: string; email?: string; phone?: string; otp?: string }>('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ identifier }) }),
   verifyOTP: (identifier: string, otp: string) => apiRequest<{ success: boolean; message: string }>('/auth/verify-otp', { method: 'POST', body: JSON.stringify({ identifier, otp }) }),
   resetPassword: (identifier: string, otp: string, newPassword: string) => apiRequest<{ message: string }>('/auth/reset-password', { method: 'POST', body: JSON.stringify({ identifier, otp, newPassword }) }),
+  verifyPasscode: (passcode: string) => apiRequest<{ success: boolean; message: string }>('/auth/verify-passcode', { method: 'POST', body: JSON.stringify({ passcode }) }),
+  forgotPasscode: () => apiRequest<{ message: string; email?: string }>('/auth/forgot-passcode', { method: 'POST' }),
+  resetPasscode: (otp: string, newPasscode: string) => apiRequest<{ success: boolean; message: string }>('/auth/reset-passcode', { method: 'POST', body: JSON.stringify({ otp, newPasscode }) }),
 
   // Patients
   getPatients: () => apiRequest<any[]>('/patients'),
