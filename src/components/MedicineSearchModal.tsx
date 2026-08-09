@@ -10,23 +10,163 @@ interface MedicineSearchModalProps {
 }
 
 const FREQUENCIES = [
-  'Once daily', 'Twice daily', 'Thrice daily', 'Four times daily',
-  '१ गोळी सकाळी १ गोळी रात्री घेणे', '१/२ गोळी सकाळी घेणे', 'उपाशीपोटी घेणे', 'जेवणानंतर घेणे', 'दर सोमवारी १ गोळी घेणे', 'दर बुधवारी १ गोळी घेणे', 'दर शनिवारी १ गोळी घेणे',
-  '७ दिवसानंतर चालू करणे', 'सकाळी लावणे १-२ तास ठेवणे', 'काळ्या डागावर लावणे', 'pimples (मोड्यांवर) लावणे', 'full फेस लावणे',
-  'एक दिवस आड सकाळी डोक्यात लावणे (१०-१५ मिनीट ठेवणे)', 'आठवड्यातून दोनदा सकाळी डोक्यात लावणे (१० ते १५ मिनीट ठेवणे)',
-  'सकाळी १ml रात्री १ml डोक्यात लावणे', 'दर बुधवारी आणि शनिवारी रात्री डोक्यात लावणे',
-  'आठवड्यातून दोन वेळेस सकाळी डोके धुणे', 'एक दिवस आड सकाळी डोके धुणे',
-  'सलग तीन दिवस रात्री मानेच्या खाली संपुर्ण शरीरभर लावणे', 'सकाळी आंघोळीनंतर संपुर्ण शरीरभर लावणे',
-  'डोक्यात लावणे', 'चेहऱ्यावर लावणे', 'जांघेत लावणे', 'बगलेत लावणे', 'नखांना लावणे', 'तोंडात लावणे', 'ओटांवर लावणे',
-  'पाठीवर लावणे', 'पोटावर लावणे', 'मांडीला लावणे', 'तळपायावर लावणे', 'तळहातावर लावणे', 'बोटांना लावणे', 'मोड्यांवर लावणे',
-  'कानाला लावणे', 'कानामध्ये लावणे', 'डोळ्यावर लावणे', 'डोळ्याखाली लावणे', 'डोळ्यावरती लावणे', 'कपाळावर लावणे',
-  'मानेवर लावणे', 'गळ्यावर लावणे', 'हाताला लावणे', 'लिंगावर लावणे', 'अंडकोशावर लावणे', 'गुदमार्गावर लावणे',
-  'बसण्याच्या जागी लावणे', 'कोपऱ्यावर लावणे', 'कोपऱ्यामागे लावणे', 'गुडघ्यावर लावणे', 'गुडघ्यामागे लावणे',
-  'मनगटाला लावणे', 'घोट्याला लावणे', 'पायाच्या बोटामध्ये लावणे', 'हाताच्या बोटामध्ये लावणे',
-  'Tapering Tab: 7d (BD -> OD)', 'Tapering Tab: 5d (BD -> OD)', 'Tapering Tab: 7d (TDS -> BD -> OD)',
-  'Tapering Cream: 7d (BD -> OD)', 'Tapering Cream: 5d (BD -> OD)',
-  'Once weekly', 'As needed', 'At bedtime', 'Before breakfast', 'After meals', 'SOS'
+  'सकाळी १ व रात्री १ घेणे',
+  'सकाळी १ घेणे',
+  'रात्री १ घेणे',
+  'दुपारी १ घेणे',
+  'सकाळी १, दुपारी १ व रात्री १ घेणे',
+  'दिवसातून ४ वेळा घेणे',
+  '१ गोळी सकाळी १ गोळी रात्री घेणे',
+  '१/२ गोळी सकाळी घेणे',
+  'उपाशीपोटी घेणे',
+  'जेवणानंतर घेणे',
+  'गोळी टेपरिंग: ७ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे',
+  'गोळी टेपरिंग: ५ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे',
+  'गोळी टेपरिंग: ७ दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे',
+  'क्रीम टेपरिंग: ७ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे',
+  'क्रीम टेपरिंग: ५ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे',
+  'दर सोमवारी १ गोळी घेणे',
+  'दर बुधवारी १ गोळी घेणे',
+  'दर शनिवारी १ गोळी घेणे',
+  'दर सोमवारी, बुधवारी, शनिवारी १ गोळी घेणे',
+  'आठवड्यातून एकदा घेणे',
+  'रात्री झोपताना घेणे',
+  'सकाळी उपाशीपोटी घेणे',
+  'गरज असेल तेव्हा घेणे',
+  'त्रास झाल्यास घेणे (SOS)',
+  '७ दिवसानंतर चालू करणे',
+  'सकाळी लावणे १-२ तास ठेवणे',
+  'काळ्या डागावर लावणे',
+  'pimples (मोड्यांवर) लावणे',
+  'full फेस लावणे',
+  'एक दिवस आड सकाळी डोक्यात लावणे (१०-१५ मिनिट ठेवणे)',
+  'आठवड्यातून दोनदा सकाळी डोक्यात लावणे (१० ते १५ मिनिट ठेवणे)',
+  'सकाळी १ml रात्री १ml डोक्यात लावणे',
+  'दर बुधवारी आणि शनिवारी रात्री डोक्यात लावणे',
+  'आठवड्यातून दोन वेळेस सकाळी डोके धुणे',
+  'एक दिवस आड सकाळी डोके धुणे',
+  'सलग तीन दिवस रात्री मानेच्या खाली संपूर्ण शरीरभर लावणे',
+  'सकाळी आंघोळीनंतर संपूर्ण शरीरभर लावणे',
+  'डोक्यात लावणे',
+  'चेहऱ्यावर लावणे',
+  'जांघेत लावणे',
+  'बगलेत लावणे',
+  'नखांना लावणे',
+  'तोंडात लावणे',
+  'ओठांवर लावणे',
+  'पाठीवर लावणे',
+  'पोटावर लावणे',
+  'मांडीला लावणे',
+  'तळपायावर लावणे',
+  'तळहातावर लावणे',
+  'बोटांना लावणे',
+  'मोड्यांवर लावणे',
+  'कानाला लावणे',
+  'कानामध्ये लावणे',
+  'डोळ्यावर लावणे',
+  'डोळ्याखाली लावणे',
+  'डोळ्यावरती लावणे',
+  'कपाळावर लावणे',
+  'मानेवर लावणे',
+  'गळ्यावर लावणे',
+  'हाताला लावणे',
+  'लिंगावर लावणे',
+  'अंडकोशावर लावणे',
+  'गुदमार्गावर लावणे',
+  'बसण्याच्या जागी लावणे',
+  'कोपऱ्यावर लावणे',
+  'कोपऱ्यामागे लावणे',
+  'गुडघ्यावर लावणे',
+  'गुडघ्यामागे लावणे',
+  'मनगटाला लावणे',
+  'घोट्याला लावणे',
+  'पायाच्या बोटामध्ये लावणे',
+  'हाताच्या बोटामध्ये लावणे'
 ];
+
+const FREQ_ALIASES: Record<string, string> = {
+  'सकाळी १ व रात्री १ घेणे': 'twice daily bd morning night 1-0-1 101 sakali ratri goli ghene',
+  'सकाळी १ घेणे': 'once daily od morning 1-0-0 100 sakali goli ghene',
+  'रात्री १ घेणे': 'night once od 0-0-1 001 ratri ghene',
+  'दुपारी १ घेणे': 'afternoon noon 0-1-0 010 dupari ghene',
+  'सकाळी १, दुपारी १ व रात्री १ घेणे': 'thrice daily tds tid three times 1-1-1 111 sakali dupari ratri goli ghene',
+  'दिवसातून ४ वेळा घेणे': 'four times qid 4 times divsatun 4 vela ghene 1-1-1-1',
+  '१ गोळी सकाळी १ गोळी रात्री घेणे': 'goli sakali ratri morning night tablet 1 1 bd twice',
+  '१/२ गोळी सकाळी घेणे': 'half goli sakali morning tablet 0.5',
+  'उपाशीपोटी घेणे': 'upashi empty stomach fasting ghene before breakfast ac',
+  'जेवणानंतर घेणे': 'jevan jevananantar after meals food ghene pc',
+  'गोळी टेपरिंग: ७ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे': 'tapering taper goli 7 divas sakali ratri nantar bd od tablet',
+  'गोळी टेपरिंग: ५ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे': 'tapering taper goli 5 divas sakali ratri nantar bd od tablet',
+  'गोळी टेपरिंग: ७ दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे': 'tapering taper goli 7 divas tinada donada ekda nantar tds bd od',
+  'क्रीम टेपरिंग: ७ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे': 'tapering taper cream 7 divas sakali ratri nantar bd od laavne',
+  'क्रीम टेपरिंग: ५ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे': 'tapering taper cream 5 divas sakali ratri nantar bd od laavne',
+  'दर सोमवारी १ गोळी घेणे': 'somvar somvari monday goli weekly tablet',
+  'दर बुधवारी १ गोळी घेणे': 'budhvar budhvari wednesday goli weekly tablet',
+  'दर शनिवारी १ गोळी घेणे': 'shanivar shanivari saturday goli weekly tablet',
+  'दर सोमवारी, बुधवारी, शनिवारी १ गोळी घेणे': 'somvari budhvari shanivari monday wednesday saturday goli weekly',
+  'आठवड्यातून एकदा घेणे': 'once weekly week aathvadyatun ekda',
+  'रात्री झोपताना घेणे': 'at bedtime night ratri zhoptana hs',
+  'सकाळी उपाशीपोटी घेणे': 'before breakfast upashi morning',
+  'गरज असेल तेव्हा घेणे': 'as needed sos prn garaj asel tevh',
+  'त्रास झाल्यास घेणे (SOS)': 'sos emergency tras jhalyas as needed',
+  '७ दिवसानंतर चालू करणे': '7 divas nantar saat after days start',
+  'सकाळी लावणे १-२ तास ठेवणे': 'sakali laavne morning apply thas cream',
+  'काळ्या डागावर लावणे': 'kalya dag dark spot laavne apply',
+  'pimples (मोड्यांवर) लावणे': 'pimple modya acne laavne apply',
+  'full फेस लावणे': 'full face chehara laavne apply',
+  'एक दिवस आड सकाळी डोक्यात लावणे (१०-१५ मिनिट ठेवणे)': 'alternate day aad sakali doke dokyat head laavne',
+  'आठवड्यातून दोनदा सकाळी डोक्यात लावणे (१० ते १५ मिनिट ठेवणे)': 'aathavda twice week doke dokyat head sakali laavne',
+  'सकाळी १ml रात्री १ml डोक्यात लावणे': 'sakali ratri ml doke dokyat head morning night laavne',
+  'दर बुधवारी आणि शनिवारी रात्री डोक्यात लावणे': 'budhvari shanivari ratri doke dokyat head wednesday saturday night laavne',
+  'आठवड्यातून दोन वेळेस सकाळी डोके धुणे': 'aathavda twice week sakali doke wash dhune',
+  'एक दिवस आड सकाळी डोके धुणे': 'alternate day aad sakali doke wash dhune',
+  'सलग तीन दिवस रात्री मानेच्या खाली संपूर्ण शरीरभर लावणे': 'salag teen 3 divas ratri mane khali sharir body laavne continuous',
+  'सकाळी आंघोळीनंतर संपूर्ण शरीरभर लावणे': 'sakali aanghol bath sharir body laavne morning',
+  'डोक्यात लावणे': 'doke dokyat head scalp laavne apply',
+  'चेहऱ्यावर लावणे': 'chehara chehra face laavne apply',
+  'जांघेत लावणे': 'jangha groin laavne apply',
+  'बगलेत लावणे': 'bagal armpit laavne apply',
+  'नखांना लावणे': 'nakha nail laavne apply',
+  'तोंडात लावणे': 'tond mouth laavne apply',
+  'ओठांवर लावणे': 'otha lip laavne apply',
+  'पाठीवर लावणे': 'pathi back laavne apply',
+  'पोटावर लावणे': 'pot stomach belly laavne apply',
+  'मांडीला लावणे': 'mandi thigh laavne apply',
+  'तळपायावर लावणे': 'talpaya sole foot laavne apply',
+  'तळहातावर लावणे': 'talhat palm laavne apply',
+  'बोटांना लावणे': 'bota finger laavne apply',
+  'मोड्यांवर लावणे': 'modya pimple acne laavne apply',
+  'कानाला लावणे': 'kan ear laavne apply',
+  'कानामध्ये लावणे': 'kanamadhe ear inside laavne apply',
+  'डोळ्यावर लावणे': 'dola eye laavne apply',
+  'डोळ्याखाली लावणे': 'dolya khali under eye laavne apply',
+  'डोळ्यावरती लावणे': 'dolya varti above eye laavne apply',
+  'कपाळावर लावणे': 'kapal forehead laavne apply',
+  'मानेवर लावणे': 'mana neck laavne apply',
+  'गळ्यावर लावणे': 'galya throat neck laavne apply',
+  'हाताला लावणे': 'hat arm hand laavne apply',
+  'लिंगावर लावणे': 'linga penis laavne apply',
+  'अंडकोशावर लावणे': 'andkosh scrotum laavne apply',
+  'गुदमार्गावर लावणे': 'gudha anal laavne apply',
+  'बसण्याच्या जागी लावणे': 'basne jagi sitting area laavne apply',
+  'कोपऱ्यावर लावणे': 'kopara elbow laavne apply',
+  'कोपऱ्यामागे लावणे': 'kopara mage behind elbow laavne apply',
+  'गुडघ्यावर लावणे': 'gudha knee laavne apply',
+  'गुडघ्यामागे लावणे': 'gudha mage behind knee laavne apply',
+  'मनगटाला लावणे': 'mangat wrist laavne apply',
+  'घोट्याला लावणे': 'ghota ankle laavne apply',
+  'पायाच्या बोटामध्ये लावणे': 'paya bota toe finger laavne apply',
+  'हाताच्या बोटामध्ये लावणे': 'hat bota finger laavne apply'
+};
+
+function freqMatchesSearch(freq: string, query: string): boolean {
+  if (!query) return true;
+  const q = query.toLowerCase().trim();
+  if (freq.toLowerCase().includes(q)) return true;
+  const aliases = FREQ_ALIASES[freq];
+  if (aliases && aliases.includes(q)) return true;
+  return false;
+}
 
 function normalizeMed(m: any, idx: number): Medicine {
   return {
@@ -36,7 +176,7 @@ function normalizeMed(m: any, idx: number): Medicine {
     strength: m.strength || '',
     form: m.form || 'Tablet',
     category: m.category || 'General',
-    defaultFrequency: m.frequency || m.defaultFrequency || 'Twice daily',
+    defaultFrequency: m.frequency || m.defaultFrequency || 'सकाळी १ व रात्री १ घेणे',
     defaultDuration: m.duration || m.defaultDuration || '7 Days',
   };
 }
@@ -48,7 +188,9 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
   const [loading, setLoading] = useState(false);
   const [selectedMed, setSelectedMed] = useState<Medicine | null>(null);
   const [dosage, setDosage] = useState('');
-  const [frequency, setFrequency] = useState('Twice daily');
+  const [frequency, setFrequency] = useState('सकाळी १ व रात्री १ घेणे');
+  const [freqInput, setFreqInput] = useState('');
+  const [freqOpen, setFreqOpen] = useState(false);
   const [duration, setDuration] = useState('7 days');
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -89,7 +231,7 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
   const handleSelectMed = (med: Medicine) => {
     setSelectedMed(med);
     setDosage(med.strength ? `${med.strength} (${med.form || 'Tablet'})` : (med.form || 'Tablet'));
-    setFrequency(med.defaultFrequency || 'Twice daily');
+    setFrequency(med.defaultFrequency || 'सकाळी १ व रात्री १ घेणे');
     setDuration(med.defaultDuration || '7 Days');
   };
 
@@ -101,7 +243,7 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
       strength: '',
       form: 'Tablet',
       category: 'General',
-      defaultFrequency: 'Twice daily',
+      defaultFrequency: 'सकाळी १ व रात्री १ घेणे',
       defaultDuration: '7 Days',
     };
     handleSelectMed(customMed);
@@ -229,19 +371,43 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div>
+                {/* Frequency with CasePaper-style search input and dropdown */}
+                <div className="relative" onClick={(e) => e.stopPropagation()}>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">
                     Frequency
                   </label>
-                  <select
-                    value={frequency}
-                    onChange={(e) => setFrequency(e.target.value)}
-                    className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white"
-                  >
-                    {FREQUENCIES.map((f) => (
-                      <option key={f} value={f}>{f}</option>
-                    ))}
-                  </select>
+                  <input
+                    type="text"
+                    value={freqOpen ? freqInput : frequency}
+                    placeholder="Type to search frequency (e.g. BD, 1-0-1, sakali...)"
+                    onFocus={() => { setFreqInput(''); setFreqOpen(true); }}
+                    onChange={(e) => { setFreqInput(e.target.value); setFreqOpen(true); }}
+                    onBlur={() => setTimeout(() => setFreqOpen(false), 200)}
+                    className="w-full p-2.5 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                  {freqOpen && (
+                    <div 
+                      className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl overflow-y-auto" 
+                      style={{ zIndex: 9999, width: '320px', maxHeight: '260px' }}
+                    >
+                      {FREQUENCIES.filter(f => freqMatchesSearch(f, freqInput)).map(f => (
+                        <div
+                          key={f}
+                          onMouseDown={(e) => { 
+                            e.preventDefault(); 
+                            setFrequency(f); 
+                            setFreqOpen(false); 
+                            setFreqInput(''); 
+                          }}
+                          className={`px-3 py-2 text-xs cursor-pointer transition-colors ${
+                            frequency === f ? 'bg-[#ecfdf5] text-[#047857] font-semibold' : 'text-gray-800 hover:bg-indigo-50'
+                          }`}
+                        >
+                          {f}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div>
