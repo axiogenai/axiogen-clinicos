@@ -15,6 +15,7 @@ import LoginView from './components/LoginView';
 import Toast from './components/Toast';
 import WhatsAppGatewayModal from './components/WhatsAppGatewayModal';
 import DoctorPasscodeModal from './components/DoctorPasscodeModal';
+import ComingSoonLandingPage from './components/ComingSoonLandingPage';
 
 import logoHd from './assets/logo-hd.png';
 
@@ -206,6 +207,19 @@ function MainApp() {
     return sessionStorage.getItem('clinicos_doctor_passcode_unlocked') === 'true';
   });
 
+  const isPublicDomain = typeof window !== 'undefined' && (
+    window.location.hostname === 'shingareclinicos.vercel.app' ||
+    (window.location.hostname.includes('vercel.app') &&
+     !window.location.hostname.includes('reception') &&
+     !window.location.hostname.includes('doctor') &&
+     !window.location.hostname.includes('dr-'))
+  );
+
+  const showStaffPortal = typeof window !== 'undefined' && (
+    window.location.search.includes('portal=true') ||
+    window.location.search.includes('login=true')
+  );
+
   useEffect(() => {
     if (user?.role === 'receptionist') {
       setTab('receptionist');
@@ -217,6 +231,11 @@ function MainApp() {
       setIsPasscodeUnlocked(true);
     }
   }, [user]);
+
+  // Render Public Coming Soon Landing Page for main clinic domain
+  if (isPublicDomain && !showStaffPortal && (!user || !token)) {
+    return <ComingSoonLandingPage />;
+  }
 
   if (!user || !token) {
     return <LoginView onSuccess={() => {}} />;
