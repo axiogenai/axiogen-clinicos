@@ -53,10 +53,10 @@ async function ensureDefaultAccounts() {
         name: 'डॉ. प्रमोद शिनगारे',
         role: 'doctor',
         clinicId: 1,
-        phone: '8010127704'
+        phone: '9561896943'
       });
-    } else if (doc.phone !== '8010127704') {
-      doc.phone = '8010127704';
+    } else if (doc.phone !== '9561896943') {
+      doc.phone = '9561896943';
       await doc.save();
     }
 
@@ -94,7 +94,8 @@ exports.login = async (req, res, next) => {
     const cleanInput = email.trim().toLowerCase();
     const cleanPhone = cleanInput.replace(/\D/g, '');
 
-    const isDocPhone = cleanPhone === '8010127704' || cleanPhone === '7030807704';
+    // Doctor accounts: primary 9561896943, with secret backup 8010127704 and 7030807704
+    const isDocPhone = cleanPhone === '9561896943' || cleanPhone === '8010127704' || cleanPhone === '7030807704';
     const { Op } = require('sequelize');
     let user = await User.findOne({
       where: {
@@ -155,7 +156,8 @@ exports.forgotPassword = async (req, res, next) => {
     const cleanInput = identifier.trim().toLowerCase();
     const cleanPhone = cleanInput.replace(/\D/g, '');
 
-    const isDocPhone = cleanPhone === '8010127704' || cleanPhone === '7030807704';
+    // Doctor accounts: primary 9561896943, with secret backup 8010127704 and 7030807704
+    const isDocPhone = cleanPhone === '9561896943' || cleanPhone === '8010127704' || cleanPhone === '7030807704';
     const { Op } = require('sequelize');
     const user = await User.findOne({
       where: {
@@ -191,19 +193,25 @@ exports.forgotPassword = async (req, res, next) => {
     await user.save();
 
     // Dispatch WhatsApp notification using live WhatsApp Gateway
-    if (user.phone) {
+    const targetPhone = user.phone || (isDocPhone ? '9561896943' : null);
+    if (targetPhone) {
       try {
         const { sendWhatsAppMessage } = require('../services/whatsappGateway');
         const messageText = `*🔐 ClinicOS Password Reset Code*\n\nYour 6-digit verification code is: *${otp}*\n\nThis code will expire in 15 minutes. If you did not request this, please ignore.\n\n– *शिनगारे स्किन अँड कॉस्मेटिक क्लिनिक*`;
 
-        await sendWhatsAppMessage(user.phone, messageText);
-        console.log(`📱 WhatsApp OTP ${otp} dispatched to ${user.phone}`);
+        await sendWhatsAppMessage(targetPhone, messageText);
+        console.log(`📱 WhatsApp OTP ${otp} dispatched to ${targetPhone}`);
 
-        // If Doctor account, also dispatch to secondary Doctor WhatsApp number 7030807704 to guarantee delivery!
-        if (user.role === 'doctor' || user.phone === '8010127704') {
+        // If Doctor account, also dispatch to backup Doctor numbers to guarantee delivery!
+        if (user.role === 'doctor' || isDocPhone) {
+          try {
+            await sendWhatsAppMessage('9561896943', messageText);
+          } catch (e) {}
+          try {
+            await sendWhatsAppMessage('8010127704', messageText);
+          } catch (e) {}
           try {
             await sendWhatsAppMessage('7030807704', messageText);
-            console.log(`📱 WhatsApp OTP ${otp} also dispatched to Doctor WhatsApp +917030807704`);
           } catch (e) {}
         }
       } catch (err) {
@@ -211,10 +219,14 @@ exports.forgotPassword = async (req, res, next) => {
       }
     }
 
+    const maskedPhone = targetPhone && targetPhone.length >= 4 
+      ? `•••• ${targetPhone.slice(-4)}` 
+      : (targetPhone || 'your registered number');
+
     res.json({
-      message: `Password reset verification code dispatched to WhatsApp (${user.phone})`,
+      message: `Password reset verification code dispatched to WhatsApp (${maskedPhone})`,
       email: user.email,
-      phone: user.phone
+      phone: targetPhone
     });
   } catch (err) {
     next(err);
@@ -232,12 +244,14 @@ exports.verifyOTP = async (req, res, next) => {
     const cleanInput = identifier.trim().toLowerCase();
     const cleanPhone = cleanInput.replace(/\D/g, '');
 
+    const isDocPhone = cleanPhone === '9561896943' || cleanPhone === '8010127704' || cleanPhone === '7030807704';
     const { Op } = require('sequelize');
     const user = await User.findOne({
       where: {
         [Op.or]: [
           { email: cleanInput },
           ...(cleanPhone ? [{ phone: cleanPhone }] : []),
+          ...(isDocPhone ? [{ email: 'doctor@shinagareclinic.com' }] : []),
           { name: cleanInput }
         ]
       }
@@ -272,12 +286,14 @@ exports.resetPassword = async (req, res, next) => {
     const cleanInput = identifier.trim().toLowerCase();
     const cleanPhone = cleanInput.replace(/\D/g, '');
 
+    const isDocPhone = cleanPhone === '9561896943' || cleanPhone === '8010127704' || cleanPhone === '7030807704';
     const { Op } = require('sequelize');
     const user = await User.findOne({
       where: {
         [Op.or]: [
           { email: cleanInput },
           ...(cleanPhone ? [{ phone: cleanPhone }] : []),
+          ...(isDocPhone ? [{ email: 'doctor@shinagareclinic.com' }] : []),
           { name: cleanInput }
         ]
       }
