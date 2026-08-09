@@ -44,6 +44,7 @@ async function ensureDefaultAccounts() {
       ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "reset_otp_expires" TIMESTAMP WITH TIME ZONE;
       ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "reset_o_t_p" VARCHAR(255);
       ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "reset_o_t_p_expires" TIMESTAMP WITH TIME ZONE;
+      ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "passcode" VARCHAR(255);
     `).catch(() => {});
 
     const { Op } = require('sequelize');
@@ -469,3 +470,103 @@ exports.resetPassword = async (req, res, next) => {
     next(err);
   }
 };
+
+// ── Verify Doctor Session Passcode ──
+exports.verifyPasscode = async (req, res, next) => {
+  try {
+    const { passcode } = req.body;
+    if (!passcode) return res.status(400).json({ error: 'Passcode is required' });
+
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const cleanInput = passcode.trim();
+    // Default master passcodes: clinic123, doc123, doctor123
+    const isMasterPass = cleanInput === 'clinic123' || cleanInput === 'doc123' || cleanInput === 'doctor123';
+    const matchesUserPass = user.passcode && user.passcode === cleanInput;
+
+    if (!isMasterPass && !matchesUserPass) {
+      return res.status(400).json({ error: 'Incorrect passcode. Please try again or click Forgot Passcode.' });
+    }
+
+    res.json({ success: true, message: 'Passcode verified successfully' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ── Forgot Doctor Session Passcode: Send OTP to Doctor Email & WhatsApp ──
+exports.forgotPasscode = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Generate secure 6-digit OTP code
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    user.resetOTP = otp;
+    user.resetOTPExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+    await user.save();
+
+    const targetEmail = 'shingare.pramod17@gmail.com';
+    const targetPhone = '9561896943';
+
+    // 1. Dispatch via WhatsApp
+    try {
+      const { sendWhatsAppMessage } = require('../services/whatsappGateway');
+      const messageText = `*🔐 ClinicOS Doctor Passcode Reset Code*\n\nYour 6-digit verification code is: *${otp}*\n\nUse this code to set a new alphanumeric security passcode.\n\n– *शिनगारे स्किन अँड कॉस्मेटिक क्लिनिक*`;
+      await sendWhatsAppMessage(targetPhone, messageText);
+      try { await sendWhatsAppMessage('7030807704', messageText); } catch (e) {}
+    } catch (err) {
+      console.error('❌ WhatsApp Passcode OTP send failed:', err.message);
+    }
+
+    // 2. Dispatch via Email (axiogen01@gmail.com)
+    sendOTPEmail(targetEmail, otp).catch(() => {});
+
+    res.json({
+      message: `Verification OTP code sent to Doctor Email (${targetEmail}) and WhatsApp (••••6943).`,
+      email: targetEmail
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ── Reset Doctor Session Passcode with OTP ──
+exports.resetPasscode = async (req, res, next) => {
+  try {
+    const { otp, newPasscode } = req.body;
+    if (!otp || !newPasscode) {
+      return res.status(400).json({ error: 'OTP code and New Passcode are required' });
+    }
+
+    if (newPasscode.trim().length < 4) {
+      return res.status(400).json({ error: 'New passcode must be at least 4 characters long' });
+    }
+
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    if (user.resetOTP !== otp.trim()) {
+      return res.status(400).json({ error: 'Invalid 6-digit OTP code. Please check your email or WhatsApp.' });
+    }
+
+    if (!user.resetOTPExpires || new Date() > user.resetOTPExpires) {
+      return res.status(400).json({ error: 'OTP code has expired. Please request a new code.' });
+    }
+
+    // Save new alphanumeric passcode
+    user.passcode = newPasscode.trim();
+    user.resetOTP = null;
+    user.resetOTPExpires = null;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'New security passcode set successfully! You are now unlocked.'
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
