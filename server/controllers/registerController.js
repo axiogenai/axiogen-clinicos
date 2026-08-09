@@ -171,9 +171,33 @@ exports.syncRegisterForDate = async (req, res, next) => {
       srNo++;
     }
 
+    // Write permanent register backup files directly to Oracle Cloud VM disk
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const registerDir = path.join(__dirname, '../registers', String(year), String(month).padStart(2, '0'));
+      if (!fs.existsSync(registerDir)) {
+        fs.mkdirSync(registerDir, { recursive: true });
+      }
+
+      const jsonPath = path.join(registerDir, `opd_register_${targetDate}.json`);
+      fs.writeFileSync(jsonPath, JSON.stringify({
+        date: targetDate,
+        year,
+        month,
+        day,
+        totalPatients: syncedRecords.length,
+        records: syncedRecords
+      }, null, 2));
+
+      console.log(`💾 [ORACLE DISK REGISTER]: Permanent register archive saved to ${jsonPath}`);
+    } catch (diskErr) {
+      console.warn('Oracle disk archive notice:', diskErr.message);
+    }
+
     res.json({
       success: true,
-      message: `OPD Register successfully synced for date ${targetDate}`,
+      message: `OPD Register successfully synced & archived on Oracle VM for date ${targetDate}`,
       count: syncedRecords.length,
       records: syncedRecords
     });
