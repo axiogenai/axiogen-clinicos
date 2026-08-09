@@ -26,22 +26,30 @@ export default function MedicineEditorRow({ item, index, onUpdate, onRemove }: M
           className="w-full sm:w-24 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
         />
         
-        <select
+        <input
+          type="text"
           value={item.frequency}
           onChange={(e) => onUpdate(index, 'frequency', e.target.value)}
-          className="w-full sm:w-28 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-        >
-          <option value="Once daily">Once daily</option>
-          <option value="Twice daily">Twice daily</option>
-          <option value="Thrice daily">Thrice daily</option>
-          <option value="Four times daily">Four times daily</option>
-          <option value="Once weekly">Once weekly</option>
-          <option value="As needed">As needed</option>
-          <option value="At bedtime">At bedtime</option>
-          <option value="Before breakfast">Before breakfast</option>
-          <option value="After meals">After meals</option>
-          <option value="SOS">SOS</option>
-        </select>
+          placeholder="Frequency (e.g. Twice daily)"
+          className="w-full sm:w-48 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+          list={`freq-options-${index}`}
+        />
+        <datalist id={`freq-options-${index}`}>
+          <option value="Once daily" />
+          <option value="Twice daily" />
+          <option value="Thrice daily" />
+          <option value="१ गोळी सकाळी १ गोळी रात्री घेणे" />
+          <option value="१/२ गोळी सकाळी घेणे" />
+          <option value="उपाशीपोटी घेणे" />
+          <option value="जेवणानंतर घेणे" />
+          <option value="सकाळी लावणे" />
+          <option value="रात्री लावणे" />
+          <option value="चेहऱ्यावर लावणे" />
+          <option value="डोक्यात लावणे" />
+          <option value="Once weekly" />
+          <option value="At bedtime" />
+          <option value="SOS" />
+        </datalist>
         
         <input
           type="text"
