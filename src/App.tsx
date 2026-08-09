@@ -14,6 +14,7 @@ import { api } from './api/client';
 import LoginView from './components/LoginView';
 import Toast from './components/Toast';
 import WhatsAppGatewayModal from './components/WhatsAppGatewayModal';
+import DoctorPasscodeModal from './components/DoctorPasscodeModal';
 
 import logoImg from './assets/logo-symbol.png';
 
@@ -201,6 +202,9 @@ function MainApp() {
   const { user, token, logout, toast, setToast } = useClinic();
   const [tab, setTab] = useState<TabState>('doctor');
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
+  const [isPasscodeUnlocked, setIsPasscodeUnlocked] = useState<boolean>(() => {
+    return sessionStorage.getItem('clinicos_doctor_passcode_unlocked') === 'true';
+  });
 
   useEffect(() => {
     if (user?.role === 'receptionist') {
@@ -216,8 +220,25 @@ function MainApp() {
 
   const isDoctor = user.role === 'doctor' || user.role === 'admin';
 
+  const handlePasscodeUnlock = () => {
+    setIsPasscodeUnlocked(true);
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('clinicos_doctor_passcode_unlocked');
+    logout();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#faf9f6] via-[#f8f6f2] to-[#f4f2eb] text-[#1a1c1a] font-sans antialiased">
+
+      {/* ── Doctor Passcode Lock Screen (Session Protected) ── */}
+      {isDoctor && !isPasscodeUnlocked && (
+        <DoctorPasscodeModal
+          onUnlock={handlePasscodeUnlock}
+          onLogout={handleLogout}
+        />
+      )}
 
       {/* ── WhatsApp Gateway Modal ── */}
       <WhatsAppGatewayModal
@@ -262,7 +283,7 @@ function MainApp() {
               </div>
 
               <button
-                onClick={logout}
+                onClick={handleLogout}
                 title="Sign Out"
                 className="p-1.5 text-[#7c766d] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-200"
               >
@@ -331,7 +352,7 @@ function MainApp() {
             </div>
 
             <button
-              onClick={logout}
+              onClick={handleLogout}
               title="Sign Out"
               className="p-2 text-[#7c766d] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-200"
             >
