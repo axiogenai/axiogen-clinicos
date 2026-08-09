@@ -175,14 +175,14 @@ exports.forgotPassword = async (req, res, next) => {
       return res.status(404).json({ error: `No registered clinic account found matching "${identifier}"` });
     }
 
-    // Check if an OTP was requested less than 60 seconds ago (1-min cooldown)
+    // Short 5-sec cooldown to avoid accidental double clicks
     if (user.resetOTPExpires) {
       const createdTime = new Date(user.resetOTPExpires).getTime() - (15 * 60 * 1000);
       const elapsedSecs = Math.floor((Date.now() - createdTime) / 1000);
-      if (elapsedSecs < 60) {
-        const waitSecs = 60 - elapsedSecs;
+      if (elapsedSecs < 5) {
+        const waitSecs = 5 - elapsedSecs;
         return res.status(429).json({
-          error: `An OTP was recently sent to your WhatsApp. Please wait ${waitSecs} seconds before requesting a new code.`
+          error: `Please wait ${waitSecs} seconds before requesting a new code.`
         });
       }
     }
@@ -202,10 +202,10 @@ exports.forgotPassword = async (req, res, next) => {
         const { sendWhatsAppMessage } = require('../services/whatsappGateway');
         const messageText = `*🔐 ClinicOS Password Reset Code*\n\nYour 6-digit verification code is: *${otp}*\n\nThis code will expire in 15 minutes. If you did not request this, please ignore.\n\n– *शिनगारे स्किन अँड कॉस्मेटिक क्लिनिक*`;
 
-        await sendWhatsAppMessage(targetPhone, messageText);
-        console.log(`📱 WhatsApp OTP ${otp} dispatched strictly to ${targetPhone}`);
+        const waResult = await sendWhatsAppMessage(targetPhone, messageText);
+        console.log(`📱 WhatsApp OTP ${otp} sent to ${targetPhone}, message ID: ${waResult?.key?.id || 'ok'}`);
       } catch (err) {
-        console.error('❌ Failed to send WhatsApp OTP:', err.message);
+        console.error(`❌ Failed to send WhatsApp OTP to ${targetPhone}:`, err.message);
       }
     }
 
