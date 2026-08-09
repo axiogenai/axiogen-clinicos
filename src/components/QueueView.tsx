@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Users, Clock, Stethoscope, CheckCircle2, ArrowRight, FileText, Phone, MapPin, Search, X, Trash2 } from 'lucide-react';
+import { Users, Clock, Stethoscope, CheckCircle2, ArrowRight, FileText, Phone, MapPin, Search, X, Trash2, UserPlus } from 'lucide-react';
 import type { Patient, QueueItem } from '../data/patients';
 import PatientEMRHistoryModal from './PatientEMRHistoryModal';
 import { useClinic } from '../context/ClinicContext';
@@ -10,10 +10,64 @@ interface QueueViewProps {
   onSelectPatient: (queueItem: QueueItem, patient: Patient) => void;
 }
 
+const EMPTY_FORM = { name: '', age: '', gender: 'F' as 'M' | 'F', phone: '', complaint: '' };
+
 export default function QueueView({ queue, patients, onSelectPatient }: QueueViewProps) {
-  const { deletePatient } = useClinic();
+  const { deletePatient, registerAndEnqueue, patients: allPatients } = useClinic();
   const [patientSearchQuery, setPatientSearchQuery] = useState('');
   const [selectedEMRPatient, setSelectedEMRPatient] = useState<Patient | null>(null);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [regForm, setRegForm] = useState(EMPTY_FORM);
+  const [regErrors, setRegErrors] = useState<Record<string, string>>({});
+  const [regLoading, setRegLoading] = useState(false);
+
+  // Duplicate phone check
+  const duplicatePatient = useMemo(() => {
+    const clean = regForm.phone.replace(/\D/g, '');
+    if (clean.length === 10) return allPatients.find(p => p.phone === clean) || null;
+    return null;
+  }, [regForm.phone, allPatients]);
+
+  const handleRegSubmit = async (consultNow: boolean) => {
+    const errors: Record<string, string> = {};
+    const name = regForm.name.trim();
+    if (!name || name.length < 2) errors.name = 'Full name required';
+    if (!regForm.age || isNaN(Number(regForm.age)) || Number(regForm.age) < 1) errors.age = 'Valid age required';
+    if (!regForm.complaint.trim()) errors.complaint = 'Chief complaint required';
+    if (Object.keys(errors).length > 0) { setRegErrors(errors); return; }
+
+    setRegLoading(true);
+    try {
+      const patientData = {
+        name,
+        age: Number(regForm.age),
+        gender: regForm.gender,
+        phone: regForm.phone.replace(/\D/g, ''),
+        complaint: regForm.complaint.trim(),
+      };
+      await registerAndEnqueue(patientData, duplicatePatient || undefined);
+      setRegForm(EMPTY_FORM);
+      setRegErrors({});
+      setShowRegisterModal(false);
+      // If consultNow, find the just-added queue item and open it
+      if (consultNow) {
+        setTimeout(() => {
+          const latest = queue[queue.length - 1];
+          if (latest) {
+            const p = patients.find(p => p.id === latest.patientId) || {
+              id: latest.patientId, name: latest.name || 'Patient', age: latest.age || 0,
+              gender: (latest.gender || 'F') as 'M' | 'F',
+              phone: latest.phone || '', village: latest.village || '',
+              pastHistory: '', allergies: '', pastVisits: []
+            };
+            onSelectPatient(latest, p);
+          }
+        }, 800);
+      }
+    } catch { /* silent */ } finally {
+      setRegLoading(false);
+    }
+  };
 
   const getPatient = (id: string) => patients.find(p => p.id === id);
 
@@ -79,6 +133,25 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
             <p className="text-lg sm:text-2xl font-black text-[#166534] leading-none mt-0.5">{completed}</p>
           </div>
         </div>
+      </div>
+
+      {/* ── Quick Register New Patient (Doctor-side) ── */}
+      <div className="bg-[#f0fdf4] border border-[#a7f3d0] rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-sm">
+        <div>
+          <h2 className="text-sm font-serif font-bold text-[#064e3b] flex items-center gap-2">
+            <UserPlus className="w-4 h-4 text-[#047857]" />
+            Register New Patient — Doctor's Room
+          </h2>
+          <p className="text-[11px] text-[#4b7c68] mt-0.5">Walk-in or direct consultation — register and start immediately</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => { setShowRegisterModal(true); setRegForm(EMPTY_FORM); setRegErrors({}); }}
+          className="btn-primary shrink-0"
+        >
+          <UserPlus className="w-3.5 h-3.5" />
+          <span>Register New Patient</span>
+        </button>
       </div>
 
       {/* ── Search Returning Patient & View EMR History Bar ── */}
@@ -460,6 +533,128 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
             setSelectedEMRPatient(null);
           }}
         />
+      )}
+
+      {/* ── Quick Patient Registration Modal (Doctor-side) ── */}
+      {showRegisterModal && (
+        <div className="fixed inset-0 z-50 bg-[#1a1c1a]/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-[#e4e2e1] overflow-hidden">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-[#e4e2e1] bg-[#f0fdf4] flex justify-between items-center">
+              <div>
+                <h3 className="font-serif font-bold text-[#064e3b] text-base flex items-center gap-2">
+                  <UserPlus className="w-4 h-4" />
+                  Register New Patient
+                </h3>
+                <p className="text-[11px] text-[#4b7c68] mt-0.5">Direct from Doctor's Room</p>
+              </div>
+              <button onClick={() => setShowRegisterModal(false)} className="text-[#7c766d] hover:text-[#1a1c1a] p-1 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Duplicate Warning */}
+              {duplicatePatient && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
+                  <span className="font-bold">⚠️ Existing patient found:</span> {duplicatePatient.name} · {duplicatePatient.age}y · {duplicatePatient.phone}<br />
+                  <span className="text-amber-700">Proceeding will add them to queue using existing record.</span>
+                </div>
+              )}
+
+              {/* Name */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Patient Name *</label>
+                <input
+                  type="text"
+                  value={regForm.name}
+                  onChange={e => setRegForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="Full name"
+                  className={`form-input text-sm ${regErrors.name ? 'border-red-400 bg-red-50' : ''}`}
+                />
+                {regErrors.name && <span className="text-xs text-red-500 mt-0.5 block">{regErrors.name}</span>}
+              </div>
+
+              {/* Age & Gender */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Age *</label>
+                  <input
+                    type="number"
+                    value={regForm.age}
+                    onChange={e => setRegForm(f => ({ ...f, age: e.target.value }))}
+                    placeholder="Age in years"
+                    min={1} max={120}
+                    className={`form-input text-sm ${regErrors.age ? 'border-red-400 bg-red-50' : ''}`}
+                  />
+                  {regErrors.age && <span className="text-xs text-red-500 mt-0.5 block">{regErrors.age}</span>}
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Gender</label>
+                  <select
+                    value={regForm.gender}
+                    onChange={e => setRegForm(f => ({ ...f, gender: e.target.value as 'M' | 'F' }))}
+                    className="form-input text-sm bg-white"
+                  >
+                    <option value="F">Female</option>
+                    <option value="M">Male</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Phone */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Mobile Number</label>
+                <div className="relative">
+                  <Phone className="w-3.5 h-3.5 text-[#7c766d] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="tel"
+                    value={regForm.phone}
+                    onChange={e => setRegForm(f => ({ ...f, phone: e.target.value }))}
+                    placeholder="10-digit mobile"
+                    maxLength={10}
+                    className="form-input text-sm pl-8"
+                  />
+                </div>
+              </div>
+
+              {/* Chief Complaint */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Chief Complaint *</label>
+                <input
+                  type="text"
+                  value={regForm.complaint}
+                  onChange={e => setRegForm(f => ({ ...f, complaint: e.target.value }))}
+                  placeholder="e.g. Acne, Hair fall, Rash..."
+                  className={`form-input text-sm ${regErrors.complaint ? 'border-red-400 bg-red-50' : ''}`}
+                />
+                {regErrors.complaint && <span className="text-xs text-red-500 mt-0.5 block">{regErrors.complaint}</span>}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="px-6 py-4 bg-[#faf9f6] border-t border-[#e4e2e1] flex flex-col sm:flex-row gap-2">
+              <button
+                type="button"
+                disabled={regLoading}
+                onClick={() => handleRegSubmit(false)}
+                className="btn-secondary flex-1 justify-center text-xs"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                {regLoading ? 'Registering...' : 'Add to Queue Only'}
+              </button>
+              <button
+                type="button"
+                disabled={regLoading}
+                onClick={() => handleRegSubmit(true)}
+                className="btn-primary flex-1 justify-center text-xs"
+              >
+                <Stethoscope className="w-3.5 h-3.5" />
+                {regLoading ? 'Please wait...' : 'Register & Consult Now'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
