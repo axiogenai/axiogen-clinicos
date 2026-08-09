@@ -259,7 +259,7 @@ function MainApp() {
             <div className="flex items-center gap-2.5 shrink-0">
               <img
                 src={logoHd}
-                alt="Shinagare Skin & Cosmetic Clinic Logo"
+                alt="Shingare Skin & Cosmetic Clinic Logo"
                 className="h-9 w-auto object-contain shrink-0 drop-shadow-sm"
               />
               <div>
@@ -267,7 +267,7 @@ function MainApp() {
                   <span className="text-base sm:text-[17px] font-serif font-bold text-[#1a1c1a] tracking-tight leading-none">ClinicOS</span>
                   <span className="bg-[#f2eee3] text-[#4b463e] text-[9px] font-black px-1.5 py-0.5 rounded border border-[#cdc6ba] tracking-wide">PRO EMR</span>
                 </div>
-                <div className="text-[10px] text-[#7c766d] font-medium mt-0.5 leading-none">Shinagare Skin & Cosmetic Clinic</div>
+                <div className="text-[10px] text-[#7c766d] font-medium mt-0.5 leading-none">Shingare Skin & Cosmetic Clinic</div>
               </div>
             </div>
 
