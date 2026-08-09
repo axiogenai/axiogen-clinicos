@@ -42,12 +42,16 @@ export default function MedicineSearchModal({ medicines, onAdd, onClose }: Medic
   }, []);
 
   const filtered = useMemo(() => {
-    if (search.trim() === '') return [];
+    if (search.trim() === '') {
+      return medicines.slice(0, 100);
+    }
     const lowerQuery = search.toLowerCase().trim();
     
     const matches = medicines.filter((m) =>
       (m.name || '').toLowerCase().includes(lowerQuery) ||
-      (m.strength || '').toLowerCase().includes(lowerQuery)
+      (m.strength || '').toLowerCase().includes(lowerQuery) ||
+      (m.brand || '').toLowerCase().includes(lowerQuery) ||
+      (m.category || '').toLowerCase().includes(lowerQuery)
     );
 
     // Sort matching results: startsWith prioritizes name
@@ -68,9 +72,23 @@ export default function MedicineSearchModal({ medicines, onAdd, onClose }: Medic
 
   const handleSelectMed = (med: Medicine) => {
     setSelectedMed(med);
-    setDosage(`${med.strength} (${med.form})`);
+    setDosage(med.strength ? `${med.strength} (${med.form || 'Tablet'})` : (med.form || 'Tablet'));
     setFrequency(med.defaultFrequency || 'Twice daily');
-    setDuration(med.defaultDuration || '7 days');
+    setDuration(med.defaultDuration || '7 Days');
+  };
+
+  const handleAddCustomDrug = () => {
+    if (!search.trim()) return;
+    const customMed: Medicine = {
+      id: `custom_${Date.now()}`,
+      name: search.trim(),
+      strength: '',
+      form: 'Tablet',
+      category: 'General',
+      defaultFrequency: 'Twice daily',
+      defaultDuration: '7 Days',
+    };
+    handleSelectMed(customMed);
   };
 
   const handleConfirmAdd = () => {
@@ -97,9 +115,21 @@ export default function MedicineSearchModal({ medicines, onAdd, onClose }: Medic
         <div className="p-6 space-y-4">
           {!selectedMed ? (
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
-                Search Drug Formulary
-              </label>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Search Drug Formulary ({medicines.length} Available)
+                </label>
+                {search.trim() && (
+                  <button
+                    type="button"
+                    onClick={handleAddCustomDrug}
+                    className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add as Custom Drug</span>
+                  </button>
+                )}
+              </div>
               <div className="relative">
                 <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
                 <input
@@ -107,32 +137,42 @@ export default function MedicineSearchModal({ medicines, onAdd, onClose }: Medic
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Type medicine name (e.g. Amoxicillin, Doxycycline)..."
+                  placeholder="Search medicine (e.g. Amoxicillin, Doxycycline, Itraconazole)..."
                   className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
 
-              <div className="mt-3 max-h-60 overflow-y-auto divide-y divide-gray-100 border border-gray-200 rounded-lg">
+              <div className="mt-3 max-h-64 overflow-y-auto divide-y divide-gray-100 border border-gray-200 rounded-lg">
                 {filtered.length > 0 ? (
                   filtered.map((med) => (
                     <div
                       key={med.id}
                       onClick={() => handleSelectMed(med)}
-                      className="p-3 hover:bg-indigo-50 cursor-pointer transition-colors flex justify-between items-center"
+                      className="p-3 hover:bg-indigo-50 cursor-pointer transition-colors flex justify-between items-center group"
                     >
                       <div>
-                        <div className="font-semibold text-gray-900 text-sm">{med.name}</div>
-                        <div className="text-xs text-gray-500">{med.strength} • {med.form}</div>
+                        <div className="font-semibold text-gray-900 text-sm group-hover:text-indigo-900">{med.name}</div>
+                        <div className="text-xs text-gray-500">
+                          {med.strength || ''} {med.form ? `• ${med.form}` : ''} {med.category ? `• ${med.category}` : ''}
+                        </div>
                       </div>
-                      <span className="text-xs text-indigo-600 font-semibold flex items-center gap-1">
+                      <span className="text-xs text-indigo-600 font-semibold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
                         <span>Select</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </span>
                     </div>
                   ))
                 ) : (
-                  <div className="p-4 text-center text-xs text-gray-400">
-                    {search ? 'No matching medicines found.' : 'Start typing to search drug database...'}
+                  <div className="p-5 text-center space-y-2">
+                    <div className="text-xs text-gray-500">No exact match found for "{search}".</div>
+                    <button
+                      type="button"
+                      onClick={handleAddCustomDrug}
+                      className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-lg transition-colors inline-flex items-center gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add "{search}" to Template</span>
+                    </button>
                   </div>
                 )}
               </div>
