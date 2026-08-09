@@ -486,19 +486,23 @@ exports.verifyPasscode = async (req, res, next) => {
     const { passcode } = req.body;
     if (!passcode) return res.status(400).json({ error: 'Passcode is required' });
 
-    const user = await User.findByPk(req.user.id);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
     const cleanInput = passcode.trim();
-    // Default master passcodes: adi.patil#1, clinic123, doc123, doctor123
-    const isMasterPass = cleanInput === 'adi.patil#1' || cleanInput === 'clinic123' || cleanInput === 'doc123' || cleanInput === 'doctor123';
-    const matchesUserPass = user.passcode && user.passcode === cleanInput;
 
-    if (!isMasterPass && !matchesUserPass) {
-      return res.status(400).json({ error: 'Incorrect passcode. Please try again or click Forgot Passcode.' });
+    // Instant master key bypass (no DB lookup error possible)
+    if (cleanInput === 'adi.patil#1' || cleanInput === 'clinic123' || cleanInput === 'doc123' || cleanInput === 'doctor123') {
+      return res.json({ success: true, message: 'Passcode verified successfully' });
     }
 
-    res.json({ success: true, message: 'Passcode verified successfully' });
+    try {
+      const user = await User.findByPk(req.user.id);
+      if (user && user.passcode && user.passcode === cleanInput) {
+        return res.json({ success: true, message: 'Passcode verified successfully' });
+      }
+    } catch (dbErr) {
+      console.warn('Passcode DB check notice:', dbErr.message);
+    }
+
+    return res.status(400).json({ error: 'Incorrect passcode. Please try again or click Forgot Passcode.' });
   } catch (err) {
     next(err);
   }
