@@ -1,4 +1,5 @@
 import { useState } from 'react';
+// LoginView component for Doctor and Receptionist portals
 import { Lock, UserCheck, ShieldAlert, ArrowRight, KeyRound, CheckCircle2, RefreshCw, X, Eye, EyeOff, ArrowLeft, ShieldCheck, Smartphone } from 'lucide-react';
 import { useClinic } from '../context/ClinicContext';
 import { api, apiRequest } from '../api/client';
