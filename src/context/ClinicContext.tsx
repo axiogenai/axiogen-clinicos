@@ -124,6 +124,9 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
 
   // Initial Database Load & Auto-polling for multi-device sync
   const loadFromDatabase = useCallback(async () => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      return; // Skip silently if offline to prevent network error logs
+    }
     try {
       const [dbPatients, dbQueue, dbTemplates, dbSettings] = await Promise.allSettled([
         api.getPatients(),
@@ -192,6 +195,9 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
 
   // Lightweight queue-only reload for SSE events (fast, no full re-render)
   const loadQueueOnly = useCallback(async () => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      return; // Skip silently if offline to prevent network error logs
+    }
     try {
       const dbQueue = await api.getQueue();
       setQueue(dbQueue);
