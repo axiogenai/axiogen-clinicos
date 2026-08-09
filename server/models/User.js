@@ -62,6 +62,11 @@ const User = sequelize.define('User', {
     type: DataTypes.DATE,
     allowNull: true,
     field: 'reset_otp_expires'
+  },
+  passcode: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'clinic123'
   }
 });
 
