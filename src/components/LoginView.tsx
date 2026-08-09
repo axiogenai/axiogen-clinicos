@@ -218,13 +218,22 @@ export default function LoginView({ onSuccess }: Props) {
       setToast({
         type: 'success',
         title: 'Password Updated',
-        message: 'Your password was updated successfully. Signing in now...'
+        message: 'Your password was updated successfully. Verifying 2-Step Security...'
       });
 
       await login(forgotIdentifier, newPassword);
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Failed to reset password. Please try again.');
+      if (err.message?.startsWith('2FA_REQUIRED:')) {
+        const identifier = err.message.replace('2FA_REQUIRED:', '');
+        setTwoFAIdentifier(identifier);
+        setTwoFAOtp('');
+        setTwoFAStep(true);
+        setIsForgotMode(false);
+        setError(null);
+      } else {
+        setError(err.message || 'Failed to reset password. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
