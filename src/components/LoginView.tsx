@@ -11,9 +11,25 @@ interface Props {
 
 export default function LoginView({ onSuccess }: Props) {
   const { login, setToast } = useClinic();
-  const [email, setEmail] = useState('9561896943');
+
+  const isReceptionDomain = typeof window !== 'undefined' && (
+    window.location.hostname.toLowerCase().includes('reception') ||
+    window.location.pathname.toLowerCase().startsWith('/reception')
+  );
+
+  const isDoctorDomain = typeof window !== 'undefined' && (
+    window.location.hostname.toLowerCase().includes('dr-') ||
+    window.location.hostname.toLowerCase().includes('doctor') ||
+    window.location.pathname.toLowerCase().startsWith('/dr')
+  );
+
+  const defaultRole = isReceptionDomain ? 'receptionist' : 'doctor';
+  const defaultEmail = isReceptionDomain ? 'shingareskinclinic@gmail.com' : '9561896943';
+  const defaultForgot = isReceptionDomain ? 'shingareskinclinic@gmail.com' : 'shingare.pramod17@gmail.com';
+
+  const [email, setEmail] = useState(defaultEmail);
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'doctor' | 'receptionist'>('doctor');
+  const [role, setRole] = useState<'doctor' | 'receptionist'>(defaultRole);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,7 +47,7 @@ export default function LoginView({ onSuccess }: Props) {
   // Forgot Password States
   const [isForgotMode, setIsForgotMode] = useState(false);
   const [forgotStep, setForgotStep] = useState<1 | 2 | 3>(1); // 1 = Request OTP, 2 = Verify OTP, 3 = Reset Password
-  const [forgotIdentifier, setForgotIdentifier] = useState('shingare.pramod17@gmail.com');
+  const [forgotIdentifier, setForgotIdentifier] = useState(defaultForgot);
   const [otpCode, setOtpCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -264,7 +280,7 @@ export default function LoginView({ onSuccess }: Props) {
             <p className="text-xs font-semibold text-[#7c766d] mt-0.5">शिनगारे स्किन & कॉस्मेटीक क्लिनिक</p>
           </div>
           <span className="inline-block bg-[#f2eee3] text-[#4b463e] text-[10px] font-bold px-2.5 py-0.5 rounded border border-[#cdc6ba]">
-            AUTHENTICATED SECURE LOGIN
+            {isReceptionDomain ? 'RECEPTION DESK PORTAL' : isDoctorDomain ? 'DOCTOR CLINICAL EMR PORTAL' : 'AUTHENTICATED SECURE LOGIN'}
           </span>
         </div>
 
