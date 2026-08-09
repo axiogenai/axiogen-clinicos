@@ -44,6 +44,21 @@ interface ClinicContextType {
   toggleFavoriteTemplate: (templateId: string) => void;
   duplicateTemplate: (templateId: string) => void;
   updateClinicSettings: (settings: ClinicSettings, showToast?: boolean) => void;
+  updatePatientDetails: (
+    patientId: string,
+    queueId: string,
+    data: {
+      name?: string;
+      age?: number;
+      gender?: 'M' | 'F' | 'Other';
+      phone?: string;
+      village?: string;
+      complaint?: string;
+      notes?: string;
+      pastHistory?: string;
+      allergies?: string;
+    }
+  ) => Promise<void>;
 }
 
 const ClinicContext = createContext<ClinicContextType | undefined>(undefined);
@@ -409,6 +424,80 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const updatePatientDetails = useCallback(async (
+    patientId: string,
+    queueId: string,
+    data: {
+      name?: string;
+      age?: number;
+      gender?: 'M' | 'F' | 'Other';
+      phone?: string;
+      village?: string;
+      complaint?: string;
+      notes?: string;
+      pastHistory?: string;
+      allergies?: string;
+    }
+  ) => {
+    const cleanPhone = (data.phone || '').replace(/\D/g, '');
+
+    // 1. Update local Patients state
+    if (patientId) {
+      setPatients(prev => prev.map(p => {
+        if (p.id === patientId || (cleanPhone && p.phone === cleanPhone)) {
+          return {
+            ...p,
+            name: data.name !== undefined ? data.name : p.name,
+            age: data.age !== undefined ? data.age : p.age,
+            gender: data.gender !== undefined ? data.gender : p.gender,
+            phone: cleanPhone || p.phone,
+            village: data.village !== undefined ? data.village : p.village,
+            pastHistory: data.pastHistory !== undefined ? data.pastHistory : p.pastHistory,
+            allergies: data.allergies !== undefined ? data.allergies : p.allergies
+          };
+        }
+        return p;
+      }));
+
+      // Call API
+      api.updatePatient(patientId, {
+        name: data.name,
+        age: data.age,
+        gender: data.gender,
+        phone: cleanPhone,
+        village: data.village,
+        pastHistory: data.pastHistory,
+        allergies: data.allergies
+      }).catch(() => {});
+    }
+
+    // 2. Update local Queue state
+    if (queueId) {
+      setQueue(prev => prev.map(q => {
+        if (q.queueId === queueId || q.patientId === patientId) {
+          return {
+            ...q,
+            name: data.name !== undefined ? data.name : q.name,
+            age: data.age !== undefined ? data.age : q.age,
+            phone: cleanPhone || q.phone,
+            village: data.village !== undefined ? data.village : q.village,
+            complaint: data.complaint !== undefined ? data.complaint : q.complaint,
+            notes: data.notes !== undefined ? data.notes : q.notes
+          };
+        }
+        return q;
+      }));
+
+      api.updateQueueStatus(queueId, 'waiting').catch(() => {});
+    }
+
+    setToast({
+      type: 'success',
+      title: 'Patient Updated',
+      message: `${data.name || 'Patient'} details updated successfully.`
+    });
+  }, [setToast]);
+
   return (
     <ClinicContext.Provider
       value={{
@@ -434,6 +523,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
         toggleFavoriteTemplate,
         duplicateTemplate,
         updateClinicSettings,
+        updatePatientDetails,
       }}
     >
       {children}
