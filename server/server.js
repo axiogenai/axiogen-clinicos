@@ -80,6 +80,17 @@ app.use('/api/case-papers', casePaperRoutes);
 app.use('/api/clinic', clinicRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
 
+// SPA Client Catch-all Routing
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) return next();
+  const indexPath = path.join(__dirname, '../dist/index.html');
+  const fs = require('fs');
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath);
+  }
+  next();
+});
+
 
 // Healthcheck
 app.get('/api/health', (req, res) => {
