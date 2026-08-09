@@ -26,10 +26,10 @@ async function seedDatabase() {
 
     const doc1 = await User.create({
       clinicId: 1,
-      email: 'doctor@shinagareclinic.com',
-      passwordHash: bcrypt.hashSync('doctor123', 10),
+      email: 'shingare.pramod17@gmail.com',
+      passwordHash: bcrypt.hashSync('clinic123', 10),
       name: 'डॉ. प्रमोद सुरेश शिनगारे',
-      phone: '9657727104',
+      phone: '9561896943',
       role: 'doctor',
       title: 'MD (Ayu) - D.Dermatology (Ay.)',
       subTitle: '(MUHS)',
@@ -53,9 +53,9 @@ async function seedDatabase() {
     const doc3 = await User.create({
       clinicId: 1,
       email: 'pramod@shinagareclinic.com',
-      passwordHash: bcrypt.hashSync('doctor123', 10),
+      passwordHash: bcrypt.hashSync('clinic123', 10),
       name: 'डॉ. प्रमोद सुरेश शिनगारे',
-      phone: '9657727104',
+      phone: '9561896943',
       role: 'doctor',
       title: 'MD (Ayu) - D.Dermatology (Ay.)',
       subTitle: '(MUHS)',
@@ -65,7 +65,7 @@ async function seedDatabase() {
 
     const receptionist = await User.create({
       clinicId: 1,
-      email: 'reception@shinagareclinic.com',
+      email: 'shingareskinclinic@gmail.com',
       passwordHash: bcrypt.hashSync('reception123', 10),
       name: 'Reception Desk',
       phone: '7972884083',
