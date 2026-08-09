@@ -180,6 +180,21 @@ function freqMatchesSearch(freq: string, query: string): boolean {
   return false;
 }
 
+const DURATIONS = [
+  '3 Days',
+  '5 Days',
+  '7 Days',
+  '10 Days',
+  '14 Days',
+  '15 Days',
+  '21 Days',
+  '1 Month',
+  '2 Months',
+  '3 Months',
+  '4 Weeks',
+  '6 Weeks'
+];
+
 const INVESTIGATIONS = [
   'CBC', 'LFT', 'RFT', 'BSL (Fasting)', 'BSL (PP)', 
   'Lipid Profile', 'Thyroid Profile', 'Urine Routine', 
@@ -213,6 +228,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
   const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
   const [freqOpenIndex, setFreqOpenIndex] = useState<number | null>(null);
   const [freqInputDisplay, setFreqInputDisplay] = useState('');
+  const [durOpenIndex, setDurOpenIndex] = useState<number | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const templateSearchRef = useRef<HTMLDivElement>(null);
 
@@ -979,13 +995,36 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                           </div>
                         )}
                       </div>
-                      <input
-                        type="text"
-                        placeholder="7 Days"
-                        value={med.duration}
-                        onChange={(e) => updateMedicineField(index, 'duration', e.target.value)}
-                        className="form-input form-input-sm"
-                      />
+                      {/* Duration — input with dropdown suggestions */}
+                      <div className="relative" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="text"
+                          placeholder="7 Days"
+                          value={med.duration}
+                          onFocus={() => { setDurOpenIndex(index); setFreqOpenIndex(null); }}
+                          onChange={(e) => updateMedicineField(index, 'duration', e.target.value)}
+                          className="form-input form-input-sm w-full"
+                        />
+                        {durOpenIndex === index && (
+                          <div className="absolute left-0 top-full mt-1 bg-white border border-[#e4e2e1] rounded-xl shadow-2xl divide-y divide-gray-50 overflow-y-auto" style={{ zIndex: 9999, width: '130px', maxHeight: '200px' }}>
+                            {DURATIONS.map(d => (
+                              <div
+                                key={d}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  updateMedicineField(index, 'duration', d);
+                                  setDurOpenIndex(null);
+                                }}
+                                className={`px-3 py-1.5 text-xs cursor-pointer transition-colors ${
+                                  med.duration === d ? 'bg-[#ecfdf5] text-[#047857] font-semibold' : 'text-[#1a1c1a] hover:bg-[#f7f5f0]'
+                                }`}
+                              >
+                                {d}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       <input
                         type="text"
                         placeholder="Count"
@@ -1054,13 +1093,35 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                             </div>
                           )}
                         </div>
-                        <input
-                          type="text"
-                          placeholder="Duration (e.g. 7 Days)"
-                          value={med.duration}
-                          onChange={(e) => updateMedicineField(index, 'duration', e.target.value)}
-                          className="form-input form-input-sm"
-                        />
+                        <div className="relative" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="text"
+                            placeholder="Duration (e.g. 7 Days)"
+                            value={med.duration}
+                            onFocus={() => { setDurOpenIndex(index); setFreqOpenIndex(null); }}
+                            onChange={(e) => updateMedicineField(index, 'duration', e.target.value)}
+                            className="form-input form-input-sm w-full"
+                          />
+                          {durOpenIndex === index && (
+                            <div className="absolute left-0 top-full mt-1 bg-white border border-[#e4e2e1] rounded-xl shadow-2xl divide-y divide-gray-50 overflow-y-auto" style={{ zIndex: 9999, width: '130px', maxHeight: '200px' }}>
+                              {DURATIONS.map(d => (
+                                <div
+                                  key={d}
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    updateMedicineField(index, 'duration', d);
+                                    setDurOpenIndex(null);
+                                  }}
+                                  className={`px-3 py-1.5 text-xs cursor-pointer transition-colors ${
+                                    med.duration === d ? 'bg-[#ecfdf5] text-[#047857] font-semibold' : 'text-[#1a1c1a] hover:bg-[#f7f5f0]'
+                                  }`}
+                                >
+                                  {d}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                         <input
                           type="text"
                           placeholder="Count"
