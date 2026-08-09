@@ -876,7 +876,7 @@ export default function DailyPatientRegister() {
         <div className="border-b-2 border-slate-900 pb-3 flex justify-between items-end">
           <div>
             <h1 className="text-xl font-serif font-bold text-slate-900 uppercase tracking-wide">
-              {clinicSettings.clinicNameEn || 'Shinagare Skin & Cosmetic Clinic'}
+              {clinicSettings.clinicNameEn || 'Shingare Skin & Cosmetic Clinic'}
             </h1>
             <p className="text-xs text-slate-700">{clinicSettings.address || 'Sangli, Maharashtra'}</p>
             <p className="text-xs text-slate-700 font-semibold mt-1">
@@ -885,7 +885,7 @@ export default function DailyPatientRegister() {
           </div>
           <div className="text-right text-xs text-slate-700">
             <p className="font-bold">Total OPD Patients: {filteredItems.length}</p>
-            <p>Doctor: {clinicSettings.doctors[0]?.name || 'Dr. Priyanka Shinagare'}</p>
+            <p>Doctor: {clinicSettings.doctors[0]?.name || 'Dr. Priyanka Shingare'}</p>
           </div>
         </div>
 
