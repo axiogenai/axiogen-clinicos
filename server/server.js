@@ -81,12 +81,13 @@ app.use('/api/clinic', clinicRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
 
 // SPA Client Catch-all Routing
-app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api')) return next();
-  const indexPath = path.join(__dirname, '../dist/index.html');
-  const fs = require('fs');
-  if (fs.existsSync(indexPath)) {
-    return res.sendFile(indexPath);
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api')) {
+    const indexPath = path.join(__dirname, '../dist/index.html');
+    const fs = require('fs');
+    if (fs.existsSync(indexPath)) {
+      return res.sendFile(indexPath);
+    }
   }
   next();
 });
