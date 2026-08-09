@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Lock, UserCheck, ShieldAlert, ArrowRight, KeyRound, CheckCircle2, RefreshCw, X, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Lock, UserCheck, ShieldAlert, ArrowRight, KeyRound, CheckCircle2, RefreshCw, X, Eye, EyeOff, ArrowLeft, ShieldCheck, Smartphone } from 'lucide-react';
 import { useClinic } from '../context/ClinicContext';
 import { api, apiRequest } from '../api/client';
 import { supabaseAuth } from '../lib/supabase';
@@ -20,6 +20,12 @@ export default function LoginView({ onSuccess }: Props) {
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // 2FA Login State (Doctor only)
+  const [twoFAStep, setTwoFAStep] = useState(false);
+  const [twoFAIdentifier, setTwoFAIdentifier] = useState('');
+  const [twoFAOtp, setTwoFAOtp] = useState('');
+  const [twoFALoading, setTwoFALoading] = useState(false);
 
   // Forgot Password States
   const [isForgotMode, setIsForgotMode] = useState(false);
@@ -64,9 +70,40 @@ export default function LoginView({ onSuccess }: Props) {
       });
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Invalid credentials');
+      // Doctor 2FA — backend returned requires2FA signal
+      if (err.message?.startsWith('2FA_REQUIRED:')) {
+        const identifier = err.message.replace('2FA_REQUIRED:', '');
+        setTwoFAIdentifier(identifier);
+        setTwoFAOtp('');
+        setTwoFAStep(true);
+        setError(null);
+      } else {
+        setError(err.message || 'Invalid credentials');
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVerify2FA = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!twoFAOtp || twoFAOtp.trim().length < 6) {
+      setError('Please enter the complete 6-digit verification code.');
+      return;
+    }
+    setError(null);
+    setTwoFALoading(true);
+    try {
+      const data = await api.verifyLoginOTP(twoFAIdentifier, twoFAOtp.trim());
+      // Store session
+      localStorage.setItem('clinicos_jwt_token', data.token);
+      localStorage.setItem('clinicos_user_session', JSON.stringify(data.user));
+      // Trigger context update by calling login with stored token trick
+      window.location.reload();
+    } catch (err: any) {
+      setError(err.message || 'Invalid OTP code. Please try again.');
+    } finally {
+      setTwoFALoading(false);
     }
   };
 
@@ -210,8 +247,86 @@ export default function LoginView({ onSuccess }: Props) {
           </span>
         </div>
 
-        {/* Normal Login Mode */}
-        {!isForgotMode ? (
+        {/* ── 2FA OTP Verification Screen (Doctor only) ── */}
+        {twoFAStep ? (
+          <form onSubmit={handleVerify2FA} className="space-y-5">
+            {/* Header */}
+            <div className="flex items-center gap-3 bg-gradient-to-r from-[#064e3b]/10 to-[#047857]/10 border border-[#a7f3d0] rounded-xl p-3.5">
+              <div className="bg-[#047857] rounded-full p-2 shrink-0">
+                <ShieldCheck className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="font-serif font-bold text-sm text-[#064e3b]">2-Step Verification</h2>
+                <p className="text-[11px] text-[#4b463e] mt-0.5">Password verified ✓ — Enter your OTP to complete login</p>
+              </div>
+            </div>
+
+            {/* OTP Sent Notice */}
+            <div className="bg-[#ecfdf5] border border-[#a7f3d0] rounded-xl p-3 flex items-start gap-2 text-xs text-[#064e3b]">
+              <Smartphone className="w-4 h-4 shrink-0 mt-0.5 text-[#047857]" />
+              <span>
+                A 6-digit verification code has been sent to your registered <strong>WhatsApp (••••6943)</strong> and <strong>Email (shingare.pramod17@gmail.com)</strong>.
+              </span>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 text-red-700 text-xs p-3 rounded-xl border border-red-200 flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 shrink-0 text-red-600" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {/* OTP Input */}
+            <div>
+              <label className="block text-xs font-bold text-[#4b463e] mb-1.5">6-Digit Verification Code</label>
+              <div className="relative">
+                <KeyRound className="w-4 h-4 text-[#047857] absolute left-3 top-3.5" />
+                <input
+                  id="login-2fa-otp"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  required
+                  autoFocus
+                  value={twoFAOtp}
+                  onChange={(e) => setTwoFAOtp(e.target.value.replace(/\D/g, ''))}
+                  placeholder="• • • • • •"
+                  className="w-full pl-9 pr-3 py-3 text-center text-2xl font-mono font-bold tracking-[0.5em] bg-white border-2 border-[#047857]/40 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#047857] focus:border-[#047857] text-[#1a1c1a] transition-all"
+                />
+              </div>
+              <p className="text-[11px] text-[#7c766d] mt-1.5 text-center">Enter the code exactly as received on WhatsApp or Email</p>
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              id="login-2fa-submit"
+              disabled={twoFALoading || twoFAOtp.length < 6}
+              className="w-full py-3 bg-gradient-to-r from-[#064e3b] to-[#047857] hover:from-[#022c22] hover:to-[#064e3b] text-[#ecfdf5] font-bold text-sm rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 active:scale-95"
+            >
+              {twoFALoading ? (
+                <span>Verifying...</span>
+              ) : (
+                <>
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Verify & Sign In</span>
+                </>
+              )}
+            </button>
+
+            {/* Back */}
+            <button
+              type="button"
+              onClick={() => { setTwoFAStep(false); setTwoFAOtp(''); setError(null); }}
+              className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-[#7c766d] hover:text-[#1a1c1a] transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Login</span>
+            </button>
+          </form>
+
+        ) : !isForgotMode ? (
           <>
             {/* Role Selector Tabs */}
             <div className="grid grid-cols-2 gap-2 bg-[#f2eee3]/80 p-1 rounded-xl border border-[#e4e2e1]">
