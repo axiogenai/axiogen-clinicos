@@ -149,9 +149,6 @@ export default function DoctorPasscodeModal({ onUnlock, onLogout }: Props) {
                   {showPasscode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              <p className="text-[11px] text-[#7c766d] mt-1 text-right">
-                Master Passcode: <code className="bg-[#f2eee3] px-1 py-0.5 rounded font-mono font-bold text-[#064e3b]">adi.patil#1</code>
-              </p>
             </div>
 
             <button
