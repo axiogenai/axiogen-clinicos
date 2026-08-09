@@ -1,5 +1,5 @@
 import { useState } from 'react';
-// LoginView component for Doctor EMR and Receptionist Desk portals
+// LoginView component for Doctor EMR and Receptionist Desk portals v2026.08.09
 import { Lock, UserCheck, ShieldAlert, ArrowRight, KeyRound, CheckCircle2, RefreshCw, X, Eye, EyeOff, ArrowLeft, ShieldCheck, Smartphone } from 'lucide-react';
 import { useClinic } from '../context/ClinicContext';
 import { api, apiRequest } from '../api/client';
