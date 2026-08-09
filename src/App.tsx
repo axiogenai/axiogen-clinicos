@@ -16,7 +16,7 @@ import Toast from './components/Toast';
 import WhatsAppGatewayModal from './components/WhatsAppGatewayModal';
 import DoctorPasscodeModal from './components/DoctorPasscodeModal';
 
-import logoImg from './assets/logo-symbol.png';
+import logoHd from './assets/logo-hd.png';
 
 type TabState = 'receptionist' | 'doctor' | 'templates' | 'register';
 type DoctorViewState = 'queue' | 'form' | 'print';
@@ -258,7 +258,7 @@ function MainApp() {
             {/* Brand Mark */}
             <div className="flex items-center gap-2.5 shrink-0">
               <img
-                src={logoImg}
+                src={logoHd}
                 alt="Shinagare Skin & Cosmetic Clinic Logo"
                 className="h-9 w-auto object-contain shrink-0 drop-shadow-sm"
               />
