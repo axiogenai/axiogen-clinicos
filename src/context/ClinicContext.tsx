@@ -37,7 +37,7 @@ interface ClinicContextType {
   addToQueue: (queueItem: QueueItem) => void;
   updateQueueStatus: (queueId: string, status: QueueItem['status']) => void;
   removeFromQueue: (queueId: string) => void;
-  registerAndEnqueue: (patientData: Partial<Patient> & { complaint: string; notes?: string }, existingPatient?: Patient) => void;
+  registerAndEnqueue: (patientData: Partial<Patient> & { complaint: string; notes?: string }, existingPatient?: Patient) => Promise<{ patient: Patient; queueItem: QueueItem } | null>;
   addTemplate: (template: CaseTemplate) => void;
   updateTemplate: (template: CaseTemplate) => void;
   deleteTemplate: (templateId: string) => void;
@@ -309,14 +309,14 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (err: any) {
         setToast({ type: 'error', message: err.message || 'Patient registration failed' });
-        return;
+        return null;
       }
 
       setPatients(prev => [...prev.filter(p => p.id !== patient!.id), patient!]);
     }
 
     const targetPatient = patient;
-    if (!targetPatient) return;
+    if (!targetPatient) return null;
 
     const queueId = `Q${Date.now()}`;
     const newQueueItem: QueueItem = {
@@ -339,10 +339,11 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
         type: 'success',
         message: `${targetPatient.name} has been added to the queue.`
       });
+      return { patient: targetPatient, queueItem: newQueueItem };
     } catch (err: any) {
       setToast({ type: 'error', message: err.message || 'Failed to add patient to queue' });
+      return null;
     }
-
   }, [patients, setToast]);
 
   const addTemplate = useCallback((template: CaseTemplate) => {
