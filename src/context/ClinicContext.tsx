@@ -97,7 +97,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
         const sbUser: UserSession = {
           id: sbData.user.id,
           email: sbData.user.email || emailInput,
-          name: sbData.user.user_metadata?.name || (emailInput.includes('reception') ? 'Receptionist' : 'Dr. Shinagare'),
+          name: sbData.user.user_metadata?.name || (emailInput.includes('reception') ? 'Receptionist' : 'Dr. Shingare'),
           role: sbData.user.user_metadata?.role || (emailInput.includes('reception') ? 'receptionist' : 'doctor'),
           clinicId: 1
         };
