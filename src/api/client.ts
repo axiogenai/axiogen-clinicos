@@ -1,4 +1,12 @@
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const getApiBase = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  if (typeof window !== 'undefined' && (window.location.hostname.includes('vercel.app') || window.location.protocol === 'https:')) {
+    return 'https://shinagare-clinicos.duckdns.org/api';
+  }
+  return '/api';
+};
+
+const API_BASE = getApiBase();
 
 export async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('clinicos_jwt_token');
