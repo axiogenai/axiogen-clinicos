@@ -7,6 +7,7 @@ const Medicine = require('./Medicine');
 const Template = require('./Template');
 const CasePaper = require('./CasePaper');
 const AuditLog = require('./AuditLog');
+const OpdRegister = require('./OpdRegister');
 
 // Define Relationships & Foreign Keys (with constraints: false to prevent SQLite FK locks)
 Clinic.hasMany(User, { foreignKey: 'clinicId', constraints: false });
@@ -37,6 +38,9 @@ AuditLog.belongsTo(Clinic, { foreignKey: 'clinicId', constraints: false });
 User.hasMany(AuditLog, { foreignKey: 'userId', constraints: false });
 AuditLog.belongsTo(User, { foreignKey: 'userId', constraints: false });
 
+Clinic.hasMany(OpdRegister, { foreignKey: 'clinicId', constraints: false });
+OpdRegister.belongsTo(Clinic, { foreignKey: 'clinicId', constraints: false });
+
 module.exports = {
   sequelize,
   Clinic,
@@ -46,5 +50,6 @@ module.exports = {
   Medicine,
   Template,
   CasePaper,
-  AuditLog
+  AuditLog,
+  OpdRegister
 };
