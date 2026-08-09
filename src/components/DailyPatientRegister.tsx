@@ -630,132 +630,138 @@ export default function DailyPatientRegister() {
       {/* ── Interactive View (Hidden during Print) ── */}
       <div className="space-y-6 pb-12 no-print">
       
-      {/* ── Top Header Banner (On-Brand Warm Ivory Styling) ── */}
-      <div className="bg-[#faf9f6] rounded-2xl p-6 border border-[#e4e2e1] shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-serif font-bold text-[#1a1c1a]">Patient OPD Register</h2>
+      {/* ── Top Header Banner (Stable 2-Row Layout - No Shifting or Wrapping) ── */}
+      <div className="bg-[#faf9f6] rounded-2xl p-5 border border-[#e4e2e1] shadow-sm space-y-4">
+        
+        {/* Row 1: Title & Mode Selector Tabs */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-[#e4e2e1] pb-3.5">
+          <h2 className="text-xl sm:text-2xl font-serif font-bold text-[#1a1c1a] whitespace-nowrap">
+            Patient OPD Register
+          </h2>
+
+          {/* Mode Selector Tabs: Daily, Monthly, Yearly Archives */}
+          <div className="flex items-center gap-1 bg-[#f0ede6] p-1 rounded-xl border border-[#e4e2e1] shrink-0">
+            <button
+              onClick={() => setViewMode('daily')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                viewMode === 'daily'
+                  ? 'bg-white text-[#047857] shadow-sm border border-[#cdc6ba]'
+                  : 'text-[#656056] hover:text-[#1a1c1a]'
+              }`}
+            >
+              <Calendar className="w-3.5 h-3.5 text-[#047857]" />
+              <span>Day View</span>
+            </button>
+            <button
+              onClick={() => setViewMode('monthly')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                viewMode === 'monthly'
+                  ? 'bg-white text-[#047857] shadow-sm border border-[#cdc6ba]'
+                  : 'text-[#656056] hover:text-[#1a1c1a]'
+              }`}
+            >
+              <CalendarDays className="w-3.5 h-3.5 text-[#047857]" />
+              <span>Month Archive</span>
+            </button>
+            <button
+              onClick={() => setViewMode('yearly')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                viewMode === 'yearly'
+                  ? 'bg-white text-[#047857] shadow-sm border border-[#cdc6ba]'
+                  : 'text-[#656056] hover:text-[#1a1c1a]'
+              }`}
+            >
+              <BarChart2 className="w-3.5 h-3.5 text-[#047857]" />
+              <span>Year Summary</span>
+            </button>
+          </div>
         </div>
 
-        {/* Mode Selector Tabs: Daily, Monthly, Yearly Archives */}
-        <div className="flex items-center gap-1.5 bg-[#f0ede6] p-1 rounded-xl border border-[#e4e2e1]">
-          <button
-            onClick={() => setViewMode('daily')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              viewMode === 'daily'
-                ? 'bg-white text-[#047857] shadow-sm border border-[#cdc6ba]'
-                : 'text-[#656056] hover:text-[#1a1c1a]'
-            }`}
-          >
-            <Calendar className="w-3.5 h-3.5 text-[#047857]" />
-            <span>Day View</span>
-          </button>
-          <button
-            onClick={() => setViewMode('monthly')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              viewMode === 'monthly'
-                ? 'bg-white text-[#047857] shadow-sm border border-[#cdc6ba]'
-                : 'text-[#656056] hover:text-[#1a1c1a]'
-            }`}
-          >
-            <CalendarDays className="w-3.5 h-3.5 text-[#047857]" />
-            <span>Month Archive</span>
-          </button>
-          <button
-            onClick={() => setViewMode('yearly')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              viewMode === 'yearly'
-                ? 'bg-white text-[#047857] shadow-sm border border-[#cdc6ba]'
-                : 'text-[#656056] hover:text-[#1a1c1a]'
-            }`}
-          >
-            <BarChart2 className="w-3.5 h-3.5 text-[#047857]" />
-            <span>Year Summary</span>
-          </button>
+        {/* Row 2: Date/Month/Year Controls + Action Buttons */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+          
+          {/* Left: Filter Selectors (Day / Month / Year) */}
+          <div className="flex items-center gap-2 shrink-0">
+            {viewMode === 'daily' && (
+              <div className="flex items-center gap-2 bg-white border border-[#cdc6ba] rounded-xl px-3 py-2 text-xs font-semibold text-[#1a1c1a] shadow-sm">
+                <Calendar className="w-4 h-4 text-[#047857]" />
+                <input 
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="bg-transparent text-[#1a1c1a] font-mono focus:outline-none cursor-pointer"
+                />
+              </div>
+            )}
+
+            {viewMode === 'monthly' && (
+              <div className="flex items-center gap-2">
+                <CustomDropdown
+                  value={selectedMonth}
+                  options={Array.from({ length: 12 }, (_, i) => ({
+                    label: new Date(2026, i).toLocaleString('en-IN', { month: 'long' }),
+                    value: i + 1
+                  }))}
+                  onChange={(val) => setSelectedMonth(val)}
+                />
+                <CustomDropdown
+                  value={selectedYear}
+                  options={[2025, 2026, 2027, 2028].map(y => ({ label: String(y), value: y }))}
+                  onChange={(val) => setSelectedYear(val)}
+                />
+              </div>
+            )}
+
+            {viewMode === 'yearly' && (
+              <div className="flex items-center gap-2">
+                <CustomDropdown
+                  value={selectedYear}
+                  labelPrefix="Select Year:"
+                  options={[2025, 2026, 2027, 2028].map(y => ({ label: String(y), value: y }))}
+                  onChange={(val) => setSelectedYear(val)}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Right: Action Buttons (Sync, Export, Print, End Day) */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              onClick={handleSyncDatabaseRegister}
+              className="bg-[#ecfdf5] hover:bg-[#d1fae5] text-[#047857] border border-[#a7f3d0] text-xs font-bold px-3 py-2 rounded-xl shadow-sm transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer whitespace-nowrap"
+              title="Sync all OPD patients for selected date to backend database register"
+            >
+              <CheckCircle2 className="w-4 h-4 text-[#047857]" />
+              <span>Sync to Database</span>
+            </button>
+
+            <button
+              onClick={viewMode === 'monthly' ? handleExportMonthlyExcel : handleExportExcel}
+              className="btn-secondary text-xs whitespace-nowrap"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-[#047857]" />
+              <span>{viewMode === 'monthly' ? 'Export Monthly Excel' : 'Export Excel'}</span>
+            </button>
+
+            <button
+              onClick={() => window.print()}
+              className="btn-secondary text-xs whitespace-nowrap"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Print Register</span>
+            </button>
+
+            <button
+              onClick={handleEndDaySession}
+              className="bg-gradient-to-r from-red-800 to-rose-700 hover:from-red-950 text-[#ecfdf5] text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm transition-all flex items-center gap-1.5 active:scale-95 border border-red-900 cursor-pointer whitespace-nowrap"
+            >
+              <Save className="w-4 h-4" />
+              <span>End Day & Save</span>
+            </button>
+          </div>
+
         </div>
 
-        {/* Action Controls */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Day Date Picker */}
-          {viewMode === 'daily' && (
-            <div className="flex items-center gap-2 bg-white border border-[#cdc6ba] rounded-xl px-3 py-2 text-xs font-semibold text-[#1a1c1a] shadow-sm">
-              <Calendar className="w-4 h-4 text-[#047857]" />
-              <input 
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="bg-transparent text-[#1a1c1a] font-mono focus:outline-none cursor-pointer"
-              />
-            </div>
-          )}
-
-          {/* Month / Year Custom Dropdowns for Archive */}
-          {viewMode === 'monthly' && (
-            <div className="flex items-center gap-2">
-              <CustomDropdown
-                value={selectedMonth}
-                options={Array.from({ length: 12 }, (_, i) => ({
-                  label: new Date(2026, i).toLocaleString('en-IN', { month: 'long' }),
-                  value: i + 1
-                }))}
-                onChange={(val) => setSelectedMonth(val)}
-              />
-              <CustomDropdown
-                value={selectedYear}
-                options={[2025, 2026, 2027, 2028].map(y => ({ label: String(y), value: y }))}
-                onChange={(val) => setSelectedYear(val)}
-              />
-            </div>
-          )}
-
-          {/* Year Custom Dropdown for Yearly Summary */}
-          {viewMode === 'yearly' && (
-            <div className="flex items-center gap-2">
-              <CustomDropdown
-                value={selectedYear}
-                labelPrefix="Select Year:"
-                options={[2025, 2026, 2027, 2028].map(y => ({ label: String(y), value: y }))}
-                onChange={(val) => setSelectedYear(val)}
-              />
-            </div>
-          )}
-
-          {/* Sync DB Register Button */}
-          <button
-            onClick={handleSyncDatabaseRegister}
-            className="bg-[#ecfdf5] hover:bg-[#d1fae5] text-[#047857] border border-[#a7f3d0] text-xs font-bold px-3 py-2 rounded-xl shadow-sm transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
-            title="Sync all OPD patients for selected date to backend database register"
-          >
-            <CheckCircle2 className="w-4 h-4 text-[#047857]" />
-            <span>Sync to Database</span>
-          </button>
-
-          {/* Export Excel Button */}
-          <button
-            onClick={viewMode === 'monthly' ? handleExportMonthlyExcel : handleExportExcel}
-            className="btn-secondary text-xs"
-          >
-            <FileSpreadsheet className="w-4 h-4 text-[#047857]" />
-            <span>{viewMode === 'monthly' ? 'Export Monthly Excel' : 'Export Excel'}</span>
-          </button>
-
-          {/* Print Button */}
-          <button
-            onClick={() => window.print()}
-            className="btn-secondary text-xs"
-          >
-            <Printer className="w-4 h-4" />
-            <span>Print Register</span>
-          </button>
-
-          {/* End Day & Save Button */}
-          <button
-            onClick={handleEndDaySession}
-            className="bg-gradient-to-r from-red-800 to-rose-700 hover:from-red-950 text-[#ecfdf5] text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-sm transition-all flex items-center gap-1.5 active:scale-95 border border-red-900 cursor-pointer"
-          >
-            <Save className="w-4 h-4" />
-            <span>End Day & Save</span>
-          </button>
-        </div>
       </div>
 
       {/* KPI Stats Row */}
