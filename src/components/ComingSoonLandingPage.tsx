@@ -14,13 +14,13 @@ export default function ComingSoonLandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#faf9f6] text-[#1a1c1a] font-sans selection:bg-[#047857] selection:text-white flex flex-col items-center justify-between relative overflow-hidden p-6 sm:p-12">
+    <div className="min-h-screen bg-[#faf9f6] text-[#1a1c1a] font-sans selection:bg-[#047857] selection:text-white flex flex-col items-center justify-between relative overflow-hidden p-4 sm:p-8 md:p-12">
       
       {/* Subtle Background Aesthetic Glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-to-b from-[#ecfdf5]/80 via-[#f5f5f0]/40 to-transparent blur-3xl pointer-events-none rounded-full" />
 
       {/* ── Centered Logo & Brand Mark ── */}
-      <div className="relative z-10 pt-4 sm:pt-6 flex flex-col items-center justify-center text-center">
+      <div className="relative z-10 pt-3 sm:pt-6 flex flex-col items-center justify-center text-center">
         <img 
           src={logoHd} 
           alt="Shingare Skin Clinic Logo" 
@@ -34,7 +34,7 @@ export default function ComingSoonLandingPage() {
         </p>
         
         {/* Made with love link */}
-        <div className="mt-2 flex items-center gap-1.5 text-xs text-[#78716c]">
+        <div className="mt-2.5 flex items-center gap-1.5 text-xs text-[#78716c]">
           <span>Made with ❤️ by</span>
           <a
             href="https://team.axiogen.in"
@@ -47,26 +47,26 @@ export default function ComingSoonLandingPage() {
         </div>
 
         {/* Status Pill Badge */}
-        <div className="inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full bg-[#ecfdf5] border-2 border-[#10b981]/35 text-[#047857] text-xs sm:text-sm font-extrabold tracking-widest uppercase shadow-md mt-6">
+        <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#ecfdf5] border-2 border-[#10b981]/35 text-[#047857] text-xs sm:text-sm font-extrabold tracking-wider uppercase shadow-md mt-5">
           <Clock className="w-4 h-4 sm:w-4.5 h-4.5 text-[#047857]" />
           <span>Official Clinic Website • Launching Soon</span>
         </div>
       </div>
 
       {/* ── Main Hero & Coming Soon Content ── */}
-      <main className="relative z-10 max-w-4xl mx-auto mt-8 mb-12 flex flex-col items-center justify-center text-center">
+      <main className="relative z-10 w-full max-w-4xl mx-auto mt-6 mb-8 flex flex-col items-center justify-center text-center">
 
         {/* Main Headline */}
-        <h2 className="text-4xl sm:text-6xl font-serif font-bold text-[#1a1c1a] tracking-tight leading-[1.15] max-w-3xl">
+        <h2 className="text-3xl sm:text-5xl md:text-6xl font-serif font-bold text-[#1a1c1a] tracking-tight leading-[1.15] max-w-3xl">
           Advanced Dermatology & <span className="text-[#047857]">Radiant Skin Care</span>
         </h2>
 
-        <p className="mt-6 text-base sm:text-lg text-[#57534e] max-w-2xl font-normal leading-relaxed">
+        <p className="mt-5 text-sm sm:text-base md:text-lg text-[#57534e] max-w-2xl font-normal leading-relaxed">
           Dr. Pramod Shingare’s premier skin, hair, and laser clinic is crafting a brand-new digital patient portal for seamless online appointments and dermatological care.
         </p>
 
         {/* Notify / Subscribe Box */}
-        <div className="mt-8 w-full max-w-md px-1">
+        <div className="mt-8 w-full max-w-md px-1.5">
           {emailSubscribed ? (
             <div className="p-4 rounded-2xl bg-[#ecfdf5] border border-[#a7f3d0] text-[#047857] flex items-center justify-center gap-2 text-sm font-bold shadow-md">
               <CheckCircle2 className="w-5 h-5 text-[#047857]" />
@@ -80,11 +80,11 @@ export default function ComingSoonLandingPage() {
                 value={subscriberEmail}
                 onChange={(e) => setSubscriberEmail(e.target.value)}
                 placeholder="Enter your email for launch updates..."
-                className="w-full px-4 py-3.5 bg-white sm:bg-transparent text-sm text-[#1a1c1a] placeholder-[#a8a29e] rounded-xl sm:rounded-none border border-[#e7e5e4] sm:border-0 focus:outline-none shadow-sm sm:shadow-none"
+                className="w-full px-4 py-3 bg-white sm:bg-transparent text-sm text-[#1a1c1a] placeholder-[#a8a29e] rounded-xl sm:rounded-none border border-[#e7e5e4] sm:border-0 focus:outline-none shadow-sm sm:shadow-none"
               />
               <button
                 type="submit"
-                className="w-full sm:w-auto px-6 py-3.5 sm:py-3 bg-[#047857] hover:bg-[#065f46] text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer active:scale-95 shrink-0"
+                className="w-full sm:w-auto px-6 py-3 bg-[#047857] hover:bg-[#065f46] text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer active:scale-95 shrink-0"
               >
                 <span>Get Notified</span>
                 <ArrowRight className="w-4 h-4" />
@@ -94,9 +94,9 @@ export default function ComingSoonLandingPage() {
         </div>
 
         {/* ── Key Clinical Specializations Grid ── */}
-        <div className="mt-16 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 text-left">
+        <div className="mt-12 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-left">
           
-          <div className="p-5 rounded-2xl bg-white border border-[#e7e5e4] shadow-md hover:shadow-lg transition-all">
+          <div className="p-4 rounded-2xl bg-white border border-[#e7e5e4] shadow-md hover:shadow-lg transition-all">
             <div className="w-10 h-10 rounded-xl bg-[#ecfdf5] border border-[#a7f3d0] flex items-center justify-center text-[#047857] mb-3">
               <Stethoscope className="w-5 h-5" />
             </div>
@@ -106,7 +106,7 @@ export default function ComingSoonLandingPage() {
             </p>
           </div>
 
-          <div className="p-5 rounded-2xl bg-white border border-[#e7e5e4] shadow-md hover:shadow-lg transition-all">
+          <div className="p-4 rounded-2xl bg-white border border-[#e7e5e4] shadow-md hover:shadow-lg transition-all">
             <div className="w-10 h-10 rounded-xl bg-[#fffbeb] border border-[#fde68a] flex items-center justify-center text-[#b45309] mb-3">
               <Zap className="w-5 h-5" />
             </div>
@@ -116,7 +116,7 @@ export default function ComingSoonLandingPage() {
             </p>
           </div>
 
-          <div className="p-5 rounded-2xl bg-white border border-[#e7e5e4] shadow-md hover:shadow-lg transition-all">
+          <div className="p-4 rounded-2xl bg-white border border-[#e7e5e4] shadow-md hover:shadow-lg transition-all">
             <div className="w-10 h-10 rounded-xl bg-[#f0f9ff] border border-[#bae6fd] flex items-center justify-center text-[#0284c7] mb-3">
               <ShieldCheck className="w-5 h-5" />
             </div>
@@ -126,7 +126,7 @@ export default function ComingSoonLandingPage() {
             </p>
           </div>
 
-          <div className="p-5 rounded-2xl bg-white border border-[#e7e5e4] shadow-md hover:shadow-lg transition-all">
+          <div className="p-4 rounded-2xl bg-white border border-[#e7e5e4] shadow-md hover:shadow-lg transition-all">
             <div className="w-10 h-10 rounded-xl bg-[#fdf2f8] border border-[#fbcfe8] flex items-center justify-center text-[#db2777] mb-3">
               <Calendar className="w-5 h-5" />
             </div>
@@ -139,9 +139,9 @@ export default function ComingSoonLandingPage() {
         </div>
 
         {/* ── Doctor Info Banner ── */}
-        <div className="mt-12 w-full p-6 sm:p-8 rounded-3xl bg-white border border-[#e7e5e4] shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 text-left">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-[#047857] text-white font-bold flex items-center justify-center text-xl shadow-md shrink-0">
+        <div className="mt-10 w-full p-5 sm:p-7 rounded-3xl bg-white border border-[#e7e5e4] shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-5 text-left">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-[#047857] text-white font-bold flex items-center justify-center text-lg shadow-md shrink-0">
               PS
             </div>
             <div>
@@ -150,12 +150,12 @@ export default function ComingSoonLandingPage() {
                   Lead Consultant
                 </span>
               </div>
-              <h3 className="text-lg font-serif font-bold text-[#1a1c1a] mt-1">Dr. Pramod Shingare</h3>
+              <h3 className="text-base sm:text-lg font-serif font-bold text-[#1a1c1a] mt-0.5">Dr. Pramod Shingare</h3>
               <p className="text-xs text-[#78716c] mt-0.5">M.D. (Dermatology, Venereology & Leprosy) • Consultant Cosmetologist</p>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 text-xs text-[#44403c] w-full md:w-auto border-t md:border-t-0 border-[#f0ede6] pt-4 md:pt-0">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-5 text-xs text-[#44403c] w-full md:w-auto border-t md:border-t-0 border-[#f0ede6] pt-3.5 md:pt-0">
             <div className="flex items-center gap-2">
               <Phone className="w-4 h-4 text-[#047857]" />
               <span className="font-bold text-[#1a1c1a]">+91 9561896943</span>
@@ -170,7 +170,7 @@ export default function ComingSoonLandingPage() {
       </main>
 
       {/* ── Footer ── */}
-      <footer className="relative z-10 w-full max-w-4xl mx-auto pt-6 border-t border-[#e7e5e4] text-center text-xs text-[#78716c]">
+      <footer className="relative z-10 w-full max-w-4xl mx-auto pt-5 border-t border-[#e7e5e4] text-center text-xs text-[#78716c]">
         <p>© {new Date().getFullYear()} Shingare Skin & Hair Clinic. All rights reserved.</p>
       </footer>
 
