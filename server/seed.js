@@ -39,7 +39,7 @@ async function seedDatabase() {
 
     const doc2 = await User.create({
       clinicId: 1,
-      email: 'priyanka@shinagareclinic.com',
+      email: 'priyanka@shingareclinic.com',
       passwordHash: bcrypt.hashSync('doctor123', 10),
       name: 'डॉ. प्रियांका प्रमोद शिनगारे',
       phone: '7249727104',
@@ -52,7 +52,7 @@ async function seedDatabase() {
 
     const doc3 = await User.create({
       clinicId: 1,
-      email: 'pramod@shinagareclinic.com',
+      email: 'pramod@shingareclinic.com',
       passwordHash: bcrypt.hashSync('clinic123', 10),
       name: 'डॉ. प्रमोद सुरेश शिनगारे',
       phone: '9561896943',
