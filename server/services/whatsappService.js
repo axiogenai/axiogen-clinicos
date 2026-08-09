@@ -446,7 +446,7 @@ async function autoBackupDailyQueue(targetDate = null) {
       'Contact Phone': item.phone || '',
       'Address': item.village || '',
       'Chief Complaint': item.complaint || '',
-      'Consulting Doctor': 'Dr. Pramod Shinagare',
+      'Consulting Doctor': 'Dr. Pramod Shingare',
       'Status': (item.status || '').toUpperCase()
     }));
 
