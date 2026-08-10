@@ -167,7 +167,7 @@ export default function DailyPatientRegister() {
         phone: item.phone || patient?.phone || '-',
         village: item.village || patient?.village || '-',
         complaint: item.complaint || 'General Checkup',
-        doctor: clinicSettings.doctors[0]?.name || 'डॉ. प्रियांका शिनगारे',
+        doctor: clinicSettings.doctors.find(d => d.name.includes('प्रमोद'))?.name || clinicSettings.doctors[0]?.name || 'डॉ. प्रमोद सुरेश शिनगारे',
         status: item.status || 'waiting'
       };
     });
