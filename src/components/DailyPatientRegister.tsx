@@ -917,7 +917,7 @@ export default function DailyPatientRegister() {
       {/* ── Monthly OPD Register Archive View ── */}
       {viewMode === 'monthly' && (
         <div className="bg-white rounded-2xl border border-[#e4e2e1] shadow-sm overflow-hidden space-y-4">
-          <div className="px-6 py-4 bg-[#f8f6f0] border-b border-[#e4e2e1] flex justify-between items-center">
+          <div className="px-6 py-4 bg-[#f8f6f0] border-b border-[#e4e2e1] flex justify-between items-start gap-3 flex-wrap">
             <div>
               <h3 className="font-serif font-bold text-[#1a1c1a] text-base flex items-center gap-2">
                 <span>Monthly OPD Clinical Register</span>
@@ -929,9 +929,28 @@ export default function DailyPatientRegister() {
                 Archived day-by-day OPD records saved permanently on Oracle VM server database.
               </p>
             </div>
-            <span className="bg-[#ecfdf5] text-[#047857] text-xs font-bold px-3 py-1 rounded-full border border-[#a7f3d0]">
-              {monthlyData?.summary?.totalPatients || 0} Total OPD Patients
-            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="bg-[#ecfdf5] text-[#047857] text-xs font-bold px-3 py-1 rounded-full border border-[#a7f3d0]">
+                {monthlyData?.summary?.totalPatients || 0} Total OPD Patients
+              </span>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!window.confirm('⚠️ This will permanently delete ALL OPD register entries and reset numbering to 0. Are you sure?')) return;
+                  try {
+                    await api.clearAllRegister();
+                    setMonthlyData(null);
+                    setToast({ type: 'success', title: 'Register Reset', message: 'All OPD register entries cleared. Numbering will restart from 1 on next sync.' });
+                  } catch {
+                    setToast({ type: 'error', message: 'Failed to clear register.' });
+                  }
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-all active:scale-95"
+              >
+                <Trash2 className="w-3 h-3" />
+                Clear All & Reset
+              </button>
+            </div>
           </div>
 
           {isLoadingArchive ? (
@@ -952,25 +971,49 @@ export default function DailyPatientRegister() {
                     <th className="p-3">VILLAGE</th>
                     <th className="p-3">CHIEF COMPLAINT</th>
                     <th className="p-3">DIAGNOSIS</th>
-                    <th className="p-3 pr-6">STATUS</th>
+                    <th className="p-3">STATUS</th>
+                    <th className="p-3 pr-6">DEL</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#e4e2e1]">
                   {monthlyData.records.map((r: any, idx: number) => (
-                    <tr key={r.id || idx} className="hover:bg-[#faf9f6] transition-colors">
+                    <tr key={r.id || idx} className="hover:bg-[#faf9f6] transition-colors group">
                       <td className="p-3 pl-6 font-mono font-bold text-[#656056]">{idx + 1}</td>
                       <td className="p-3 font-mono font-semibold text-[#1a1c1a]">{r.date}</td>
-                      <td className="p-3 font-mono text-[#047857] font-bold">{r.opdNo || r.queueId}</td>
+                      <td className="p-3 font-mono text-[#047857] font-bold">{idx + 1}</td>
                       <td className="p-3 font-bold text-[#1a1c1a]">{r.patientName}</td>
                       <td className="p-3 text-[#656056]">{r.age || '-'} / {r.gender || 'M'}</td>
                       <td className="p-3 font-mono text-[#4b463e]">{r.phone || '-'}</td>
                       <td className="p-3 text-[#656056]">{r.village || '-'}</td>
                       <td className="p-3 text-[#4b463e]">{r.complaint || '-'}</td>
                       <td className="p-3 text-[#4b463e]">{r.diagnosis || '-'}</td>
-                      <td className="p-3 pr-6 font-bold uppercase text-[10px]">
+                      <td className="p-3 font-bold uppercase text-[10px]">
                         <span className="bg-[#ecfdf5] text-[#047857] px-2 py-0.5 rounded border border-[#a7f3d0]">
                           {r.status || 'COMPLETED'}
                         </span>
+                      </td>
+                      <td className="p-3 pr-6">
+                        <button
+                          type="button"
+                          title="Delete this entry"
+                          onClick={async () => {
+                            if (!window.confirm(`Delete OPD entry for ${r.patientName} (${r.date})?`)) return;
+                            try {
+                              await api.deleteRegisterEntry(r.id);
+                              setMonthlyData((prev: any) => prev ? {
+                                ...prev,
+                                records: prev.records.filter((rec: any) => rec.id !== r.id),
+                                summary: { ...prev.summary, totalPatients: Math.max(0, (prev.summary?.totalPatients || 1) - 1) }
+                              } : prev);
+                              setToast({ type: 'success', message: `Deleted OPD entry for ${r.patientName}` });
+                            } catch {
+                              setToast({ type: 'error', message: 'Failed to delete entry.' });
+                            }
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </td>
                     </tr>
                   ))}
