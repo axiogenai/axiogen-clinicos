@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Pill, FlaskConical, Lightbulb, Calendar, ArrowLeft, Printer, Trash2, Database, CheckCircle2, Search, Plus, X, ChevronDown, FileText } from 'lucide-react';
+import { Pill, FlaskConical, Lightbulb, Calendar, ArrowLeft, Printer, Trash2, Database, CheckCircle2, Search, Plus, X, ChevronDown, FileText, Sparkles, Loader2 } from 'lucide-react';
 import type { Patient } from '../data/patients';
 import { medicines as initialLocalMedicines } from '../data/medicines';
 import { useClinic } from '../context/ClinicContext';
@@ -10,6 +10,7 @@ import ReprintPreview from './ReprintPreview';
 import PatientEMRHistoryModal from './PatientEMRHistoryModal';
 
 import { calculateMedicineCount } from '../utils/countCalculator';
+import { translateFrequencyToMarathi } from '../utils/marathiTranslator';
 
 interface CasepaperFormProps {
   patient: Patient;
@@ -279,8 +280,28 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
   const [freqOpenIndex, setFreqOpenIndex] = useState<number | null>(null);
   const [freqInputDisplay, setFreqInputDisplay] = useState('');
   const [durOpenIndex, setDurOpenIndex] = useState<number | null>(null);
+  const [translatingIndex, setTranslatingIndex] = useState<number | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const templateSearchRef = useRef<HTMLDivElement>(null);
+
+  const handleTranslateRowFrequency = async (index: number, customText?: string) => {
+    const textToTranslate = customText !== undefined ? customText : (freqInputDisplay || casePaper.medicines[index]?.frequency || '');
+    if (!textToTranslate || !textToTranslate.trim()) return;
+    setTranslatingIndex(index);
+    try {
+      const translated = await translateFrequencyToMarathi(textToTranslate);
+      if (translated) {
+        updateMedicineField(index, 'frequency', translated);
+        setFreqInputDisplay(translated);
+        setToast({ type: 'success', title: 'Groq AI Translation', message: `Translated: "${translated}"` });
+      }
+    } catch {
+      setToast({ type: 'error', message: 'Translation failed. Please try again.' });
+    } finally {
+      setTranslatingIndex(null);
+      setFreqOpenIndex(null);
+    }
+  };
 
   const selectFollowUpDays = (days: number) => {
     if (days === 0) {
@@ -1009,24 +1030,58 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                         className="form-input form-input-sm font-semibold text-[#1a1c1a]"
                         placeholder="Medicine Name & Strength"
                       />
-                      {/* Frequency — free-text input + suggestions */}
-                      <div className="relative" onClick={(e) => e.stopPropagation()}>
+                      {/* Frequency — free-text custom editing + Groq AI translation + dropdown */}
+                      <div className="relative flex items-center" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="text"
                           value={freqOpenIndex === index ? freqInputDisplay : (med.frequency || '')}
-                          placeholder="Frequency"
+                          placeholder="Frequency (उदा. sakali 1 goli)"
                           onFocus={() => {
-                            setFreqInputDisplay('');
+                            setFreqInputDisplay(med.frequency || '');
                             setFreqOpenIndex(index);
                           }}
                           onChange={(e) => {
-                            setFreqInputDisplay(e.target.value);
+                            const val = e.target.value;
+                            setFreqInputDisplay(val);
+                            updateMedicineField(index, 'frequency', val);
                             setFreqOpenIndex(index);
                           }}
-                          className="form-input form-input-sm text-xs w-full"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleTranslateRowFrequency(index, freqInputDisplay);
+                            }
+                          }}
+                          className="form-input form-input-sm text-xs w-full pr-7"
                         />
+                        <button
+                          type="button"
+                          title="Translate English/Hinglish to Marathi using Groq AI"
+                          onClick={() => handleTranslateRowFrequency(index, freqInputDisplay || med.frequency || '')}
+                          disabled={translatingIndex === index}
+                          className="absolute right-1 text-[#047857] hover:text-[#065f46] hover:bg-[#ecfdf5] p-1 rounded transition-colors"
+                        >
+                          {translatingIndex === index ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-[#047857]" />
+                          ) : (
+                            <Sparkles className="w-3.5 h-3.5" />
+                          )}
+                        </button>
                         {freqOpenIndex === index && (
-                          <div className="absolute left-0 top-full mt-1 bg-white border border-[#e4e2e1] rounded-xl shadow-2xl" style={{ zIndex: 9999, width: '260px', maxHeight: '260px', overflowY: 'auto' }}>
+                          <div className="absolute left-0 top-full mt-1 bg-white border border-[#e4e2e1] rounded-xl shadow-2xl overflow-hidden" style={{ zIndex: 9999, width: '280px', maxHeight: '260px', overflowY: 'auto' }}>
+                            {/* Groq AI Top Action Option for English/Romanized text */}
+                            {freqInputDisplay.trim() && !/[\u0900-\u097F]/.test(freqInputDisplay) && (
+                              <div
+                                onClick={() => handleTranslateRowFrequency(index, freqInputDisplay)}
+                                className="px-3 py-2 text-xs font-bold text-[#047857] bg-[#ecfdf5] hover:bg-[#d1fae5] border-b border-[#a7f3d0] cursor-pointer flex items-center justify-between gap-2"
+                              >
+                                <span className="flex items-center gap-1.5 truncate">
+                                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                                  <span>Convert "{freqInputDisplay}" to Marathi</span>
+                                </span>
+                                <span className="text-[10px] font-sans font-extrabold uppercase bg-[#047857] text-white px-1.5 py-0.5 rounded">Groq AI</span>
+                              </div>
+                            )}
                             {FREQUENCIES.filter(f => freqMatchesSearch(f, freqInputDisplay)).map(f => (
                               <div
                                 key={f}
