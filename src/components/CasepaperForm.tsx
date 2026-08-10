@@ -1009,7 +1009,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                       </span>
                       <input
                         type="text"
-                        value={(med.dosage && !med.name.toLowerCase().includes(med.dosage.toLowerCase())) ? `${med.name} ${med.dosage}` : med.name}
+                        value={med.name}
                         onChange={(e) => updateMedicineField(index, 'name', e.target.value)}
                         className="form-input form-input-sm font-semibold text-[#1a1c1a]"
                         placeholder="Medicine Name & Strength"
@@ -1140,7 +1140,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                       </div>
                       <input
                         type="text"
-                        value={(med.dosage && !med.name.toLowerCase().includes(med.dosage.toLowerCase())) ? `${med.name} ${med.dosage}` : med.name}
+                        value={med.name}
                         onChange={(e) => updateMedicineField(index, 'name', e.target.value)}
                         className="form-input form-input-sm font-semibold text-[#1a1c1a] w-full"
                         placeholder="Medicine Name & Strength"
