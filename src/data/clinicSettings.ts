@@ -37,19 +37,19 @@ export const defaultClinicSettings: ClinicSettings = {
   doctors: [
     {
       id: "doc_1",
-      name: "डॉ. प्रियांका प्रमोद शिनगारे",
-      title: "BHMS, FCHD (MUHS)",
-      subTitle: "(Consultant Homeopathy Dermatologist)",
-      regNo: "Reg. No. 73338",
-      specialty: "त्वचारोग तज्ज्ञ",
-    },
-    {
-      id: "doc_2",
       name: "डॉ. प्रमोद सुरेश शिनगारे",
       title: "MD (Ayu) - D.Dermatology (Ay.)",
       subTitle: "(MUHS)",
       regNo: "Reg. No. I-87218-A",
       specialty: "त्वचारोग व सौंदर्य विशेष तज्ज्ञ",
+    },
+    {
+      id: "doc_2",
+      name: "डॉ. प्रियांका प्रमोद शिनगारे",
+      title: "BHMS, FCHD (MUHS)",
+      subTitle: "(Consultant Homeopathy Dermatologist)",
+      regNo: "Reg. No. 73338",
+      specialty: "त्वचारोग तज्ज्ञ",
     },
   ],
   address: "एस.टी. स्टँड जवळ, राजाराम चित्र मंदिर समोर, कल्याणी बझार वरती गाळा नं. ६, पेठ वडगाव",
