@@ -103,23 +103,25 @@ export default function MedicineEditorRow({ item, index, onUpdate, onRemove }: M
   );
 
   return (
-    <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center p-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 transition-colors">
-      <div className="flex-1 w-full">
-        <div className="font-medium text-sm text-gray-900 mb-2 sm:mb-0">
+    <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm hover:border-gray-300 transition-colors space-y-2.5 sm:space-y-0 sm:flex sm:items-center sm:gap-3">
+      {/* Top Header on Mobile: Medicine Name + Delete button */}
+      <div className="flex items-center justify-between gap-2 w-full sm:flex-1 min-w-0">
+        <div className="font-bold text-xs sm:text-sm text-gray-900 truncate">
           {item.medicineName || 'Unknown Medicine'}
         </div>
+        <button
+          type="button"
+          onClick={() => onRemove(index)}
+          className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+          title="Remove medicine"
+        >
+          <Trash2 className="w-4 h-4 text-red-500" />
+        </button>
       </div>
       
-      <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full sm:w-auto items-center">
-        <input
-          type="text"
-          value={item.dosage}
-          onChange={(e) => onUpdate(index, 'dosage', e.target.value)}
-          placeholder="Dosage"
-          className="w-full sm:w-24 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-        />
-        
-        <div className="relative w-full sm:w-64 flex items-center" ref={dropdownRef}>
+      {/* Frequency & Duration Controls */}
+      <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="relative flex-1 sm:w-64 flex items-center" ref={dropdownRef}>
           <input
             type="text"
             value={item.frequency}
@@ -135,7 +137,7 @@ export default function MedicineEditorRow({ item, index, onUpdate, onRemove }: M
               }
             }}
             placeholder="वारंवारता (उदा. sakali 1 goli)"
-            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md pr-7 focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full px-2.5 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-lg pr-7 focus:ring-emerald-500 focus:border-emerald-500"
           />
           <button
             type="button"
@@ -192,17 +194,8 @@ export default function MedicineEditorRow({ item, index, onUpdate, onRemove }: M
           value={item.duration}
           onChange={(e) => onUpdate(index, 'duration', e.target.value)}
           placeholder="Duration"
-          className="w-full sm:w-24 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+          className="w-24 sm:w-28 px-2.5 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 shrink-0"
         />
-        
-        <button
-          type="button"
-          onClick={() => onRemove(index)}
-          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors ml-auto sm:ml-0"
-          title="Remove medicine"
-        >
-          <Trash2 className="w-4 h-4 text-gray-400 hover:text-red-500" />
-        </button>
       </div>
     </div>
   );
