@@ -272,57 +272,59 @@ function MainApp() {
       />
       
       {/* ── Frosted Glass Header ── */}
-      <header className="app-header bg-white/90 backdrop-blur-md border-b border-[#e4e2e1] shadow-sm sticky top-0 z-40 no-print">
-        <div className="w-full px-4 sm:px-8 min-h-[60px] py-2 sm:py-0 flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-4">
+      <header className="app-header bg-white/95 backdrop-blur-md border-b border-[#e4e2e1] shadow-sm sticky top-0 z-40 no-print">
+        <div className="w-full px-3 sm:px-8 py-2 sm:py-2.5 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4">
           
-          <div className="w-full sm:w-auto flex items-center justify-between gap-3">
+          <div className="w-full sm:w-auto flex items-center justify-between gap-2">
             {/* Brand Mark */}
-            <div className="flex items-center gap-2.5 shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               <img
                 src={logoHd}
                 alt="Shingare Skin & Cosmetic Clinic Logo"
-                className="h-9 w-auto object-contain shrink-0 drop-shadow-sm"
+                className="h-7 sm:h-9 w-auto object-contain shrink-0 drop-shadow-sm"
               />
               <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-base sm:text-[17px] font-serif font-bold text-[#1a1c1a] tracking-tight leading-none">ClinicOS</span>
-                  <span className="bg-[#f2eee3] text-[#4b463e] text-[9px] font-black px-1.5 py-0.5 rounded border border-[#cdc6ba] tracking-wide">PRO EMR</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-sm sm:text-[17px] font-serif font-bold text-[#1a1c1a] tracking-tight leading-none">ClinicOS</span>
+                  <span className="bg-[#f2eee3] text-[#4b463e] text-[8px] sm:text-[9px] font-black px-1.5 py-0.5 rounded border border-[#cdc6ba] tracking-wide">PRO EMR</span>
                 </div>
-                <div className="text-[10px] text-[#7c766d] font-medium mt-0.5 leading-none">Shingare Skin & Cosmetic Clinic</div>
+                <div className="text-[9px] sm:text-[10px] text-[#7c766d] font-medium mt-0.5 leading-none">Shingare Skin & Cosmetic Clinic</div>
               </div>
             </div>
 
             {/* Mobile User Badge + Logout */}
-            <div className="flex sm:hidden items-center gap-2 shrink-0">
+            <div className="flex sm:hidden items-center gap-1.5 shrink-0">
               {isDoctor && (
                 <button
                   onClick={() => setIsWhatsAppModalOpen(true)}
                   title="WhatsApp Gateway"
-                  className="px-2 py-1 text-xs font-bold bg-[#ecfdf5] text-[#047857] border border-[#a7f3d0] rounded-xl flex items-center gap-1 cursor-pointer"
+                  className="px-2 py-0.5 text-[10px] font-bold bg-[#ecfdf5] text-[#047857] border border-[#a7f3d0] rounded-lg flex items-center gap-1 cursor-pointer"
                 >
                   <span>📱 WA</span>
                 </button>
               )}
-              <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs ${isDoctor ? 'bg-[#ecfdf5] border-[#a7f3d0]' : 'bg-[#f0f9ff] border-[#bae6fd]'}`}>
-                <span className={`font-bold text-[11px] ${isDoctor ? 'text-[#064e3b]' : 'text-[#1d4ed8]'}`}>{user.name.split(' ')[0]}</span>
+              <div className={`flex items-center gap-1 px-2 py-0.5 rounded-lg border text-xs ${isDoctor ? 'bg-[#ecfdf5] border-[#a7f3d0]' : 'bg-[#f0f9ff] border-[#bae6fd]'}`}>
+                <span className={`font-bold text-[10px] truncate max-w-[80px] ${isDoctor ? 'text-[#064e3b]' : 'text-[#1d4ed8]'}`}>
+                  Dr. {user.name.split(' ')[0]}
+                </span>
               </div>
 
               <button
                 onClick={handleLogout}
                 title="Sign Out"
-                className="p-1.5 text-[#7c766d] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-200"
+                className="p-1 text-[#7c766d] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-200"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
 
           {/* Role-Based Nav Tabs */}
           {isDoctor && (
-            <nav className="w-full sm:w-auto flex items-center justify-center gap-1 bg-[#f2eee3]/80 p-1 rounded-xl border border-[#e4e2e1] no-scrollbar">
+            <nav className="w-full sm:w-auto flex items-center justify-between sm:justify-center gap-1 bg-[#f2eee3]/80 p-1 rounded-xl border border-[#e4e2e1] overflow-x-auto no-scrollbar">
               <button
                 onClick={() => setTab('doctor')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 flex-1 sm:flex-initial whitespace-nowrap ${
+                className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 flex-1 sm:flex-initial whitespace-nowrap ${
                   tab === 'doctor'
                     ? 'bg-gradient-to-r from-[#064e3b] to-[#047857] text-[#ecfdf5] shadow-md shadow-emerald-950/20'
                     : 'text-[#4b463e] hover:text-[#1a1c1a] hover:bg-white/60'
@@ -334,7 +336,7 @@ function MainApp() {
 
               <button
                 onClick={() => setTab('register')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 flex-1 sm:flex-initial whitespace-nowrap ${
+                className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 flex-1 sm:flex-initial whitespace-nowrap ${
                   tab === 'register'
                     ? 'bg-gradient-to-r from-[#064e3b] to-[#047857] text-[#ecfdf5] shadow-md shadow-emerald-950/20'
                     : 'text-[#4b463e] hover:text-[#1a1c1a] hover:bg-white/60'
@@ -346,7 +348,7 @@ function MainApp() {
 
               <button
                 onClick={() => setTab('templates')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 flex-1 sm:flex-initial whitespace-nowrap ${
+                className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 flex-1 sm:flex-initial whitespace-nowrap ${
                   tab === 'templates'
                     ? 'bg-gradient-to-r from-[#064e3b] to-[#047857] text-[#ecfdf5] shadow-md shadow-emerald-950/20'
                     : 'text-[#4b463e] hover:text-[#1a1c1a] hover:bg-white/60'
