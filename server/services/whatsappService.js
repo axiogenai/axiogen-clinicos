@@ -3,6 +3,8 @@ const { Op } = require('sequelize');
 const XLSX = require('xlsx');
 const fs = require('fs');
 const path = require('path');
+const { getISTDateStr, getISTTimeString, getISTTimeInfo } = require('../utils/timezone');
+
 
 // Sent message log store to prevent duplicate reminders
 const sentLog = new Set();
@@ -24,7 +26,7 @@ function formatWhatsAppDate(dateStr) {
 /**
  * Formats WhatsApp text message for a patient follow-up reminder
  */
-function buildReminderMessage(patientName, followUpDate, doctorName = 'डॉ. प्रमोद शिनगारे') {
+function buildReminderMessage(patientName, followUpDate, doctorName = 'डॉ. प्रमोद सुरेश शिनगारे') {
   const formattedDate = formatWhatsAppDate(followUpDate);
 
   return (
@@ -425,7 +427,7 @@ async function dispatchWhatsAppMessage(phone, messageText) {
  * Daily OPD Register Auto-Backup to server local folder
  */
 async function autoBackupDailyQueue(targetDate = null) {
-  const dateStr = targetDate || new Date().toISOString().split('T')[0];
+  const dateStr = targetDate || getISTDateStr();
   try {
     const queueItems = await Queue.findAll({
       where: { date: dateStr },
@@ -446,7 +448,7 @@ async function autoBackupDailyQueue(targetDate = null) {
       'Contact Phone': item.phone || '',
       'Address': item.village || '',
       'Chief Complaint': item.complaint || '',
-      'Consulting Doctor': 'Dr. Pramod Shingare',
+      'Consulting Doctor': 'Dr. Pramod Suresh Shingare',
       'Status': (item.status || '').toUpperCase()
     }));
 
