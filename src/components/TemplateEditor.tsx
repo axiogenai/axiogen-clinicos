@@ -290,31 +290,32 @@ export default function TemplateEditor({ template, onSave, onCancel, onPreview }
       </div>
 
       {/* Floating Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg p-4 z-20">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-xl p-2.5 sm:p-4 z-40">
+        <div className="max-w-6xl mx-auto flex flex-row items-center justify-between gap-2">
           <button
             type="button"
             onClick={onCancel}
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-colors"
+            className="px-3 sm:px-6 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium text-xs sm:text-sm transition-colors shrink-0"
           >
             Cancel
           </button>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <button
               type="button"
               onClick={onPreview}
-              className="px-6 py-2 border border-emerald-600 text-emerald-700 hover:bg-emerald-50 rounded-lg font-bold text-sm transition-colors flex items-center gap-1.5"
+              className="px-2.5 sm:px-5 py-2 border border-emerald-600 text-emerald-700 hover:bg-emerald-50 rounded-xl font-bold text-xs sm:text-sm transition-colors flex items-center gap-1 shrink-0"
             >
-              <Eye className="w-4 h-4" />
-              <span>Preview Template</span>
+              <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="hidden xs:inline">Preview</span>
+              <span className="xs:hidden">Preview</span>
             </button>
             <button
               type="submit"
-              className="px-8 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-bold text-sm shadow-md transition-colors flex items-center gap-1.5"
+              className="px-3 sm:px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold text-xs sm:text-sm shadow-md transition-colors flex items-center gap-1 shrink-0"
             >
-              <Check className="w-4 h-4" />
-              <span>Save Template</span>
+              <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span>Save</span>
             </button>
           </div>
         </div>
