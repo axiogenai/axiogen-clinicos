@@ -136,15 +136,15 @@ export default function MedicineEditorRow({ item, index, onUpdate, onRemove }: M
                 handleAiTranslate();
               }
             }}
-            placeholder="वारंवारता (उदा. sakali 1 goli)"
-            className="w-full px-2.5 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-lg pr-7 focus:ring-emerald-500 focus:border-emerald-500"
+            placeholder="Frequency (sakali 1 goli)"
+            className="w-full px-2.5 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-lg pr-9 focus:ring-emerald-500 focus:border-emerald-500"
           />
           <button
             type="button"
             title="मराठी भाषांतर"
             onClick={handleAiTranslate}
             disabled={translating}
-            className="absolute right-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 p-1 rounded transition-colors"
+            className="absolute right-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 p-1 rounded transition-colors z-10 shrink-0"
           >
             {translating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Languages className="w-3.5 h-3.5" />}
           </button>
