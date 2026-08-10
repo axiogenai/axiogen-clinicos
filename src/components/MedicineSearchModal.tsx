@@ -469,14 +469,14 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
                           handleAiTranslateFrequency(freqInput);
                         }
                       }}
-                      className="w-full p-2.5 pr-8 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                      className="w-full p-2.5 pr-10 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                     />
                     <button
                       type="button"
                       title="मराठी भाषांतर"
                       onClick={() => handleAiTranslateFrequency(freqInput || frequency)}
                       disabled={translatingFreq}
-                      className="absolute right-2 text-emerald-600 hover:text-emerald-700 p-1 rounded hover:bg-emerald-50 transition-colors"
+                      className="absolute right-2 text-emerald-600 hover:text-emerald-700 p-1 rounded hover:bg-emerald-50 transition-colors z-10 shrink-0"
                     >
                       {translatingFreq ? <Loader2 className="w-4 h-4 animate-spin" /> : <Languages className="w-4 h-4" />}
                     </button>
