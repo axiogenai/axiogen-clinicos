@@ -115,4 +115,6 @@ export const api = {
   getMonthlyRegister: (year?: number, month?: number) => apiRequest<any>(`/register/monthly?year=${year || new Date().getFullYear()}&month=${month || (new Date().getMonth() + 1)}`),
   getYearlyRegister: (year?: number) => apiRequest<any>(`/register/yearly?year=${year || new Date().getFullYear()}`),
   syncRegister: (date?: string) => apiRequest<any>('/register/sync', { method: 'POST', body: JSON.stringify({ date }) }),
+  deleteRegisterEntry: (id: string) => apiRequest<any>(`/register/${id}`, { method: 'DELETE' }),
+  clearAllRegister: () => apiRequest<any>('/register/clear-all', { method: 'DELETE' }),
 };
