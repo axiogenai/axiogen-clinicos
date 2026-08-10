@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Pill, FlaskConical, Lightbulb, Calendar, ArrowLeft, Printer, Trash2, Database, CheckCircle2, Search, Plus, X, ChevronDown, FileText, Languages, Loader2 } from 'lucide-react';
+import { Pill, FlaskConical, Lightbulb, Calendar, ArrowLeft, Printer, Trash2, CheckCircle2, Search, Plus, X, ChevronDown, FileText, Languages, Loader2 } from 'lucide-react';
 import type { Patient } from '../data/patients';
 import { medicines as initialLocalMedicines } from '../data/medicines';
 import { useClinic } from '../context/ClinicContext';
@@ -702,25 +702,9 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
               <p className="text-[10px] sm:text-xs text-[#7c766d] mt-0.5 truncate">
                 {patient.age} Yrs / {patient.gender === 'M' ? 'Male' : 'Female'} · {patient.phone} · {patient.village || 'N/A'}
               </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsMedicineImportOpen(true)}
-              className="btn-secondary text-xs shrink-0 ml-auto sm:hidden"
-            >
-              <Database className="w-3.5 h-3.5 text-[#047857]" />
-            </button>
           </div>
-
-          <button
-            type="button"
-            onClick={() => setIsMedicineImportOpen(true)}
-            className="btn-secondary text-xs shrink-0 hidden sm:flex"
-          >
-            <Database className="w-3.5 h-3.5 text-[#047857]" />
-            <span>Import Medicines CSV</span>
-          </button>
         </div>
+      </div>
       {/* ── Main 3-column grid ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
         
