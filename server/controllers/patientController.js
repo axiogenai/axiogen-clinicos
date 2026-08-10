@@ -157,7 +157,7 @@ exports.deletePatient = async (req, res, next) => {
     const targetPhone = patient.phone;
     const targetId = patient.id;
 
-    // Delete patient record from Patient table
+    // Delete patient record from primary DB (Supabase/PostgreSQL)
     await patient.destroy();
 
     // Also clean up any lingering Queue entries with matching patientId or phone
@@ -172,8 +172,44 @@ exports.deletePatient = async (req, res, next) => {
       }
     });
 
+    // ── Dual-Delete: Also purge from local SQLite on Oracle VM ──
+    // When DATABASE_URL is set (Supabase), the local SQLite file is not the
+    // active database but may still hold stale records from before migration.
+    // We delete from it in the background so patients don't resurface if the
+    // server ever falls back to SQLite mode.
+    if (process.env.DATABASE_URL) {
+      try {
+        const path = require('path');
+        const { Sequelize } = require('sequelize');
+        const sqlitePath = path.resolve(__dirname, '../database.sqlite');
+        const fs = require('fs');
+        if (fs.existsSync(sqlitePath)) {
+          const sqliteDb = new Sequelize({
+            dialect: 'sqlite',
+            storage: sqlitePath,
+            logging: false,
+          });
+          // Delete matching patients from SQLite
+          await sqliteDb.query(
+            `DELETE FROM patients WHERE id = :id OR phone = :phone OR name = :name`,
+            { replacements: { id: targetId, phone: targetPhone || '', name: patient.name } }
+          );
+          // Delete matching queue entries from SQLite
+          await sqliteDb.query(
+            `DELETE FROM queues WHERE patient_id = :patientId OR phone = :phone`,
+            { replacements: { patientId: targetId, phone: targetPhone || '' } }
+          );
+          await sqliteDb.close();
+        }
+      } catch (sqliteErr) {
+        // Non-critical — SQLite cleanup failure should never block the API response
+        console.warn('⚠️ SQLite dual-delete warning (non-critical):', sqliteErr.message);
+      }
+    }
+
     res.json({ message: 'Patient and all associated queue records permanently deleted successfully' });
   } catch (err) {
     next(err);
   }
 };
+
