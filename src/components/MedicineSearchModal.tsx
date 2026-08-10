@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Search, ArrowRight, Plus, Loader2, Sparkles } from 'lucide-react';
+import { X, Search, ArrowRight, Plus, Loader2, Languages } from 'lucide-react';
 import type { Medicine } from '../data/medicines';
 import type { TemplateMedicine } from '../data/templates';
 import { api } from '../api/client';
@@ -483,12 +483,12 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
                     />
                     <button
                       type="button"
-                      title="Translate English to Marathi using Groq AI"
+                      title="मराठी भाषांतर"
                       onClick={() => handleAiTranslateFrequency(freqInput || frequency)}
                       disabled={translatingFreq}
                       className="absolute right-2 text-emerald-600 hover:text-emerald-700 p-1 rounded hover:bg-emerald-50 transition-colors"
                     >
-                      {translatingFreq ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                      {translatingFreq ? <Loader2 className="w-4 h-4 animate-spin" /> : <Languages className="w-4 h-4" />}
                     </button>
                   </div>
                   {freqOpen && (
@@ -505,10 +505,10 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
                           className="px-3 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 cursor-pointer flex items-center justify-between gap-2 border-b border-emerald-200"
                         >
                           <span className="flex items-center gap-1.5 truncate">
-                            <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                            <span>Convert "{freqInput}" to Marathi</span>
+                            <Languages className="w-3.5 h-3.5 shrink-0" />
+                            <span>मराठीत रूपांतर करा: "{freqInput}"</span>
                           </span>
-                          <span className="text-[10px] font-sans font-extrabold uppercase bg-emerald-600 text-white px-1.5 py-0.5 rounded">Groq AI</span>
+                          <span className="text-[10px] font-sans font-extrabold uppercase bg-emerald-600 text-white px-1.5 py-0.5 rounded">मराठी</span>
                         </div>
                       )}
                       {FREQUENCIES.filter(f => freqMatchesSearch(f, freqInput)).map(f => (
