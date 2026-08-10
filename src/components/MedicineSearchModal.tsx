@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Search, ArrowRight, Plus, Loader2 } from 'lucide-react';
+import { X, Search, ArrowRight, Plus, Loader2, Sparkles } from 'lucide-react';
 import type { Medicine } from '../data/medicines';
 import type { TemplateMedicine } from '../data/templates';
 import { api } from '../api/client';
+import { translateFrequencyToMarathi } from '../utils/marathiTranslator';
 
 interface MedicineSearchModalProps {
   onAdd: (med: TemplateMedicine & { medicineName: string }) => void;
@@ -20,11 +21,36 @@ const FREQUENCIES = [
   '१/२ गोळी सकाळी घेणे',
   'उपाशीपोटी घेणे',
   'जेवणानंतर घेणे',
-  'गोळी टेपरिंग: ७ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे',
+  'गोळी टेपरिंग: १ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे',
+  'गोळी टेपरिंग: २ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे',
+  'गोळी टेपरिंग: ३ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे',
+  'गोळी टेपरिंग: ४ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे',
   'गोळी टेपरिंग: ५ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे',
+  'गोळी टेपरिंग: ६ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे',
+  'गोळी टेपरिंग: ७ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे',
+  'गोळी टेपरिंग: ८ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे',
+  'गोळी टेपरिंग: ९ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे',
+  'गोळी टेपरिंग: १० दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे',
+  'गोळी टेपरिंग: १ दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे',
+  'गोळी टेपरिंग: २ दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे',
+  'गोळी टेपरिंग: ३ दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे',
+  'गोळी टेपरिंग: ४ दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे',
+  'गोळी टेपरिंग: ५ दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे',
+  'गोळी टेपरिंग: ६ दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे',
   'गोळी टेपरिंग: ७ दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे',
-  'क्रीम टेपरिंग: ७ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे',
+  'गोळी टेपरिंग: ८ दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे',
+  'गोळी टेपरिंग: ९ दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे',
+  'गोळी टेपरिंग: १० दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे',
+  'क्रीम टेपरिंग: १ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे',
+  'क्रीम टेपरिंग: २ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे',
+  'क्रीम टेपरिंग: ३ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे',
+  'क्रीम टेपरिंग: ४ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे',
   'क्रीम टेपरिंग: ५ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे',
+  'क्रीम टेपरिंग: ६ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे',
+  'क्रीम टेपरिंग: ७ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे',
+  'क्रीम टेपरिंग: ८ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे',
+  'क्रीम टेपरिंग: ९ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे',
+  'क्रीम टेपरिंग: १० दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे',
   'दर सोमवारी १ गोळी घेणे',
   'दर बुधवारी १ गोळी घेणे',
   'दर शनिवारी १ गोळी घेणे',
@@ -95,11 +121,36 @@ const FREQ_ALIASES: Record<string, string> = {
   '१/२ गोळी सकाळी घेणे': 'half goli sakali morning tablet 0.5',
   'उपाशीपोटी घेणे': 'upashi empty stomach fasting ghene before breakfast ac',
   'जेवणानंतर घेणे': 'jevan jevananantar after meals food ghene pc',
-  'गोळी टेपरिंग: ७ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे': 'tapering taper goli 7 divas sakali ratri nantar bd od tablet',
-  'गोळी टेपरिंग: ५ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे': 'tapering taper goli 5 divas sakali ratri nantar bd od tablet',
+  'गोळी टेपरिंग: १ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे': 'tapering taper goli 1 divas ek sakali ratri nantar bd od tablet',
+  'गोळी टेपरिंग: २ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे': 'tapering taper goli 2 divas don sakali ratri nantar bd od tablet',
+  'गोळी टेपरिंग: ३ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे': 'tapering taper goli 3 divas teen sakali ratri nantar bd od tablet',
+  'गोळी टेपरिंग: ४ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे': 'tapering taper goli 4 divas char sakali ratri nantar bd od tablet',
+  'गोळी टेपरिंग: ५ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे': 'tapering taper goli 5 divas paach sakali ratri nantar bd od tablet',
+  'गोळी टेपरिंग: ६ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे': 'tapering taper goli 6 divas saha sakali ratri nantar bd od tablet',
+  'गोळी टेपरिंग: ७ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे': 'tapering taper goli 7 divas saat sakali ratri nantar bd od tablet',
+  'गोळी टेपरिंग: ८ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे': 'tapering taper goli 8 divas aath sakali ratri nantar bd od tablet',
+  'गोळी टेपरिंग: ९ दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे': 'tapering taper goli 9 divas nau sakali ratri nantar bd od tablet',
+  'गोळी टेपरिंग: १० दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे': 'tapering taper goli 10 divas dahaa sakali ratri nantar bd od tablet',
+  'गोळी टेपरिंग: १ दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे': 'tapering taper goli 1 divas tinada donada ekda nantar tds bd od',
+  'गोळी टेपरिंग: २ दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे': 'tapering taper goli 2 divas tinada donada ekda nantar tds bd od',
+  'गोळी टेपरिंग: ३ दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे': 'tapering taper goli 3 divas tinada donada ekda nantar tds bd od',
+  'गोळी टेपरिंग: ४ दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे': 'tapering taper goli 4 divas tinada donada ekda nantar tds bd od',
+  'गोळी टेपरिंग: ५ दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे': 'tapering taper goli 5 divas tinada donada ekda nantar tds bd od',
+  'गोळी टेपरिंग: ६ दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे': 'tapering taper goli 6 divas tinada donada ekda nantar tds bd od',
   'गोळी टेपरिंग: ७ दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे': 'tapering taper goli 7 divas tinada donada ekda nantar tds bd od',
-  'क्रीम टेपरिंग: ७ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे': 'tapering taper cream 7 divas sakali ratri nantar bd od laavne',
+  'गोळी टेपरिंग: ८ दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे': 'tapering taper goli 8 divas tinada donada ekda nantar tds bd od',
+  'गोळी टेपरिंग: ९ दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे': 'tapering taper goli 9 divas tinada donada ekda nantar tds bd od',
+  'गोळी टेपरिंग: १० दिवस तीनदा नंतर दोनदा नंतर एकदा घेणे': 'tapering taper goli 10 divas tinada donada ekda nantar tds bd od',
+  'क्रीम टेपरिंग: १ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे': 'tapering taper cream 1 divas sakali ratri nantar bd od laavne',
+  'क्रीम टेपरिंग: २ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे': 'tapering taper cream 2 divas sakali ratri nantar bd od laavne',
+  'क्रीम टेपरिंग: ३ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे': 'tapering taper cream 3 divas sakali ratri nantar bd od laavne',
+  'क्रीम टेपरिंग: ४ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे': 'tapering taper cream 4 divas sakali ratri nantar bd od laavne',
   'क्रीम टेपरिंग: ५ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे': 'tapering taper cream 5 divas sakali ratri nantar bd od laavne',
+  'क्रीम टेपरिंग: ६ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे': 'tapering taper cream 6 divas sakali ratri nantar bd od laavne',
+  'क्रीम टेपरिंग: ७ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे': 'tapering taper cream 7 divas sakali ratri nantar bd od laavne',
+  'क्रीम टेपरिंग: ८ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे': 'tapering taper cream 8 divas sakali ratri nantar bd od laavne',
+  'क्रीम टेपरिंग: ९ दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे': 'tapering taper cream 9 divas sakali ratri nantar bd od laavne',
+  'क्रीम टेपरिंग: १० दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे': 'tapering taper cream 10 divas sakali ratri nantar bd od laavne',
   'दर सोमवारी १ गोळी घेणे': 'somvar somvari monday goli weekly tablet',
   'दर बुधवारी १ गोळी घेणे': 'budhvar budhvari wednesday goli weekly tablet',
   'दर शनिवारी १ गोळी घेणे': 'shanivar shanivari saturday goli weekly tablet',
@@ -208,6 +259,25 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
   const [freqOpen, setFreqOpen] = useState(false);
   const [duration, setDuration] = useState('7 Days');
   const [durOpen, setDurOpen] = useState(false);
+  const [translatingFreq, setTranslatingFreq] = useState(false);
+
+  const handleAiTranslateFrequency = async (customText?: string) => {
+    const textToTranslate = customText !== undefined ? customText : (freqInput || frequency);
+    if (!textToTranslate || !textToTranslate.trim()) return;
+    setTranslatingFreq(true);
+    try {
+      const translated = await translateFrequencyToMarathi(textToTranslate);
+      if (translated) {
+        setFrequency(translated);
+        setFreqInput(translated);
+      }
+    } catch {
+      /* fallback */
+    } finally {
+      setTranslatingFreq(false);
+      setFreqOpen(false);
+    }
+  };
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -386,24 +456,61 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Frequency Dropdown */}
+                {/* Frequency Dropdown & Custom Editing + Groq AI */}
                 <div className="relative" onClick={(e) => e.stopPropagation()}>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">
                     Frequency
                   </label>
-                  <input
-                    type="text"
-                    value={freqOpen ? freqInput : frequency}
-                    placeholder="Search frequency..."
-                    onFocus={() => { setFreqInput(''); setFreqOpen(true); setDurOpen(false); }}
-                    onChange={(e) => { setFreqInput(e.target.value); setFreqOpen(true); }}
-                    className="w-full p-2.5 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                  />
+                  <div className="relative flex items-center">
+                    <input
+                      type="text"
+                      value={freqOpen ? freqInput : frequency}
+                      placeholder="Search or type custom frequency..."
+                      onFocus={() => { setFreqInput(frequency || ''); setFreqOpen(true); setDurOpen(false); }}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFreqInput(val);
+                        setFrequency(val);
+                        setFreqOpen(true);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAiTranslateFrequency(freqInput);
+                        }
+                      }}
+                      className="w-full p-2.5 pr-8 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                    />
+                    <button
+                      type="button"
+                      title="Translate English to Marathi using Groq AI"
+                      onClick={() => handleAiTranslateFrequency(freqInput || frequency)}
+                      disabled={translatingFreq}
+                      className="absolute right-2 text-emerald-600 hover:text-emerald-700 p-1 rounded hover:bg-emerald-50 transition-colors"
+                    >
+                      {translatingFreq ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    </button>
+                  </div>
                   {freqOpen && (
                     <div 
                       className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl overflow-y-auto divide-y divide-gray-50" 
                       style={{ zIndex: 99999, width: '100%', minWidth: '280px', maxHeight: '220px' }}
                     >
+                      {freqInput.trim() && !/[\u0900-\u097F]/.test(freqInput) && (
+                        <div
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            handleAiTranslateFrequency(freqInput);
+                          }}
+                          className="px-3 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 cursor-pointer flex items-center justify-between gap-2 border-b border-emerald-200"
+                        >
+                          <span className="flex items-center gap-1.5 truncate">
+                            <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                            <span>Convert "{freqInput}" to Marathi</span>
+                          </span>
+                          <span className="text-[10px] font-sans font-extrabold uppercase bg-emerald-600 text-white px-1.5 py-0.5 rounded">Groq AI</span>
+                        </div>
+                      )}
                       {FREQUENCIES.filter(f => freqMatchesSearch(f, freqInput)).map(f => (
                         <div
                           key={f}
