@@ -485,11 +485,100 @@ function initBackgroundScheduler() {
   let lastReminderDate = '';
   let lastBackupDate = '';
   let lastFestivalDate = '';
+  let lastEndDayDate = ''; // Tracks midnight auto End Day & Save
 
   const checkIntervalMs = 60 * 1000; // Check every 1 minute
 
   const runChecks = async () => {
     const { dateStr, hour, minute } = getISTTimeInfo();
+
+    // ── Midnight Auto End Day & Save (12:00 AM IST) ──
+    // At midnight, the calendar date rolls over. We save for YESTERDAY.
+    // This replicates exactly what the "End Day & Save" button does.
+    if (hour === 0 && lastEndDayDate !== dateStr) {
+      lastEndDayDate = dateStr;
+      // Yesterday's date
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      console.log(`🌙 [MIDNIGHT AUTO END-DAY IST ${dateStr}] Auto-saving OPD Register for ${yesterdayStr}...`);
+      try {
+        const { OpdRegister, Queue, Patient, CasePaper } = require('../models');
+        const { Op } = require('sequelize');
+        const clinicId = 1;
+        const [yStr, mStr, dStr] = yesterdayStr.split('-');
+        const year = parseInt(yStr, 10);
+        const month = parseInt(mStr, 10);
+        const day = parseInt(dStr, 10);
+
+        const queueItems = await Queue.findAll({
+          where: { clinicId, date: yesterdayStr },
+          order: [['created_at', 'ASC']]
+        });
+
+        let srNo = 1;
+        for (const q of queueItems) {
+          const patient = q.patientId ? await Patient.findByPk(q.patientId) : null;
+          const casePaper = q.patientId ? await CasePaper.findOne({
+            where: { clinicId, patientId: q.patientId, date: yesterdayStr }
+          }) : null;
+
+          const [record] = await OpdRegister.findOrCreate({
+            where: { clinicId, date: yesterdayStr, queueId: q.queueId },
+            defaults: {
+              clinicId, date: yesterdayStr, year, month, day, srNo,
+              opdNo: q.queueId || `OPD-${yesterdayStr.replace(/-/g, '')}-${String(srNo).padStart(3, '0')}`,
+              queueId: q.queueId,
+              patientId: q.patientId,
+              patientName: q.name,
+              age: q.age || patient?.age || 0,
+              gender: patient?.gender || 'M',
+              phone: q.phone || patient?.phone || '',
+              village: q.village || patient?.village || '',
+              complaint: q.complaint || casePaper?.complaint || '',
+              diagnosis: casePaper?.pastHistory || '',
+              medicines: casePaper?.medicines || [],
+              investigations: casePaper?.investigationsAdvised || [],
+              counselling: casePaper?.counsellingDone || [],
+              followUpDate: casePaper?.followUpDate || '',
+              timeAdded: q.timeAdded,
+              status: casePaper ? 'completed' : q.status
+            }
+          });
+          if (record) {
+            await record.update({
+              patientName: q.name,
+              age: q.age || patient?.age || record.age,
+              phone: q.phone || patient?.phone || record.phone,
+              village: q.village || patient?.village || record.village,
+              complaint: q.complaint || casePaper?.complaint || record.complaint,
+              status: casePaper ? 'completed' : q.status,
+              medicines: casePaper?.medicines || record.medicines,
+              followUpDate: casePaper?.followUpDate || record.followUpDate
+            });
+          }
+          srNo++;
+        }
+
+        // Also write the JSON disk archive on Oracle VM
+        try {
+          const fs = require('fs');
+          const path = require('path');
+          const registerDir = path.join(__dirname, '../registers', String(year), String(month).padStart(2, '0'));
+          if (!fs.existsSync(registerDir)) fs.mkdirSync(registerDir, { recursive: true });
+          const jsonPath = path.join(registerDir, `opd_register_${yesterdayStr}.json`);
+          const allSynced = await OpdRegister.findAll({ where: { clinicId, date: yesterdayStr } });
+          fs.writeFileSync(jsonPath, JSON.stringify({ date: yesterdayStr, year, month, day, totalPatients: allSynced.length, records: allSynced }, null, 2));
+          console.log(`💾 [MIDNIGHT DISK REGISTER]: Archive saved for ${yesterdayStr} → ${jsonPath}`);
+        } catch (diskErr) {
+          console.warn('Disk archive notice:', diskErr.message);
+        }
+
+        console.log(`✅ [MIDNIGHT AUTO END-DAY]: OPD Register auto-saved for ${yesterdayStr} (${srNo - 1} patients).`);
+      } catch (err) {
+        console.error('❌ Midnight auto End-Day Save error:', err);
+      }
+    }
 
     // Trigger automated festival wishes at 8:30 AM IST or later on holiday dates
     const monthDay = dateStr.slice(5);
