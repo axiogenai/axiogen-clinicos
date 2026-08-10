@@ -1,5 +1,6 @@
 const { OpdRegister, Queue, Patient, CasePaper } = require('../models');
 const { Op } = require('sequelize');
+const { getISTDateStr } = require('../utils/timezone');
 
 /**
  * Get Day-Wise OPD Register
@@ -7,7 +8,7 @@ const { Op } = require('sequelize');
 exports.getDailyRegister = async (req, res, next) => {
   try {
     const clinicId = req.user?.clinicId || 1;
-    const date = req.query.date || new Date().toISOString().split('T')[0];
+    const date = req.query.date || getISTDateStr();
 
     const records = await OpdRegister.findAll({
       where: { clinicId, date },
@@ -191,7 +192,7 @@ exports.getYearlyRegister = async (req, res, next) => {
 exports.syncRegisterForDate = async (req, res, next) => {
   try {
     const clinicId = req.user?.clinicId || 1;
-    const targetDate = req.body?.date || req.query?.date || new Date().toISOString().split('T')[0];
+    const targetDate = req.body?.date || req.query?.date || getISTDateStr();
 
     const [yStr, mStr, dStr] = targetDate.split('-');
     const year = parseInt(yStr, 10);
