@@ -1,5 +1,7 @@
-import { Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { Trash2, Sparkles, Loader2 } from 'lucide-react';
 import type { TemplateMedicine } from '../data/templates';
+import { translateFrequencyToMarathi } from '../utils/marathiTranslator';
 
 interface MedicineEditorRowProps {
   item: TemplateMedicine;
@@ -9,6 +11,21 @@ interface MedicineEditorRowProps {
 }
 
 export default function MedicineEditorRow({ item, index, onUpdate, onRemove }: MedicineEditorRowProps) {
+  const [translating, setTranslating] = useState(false);
+
+  const handleAiTranslate = async () => {
+    if (!item.frequency || !item.frequency.trim()) return;
+    setTranslating(true);
+    try {
+      const translated = await translateFrequencyToMarathi(item.frequency);
+      if (translated) onUpdate(index, 'frequency', translated);
+    } catch {
+      /* silent */
+    } finally {
+      setTranslating(false);
+    }
+  };
+
   return (
     <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center p-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-gray-300 transition-colors">
       <div className="flex-1 w-full">
@@ -26,14 +43,31 @@ export default function MedicineEditorRow({ item, index, onUpdate, onRemove }: M
           className="w-full sm:w-24 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
         />
         
-        <input
-          type="text"
-          value={item.frequency}
-          onChange={(e) => onUpdate(index, 'frequency', e.target.value)}
-          placeholder="वारंवारता (उदा. सकाळी १ व रात्री १)"
-          className="w-full sm:w-56 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-          list={`freq-options-${index}`}
-        />
+        <div className="relative w-full sm:w-64 flex items-center">
+          <input
+            type="text"
+            value={item.frequency}
+            onChange={(e) => onUpdate(index, 'frequency', e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAiTranslate();
+              }
+            }}
+            placeholder="वारंवारता (उदा. sakali 1 goli)"
+            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md pr-7 focus:ring-indigo-500 focus:border-indigo-500"
+            list={`freq-options-${index}`}
+          />
+          <button
+            type="button"
+            title="Translate English/Hinglish to Marathi using Groq AI"
+            onClick={handleAiTranslate}
+            disabled={translating}
+            className="absolute right-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 p-1 rounded transition-colors"
+          >
+            {translating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+          </button>
+        </div>
         <datalist id={`freq-options-${index}`}>
           <option value="सकाळी १ व रात्री १ घेणे" />
           <option value="सकाळी १ घेणे" />
