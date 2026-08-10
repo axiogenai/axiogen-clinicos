@@ -1,5 +1,6 @@
 const { Medicine } = require('../models');
 const { Op } = require('sequelize');
+const { cleanMedicineName } = require('../clean_medicine_db');
 
 exports.getMedicines = async (req, res, next) => {
   try {
@@ -73,11 +74,12 @@ exports.createMedicine = async (req, res, next) => {
     const { productId, name, brand, strength, form, dosage, frequency, duration, category, stockQty, expiryDate, availability, notes } = req.body;
     if (!name) return res.status(400).json({ error: 'Medicine name required' });
 
+    const cleanName = cleanMedicineName(name, form);
     const id = `med_${Date.now()}`;
     const medicine = await Medicine.create({
       id,
       productId: productId || id,
-      name,
+      name: cleanName || name,
       brand: brand || '',
       strength: strength || '',
       form: form || 'Tablet',
@@ -107,7 +109,7 @@ exports.bulkImportMedicines = async (req, res, next) => {
     const prepared = medicines.map((m, idx) => ({
       id: m.id || `med_${Date.now()}_${idx}`,
       productId: m.productId || m.id || `PROD_${idx}`,
-      name: m.name,
+      name: cleanMedicineName(m.name, m.form) || m.name,
       brand: m.brand || '',
       strength: m.strength || '',
       form: m.form || 'Tablet',
