@@ -842,9 +842,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                       <tbody>
                         {casePaper.medicines &&
                           casePaper.medicines.map((med, index) => {
-                            const displayName = (med.dosage && !med.name.toLowerCase().includes(med.dosage.toLowerCase()))
-                              ? `${med.name} ${med.dosage}`
-                              : med.name;
+                            const displayName = (med.name || '').trim();
                             return (
                               <tr key={index} style={{ borderBottom: '1px solid #333' }}>
                                 <td style={{ border: '1px solid #333', padding: '6px 6px', textAlign: 'center', fontFamily: 'monospace', fontSize: '11px' }}>{index + 1}</td>
