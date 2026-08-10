@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2, Sparkles, Loader2 } from 'lucide-react';
+import { Trash2, Languages, Loader2 } from 'lucide-react';
 import type { TemplateMedicine } from '../data/templates';
 import { translateFrequencyToMarathi } from '../utils/marathiTranslator';
 
@@ -60,12 +60,12 @@ export default function MedicineEditorRow({ item, index, onUpdate, onRemove }: M
           />
           <button
             type="button"
-            title="Translate English/Hinglish to Marathi using Groq AI"
+            title="मराठी भाषांतर"
             onClick={handleAiTranslate}
             disabled={translating}
             className="absolute right-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 p-1 rounded transition-colors"
           >
-            {translating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+            {translating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Languages className="w-3.5 h-3.5" />}
           </button>
         </div>
         <datalist id={`freq-options-${index}`}>
