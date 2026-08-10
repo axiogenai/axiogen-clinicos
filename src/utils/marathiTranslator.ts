@@ -26,7 +26,7 @@ export async function translateFrequencyToMarathi(input: string): Promise<string
       return res.translatedText.trim();
     }
   } catch (e) {
-    console.warn('Groq AI Translation network fallback:', e);
+    // translation network fallback
   }
 
   // Local fallback rule-based transliteration
