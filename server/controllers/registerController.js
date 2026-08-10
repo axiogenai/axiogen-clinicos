@@ -294,3 +294,32 @@ exports.syncRegisterForDate = async (req, res, next) => {
     next(err);
   }
 };
+
+/**
+ * Delete a single OPD Register entry by ID
+ */
+exports.deleteRegisterEntry = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const clinicId = req.user?.clinicId || 1;
+    const record = await OpdRegister.findOne({ where: { id, clinicId } });
+    if (!record) return res.status(404).json({ error: 'OPD register entry not found' });
+    await record.destroy();
+    res.json({ message: 'OPD register entry deleted successfully' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Clear ALL OPD Register entries for the clinic (reset to 0)
+ */
+exports.clearAllRegister = async (req, res, next) => {
+  try {
+    const clinicId = req.user?.clinicId || 1;
+    const deleted = await OpdRegister.destroy({ where: { clinicId } });
+    res.json({ message: `Cleared ${deleted} OPD register entries. Numbers will restart from 1 on next sync.`, deleted });
+  } catch (err) {
+    next(err);
+  }
+};
