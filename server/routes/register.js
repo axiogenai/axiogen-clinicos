@@ -9,5 +9,8 @@ router.get('/daily', registerController.getDailyRegister);
 router.get('/monthly', registerController.getMonthlyRegister);
 router.get('/yearly', registerController.getYearlyRegister);
 router.post('/sync', registerController.syncRegisterForDate);
+router.delete('/clear-all', registerController.clearAllRegister);
+router.delete('/:id', registerController.deleteRegisterEntry);
 
 module.exports = router;
+
