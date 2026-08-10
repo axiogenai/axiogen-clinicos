@@ -443,17 +443,7 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
                 </button>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">
-                  Dosage / Strength
-                </label>
-                <input
-                  type="text"
-                  value={dosage}
-                  onChange={(e) => setDosage(e.target.value)}
-                  className="w-full p-2.5 border border-gray-300 rounded-lg text-sm"
-                />
-              </div>
+              {/* Frequency & Duration Inputs */}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Frequency Dropdown & Custom Editing + Groq AI */}
