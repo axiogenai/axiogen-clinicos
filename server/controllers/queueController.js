@@ -1,12 +1,11 @@
 const { Queue, Patient, AuditLog } = require('../models');
 const { Op } = require('sequelize');
 const { broadcastQueueUpdate } = require('../services/sseService');
+const { getISTDateStr, getISTTimeString } = require('../utils/timezone');
 
 const autoPurgeOldQueueItems = async (clinicId = 1) => {
   try {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - 7);
-    const cutoffDateStr = cutoffDate.toISOString().split('T')[0];
+    const cutoffDateStr = getISTDateStr();
 
     const deleted = await Queue.destroy({
       where: {
@@ -17,7 +16,7 @@ const autoPurgeOldQueueItems = async (clinicId = 1) => {
       }
     });
     if (deleted > 0) {
-      console.log(`🧹 [7-DAY AUTOMATIC PURGE] Deleted ${deleted} OPD queue items older than 7 days (prior to ${cutoffDateStr}).`);
+      console.log(`🧹 [7-DAY AUTOMATIC PURGE] Deleted ${deleted} OPD queue items older than 7 days.`);
     }
   } catch (err) {
     console.error('❌ Error during 7-day queue auto-purge:', err);
@@ -27,7 +26,7 @@ const autoPurgeOldQueueItems = async (clinicId = 1) => {
 exports.getQueue = async (req, res, next) => {
   try {
     const clinicId = req.user?.clinicId || 1;
-    const date = req.query.date || new Date().toISOString().split('T')[0];
+    const date = req.query.date || getISTDateStr();
     
     // Automatically purge OPD queue items older than 7 days
     autoPurgeOldQueueItems(clinicId).catch(() => {});
@@ -47,7 +46,7 @@ exports.addToQueue = async (req, res, next) => {
     const clinicId = req.user?.clinicId || 1;
     const { queueId, patientId, name, age, phone, village, complaint, notes, date } = req.body;
 
-    const currentDate = date || new Date().toISOString().split('T')[0];
+    const currentDate = date || getISTDateStr();
 
     // Check if patient is already in today's queue
     if (patientId) {
@@ -82,7 +81,8 @@ exports.addToQueue = async (req, res, next) => {
     }
 
     const idToUse = queueId || `Q${Date.now()}`;
-    const timeAdded = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    const timeAdded = getISTTimeString();
+
 
     const queueItem = await Queue.create({
       queueId: idToUse,
