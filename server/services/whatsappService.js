@@ -196,27 +196,7 @@ async function processFestivalWishes(overrideDateStr = null) {
   return results;
 }
 
-/**
- * Returns current Date & Hour strictly in Indian Standard Time (Asia/Kolkata)
- */
-function getISTTimeInfo() {
-  const now = new Date();
-  const options = { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false };
-  const formatter = new Intl.DateTimeFormat('en-CA', options);
-  const parts = formatter.formatToParts(now);
 
-  const year = parts.find(p => p.type === 'year').value;
-  const month = parts.find(p => p.type === 'month').value;
-  const day = parts.find(p => p.type === 'day').value;
-  const hour = parseInt(parts.find(p => p.type === 'hour').value, 10);
-  const minute = parseInt(parts.find(p => p.type === 'minute').value, 10);
-
-  return {
-    dateStr: `${year}-${month}-${day}`,
-    hour,
-    minute
-  };
-}
 
 /**
  * Returns tomorrow's date string (YYYY-MM-DD) strictly in Indian Standard Time (Asia/Kolkata)
