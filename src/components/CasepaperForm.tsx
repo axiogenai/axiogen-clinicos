@@ -1019,7 +1019,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                         <input
                           type="text"
                           value={freqOpenIndex === index ? freqInputDisplay : (med.frequency || '')}
-                          placeholder="Frequency (उदा. sakali 1 goli)"
+                          placeholder="Frequency (sakali 1 goli)"
                           onFocus={() => {
                             setFreqInputDisplay(med.frequency || '');
                             setFreqOpenIndex(index);
@@ -1036,14 +1036,14 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                               handleTranslateRowFrequency(index, freqInputDisplay);
                             }
                           }}
-                          className="form-input form-input-sm text-xs w-full pr-7"
+                          className="form-input form-input-sm text-xs w-full !pr-9"
                         />
                         <button
                           type="button"
                           title="मराठी भाषांतर"
                           onClick={() => handleTranslateRowFrequency(index, freqInputDisplay || med.frequency || '')}
                           disabled={translatingIndex === index}
-                          className="absolute right-1 text-[#047857] hover:text-[#065f46] hover:bg-[#ecfdf5] p-1 rounded transition-colors"
+                          className="absolute right-1.5 text-[#047857] hover:text-[#065f46] hover:bg-[#ecfdf5] p-1 rounded transition-colors z-10 shrink-0"
                         >
                           {translatingIndex === index ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin text-[#047857]" />
