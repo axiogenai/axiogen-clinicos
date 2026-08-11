@@ -363,7 +363,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     strength: m.strength || m['Strength'] || '',
     form: m.form || m['Form'] || 'Tablet',
     category: m.category || m['Category'] || 'General',
-    defaultFrequency: m.frequency || m.defaultFrequency || 'सकाळी १ व रात्री १ घेणे',
+    defaultFrequency: m.frequency || m.defaultFrequency || '',
     defaultDuration: m.duration || m.defaultDuration || '7 Days',
   });
 
@@ -472,7 +472,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
         medicineId: tm.medicineId,
         name: tm.medicineName || (tm as any).name || (med ? med.name : 'Unknown Medicine'),
         dosage: tm.dosage || (med ? `${med.strength || ''} (${med.form || 'Tablet'})` : ''),
-        frequency: tm.frequency || (med ? med.defaultFrequency || 'सकाळी १ व रात्री १ घेणे' : 'सकाळी १ व रात्री १ घेणे'),
+        frequency: tm.frequency || (med ? med.defaultFrequency || '' : ''),
         duration: tm.duration || (med ? med.defaultDuration || '7 Days' : '7 Days'),
       };
     });
@@ -495,7 +495,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
       fullName = `${fullName} ${med.strength}`;
     }
 
-    const freq = med.defaultFrequency || 'सकाळी १ व रात्री १ घेणे';
+    const freq = med.defaultFrequency || '';
     const dur = med.defaultDuration || '7 Days';
     const autoCount = calculateMedicineCount({ name: fullName, frequency: freq, duration: dur });
 
