@@ -958,7 +958,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-[#1a1c1a] text-sm">
-                            {med.name.replace(/^(Tab\.|Cap\.|Syp\.|Inj\.|Tab|Cap|Syp|Inj)\.?\s+/i, '')}
+                            {med.name}
                           </span>
                           {med.category && (
                             <span className="text-[10px] bg-[#f2eee3] text-[#4b463e] px-2 py-0.5 rounded-md font-semibold border border-[#cdc6ba]">
