@@ -957,15 +957,14 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                         onMouseDown={(e) => { e.preventDefault(); addMedicine(med.id); }}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-[#1a1c1a] text-sm">{med.name}</span>
+                          <span className="font-bold text-[#1a1c1a] text-sm">
+                            {med.name.replace(/^(Tab\.|Cap\.|Syp\.|Inj\.|Tab|Cap|Syp|Inj)\.?\s+/i, '')}
+                          </span>
                           {med.category && (
                             <span className="text-[10px] bg-[#f2eee3] text-[#4b463e] px-2 py-0.5 rounded-md font-semibold border border-[#cdc6ba]">
                               {med.category}
                             </span>
                           )}
-                        </div>
-                        <div className="text-xs text-[#7c766d] mt-0.5">
-                          {med.brand ? `${med.brand} · ` : ''}{med.strength || ''} {med.form || 'Tablet'}
                         </div>
                       </div>
                     ))
