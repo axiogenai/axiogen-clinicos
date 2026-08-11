@@ -75,6 +75,28 @@ const updateSettings = (req, res) => {
   });
 };
 
+const handleMetaWebhookVerify = (req, res) => {
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
+
+  const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN || 'clinicos_meta_webhook_secret_2026';
+
+  if (mode && token) {
+    if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+      console.log('✅ Meta Webhook verified successfully!');
+      return res.status(200).send(challenge);
+    } else {
+      return res.sendStatus(403);
+    }
+  }
+  return res.sendStatus(400);
+};
+
+const handleMetaWebhookEvent = (req, res) => {
+  res.status(200).send('EVENT_RECEIVED');
+};
+
 module.exports = {
   getStatus,
   triggerAutoSend,
@@ -83,4 +105,6 @@ module.exports = {
   disconnectGateway,
   restartGateway,
   updateSettings,
+  handleMetaWebhookVerify,
+  handleMetaWebhookEvent,
 };
