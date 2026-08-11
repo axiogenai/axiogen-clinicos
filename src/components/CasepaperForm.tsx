@@ -964,15 +964,9 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                             </span>
                           )}
                         </div>
-                        {(() => {
-                          const s = (med.strength || '').trim();
-                          const isValidStrength = s && !/^\d+[\,\']?\s*(s|tab|tabs|cap|caps|strip|strips|kit|kits|vial|amp)$/i.test(s) && !/^\d+$/i.test(s);
-                          const parts = [];
-                          if (isValidStrength) parts.push(s);
-                          if (med.form && !med.name.toLowerCase().includes(med.form.toLowerCase())) parts.push(med.form);
-                          const text = parts.join(' • ');
-                          return text ? <div className="text-xs text-[#7c766d] mt-0.5">{text}</div> : null;
-                        })()}
+                        {med.form && (
+                          <div className="text-xs text-[#7c766d] mt-0.5">{med.form}</div>
+                        )}
                       </div>
                     ))
                   ) : (
