@@ -10,6 +10,18 @@ interface MedicineSearchModalProps {
   onClose: () => void;
 }
 
+const getPrintMedicineName = (med: any) => {
+  if (!med) return '';
+  let name = (med.name || '').trim();
+  const strength = (med.dosage || med.strength || '').trim();
+  const isJunkPackSize = /^\d+\s*[\'"`;&]?\s*s?$/i.test(strength) || /[\d\`\'\,\-\;\:]+\s*(s|tab|tabs|cap|caps|strip|strips|kit|kits|vial|amp|nos|unit)\b/i.test(strength) || /^\d+$/i.test(strength);
+
+  if (strength && !isJunkPackSize && !name.toLowerCase().includes(strength.toLowerCase())) {
+    name = `${name} ${strength}`;
+  }
+  return name;
+};
+
 const FREQUENCIES = [
   'सकाळी १ व रात्री १ घेणे',
   'सकाळी १ घेणे',
@@ -441,11 +453,11 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 min-h-[280px] pb-36">
               <div className="bg-indigo-50 border border-indigo-100 p-3.5 rounded-xl flex justify-between items-center">
                 <div>
-                  <div className="font-bold text-indigo-900 text-sm">{selectedMed.name}</div>
-                  <div className="text-xs text-indigo-700">{selectedMed.strength} • {selectedMed.form}</div>
+                  <div className="font-bold text-indigo-900 text-sm">{getPrintMedicineName(selectedMed)}</div>
+                  <div className="text-xs text-indigo-700">{selectedMed.form}</div>
                 </div>
                 <button
                   type="button"
