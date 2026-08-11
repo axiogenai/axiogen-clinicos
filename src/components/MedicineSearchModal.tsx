@@ -401,12 +401,9 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
                       <div>
                         <div className="font-semibold text-gray-900 text-sm group-hover:text-indigo-900">{med.name}</div>
                         {(() => {
-                          const s = (med.strength || '').trim();
-                          const isValidStrength = s && !/^\d+[\,\']?\s*(s|tab|tabs|cap|caps|strip|strips|kit|kits|vial|amp)$/i.test(s) && !/^\d+$/i.test(s);
                           const parts = [];
-                          if (isValidStrength) parts.push(s);
-                          if (med.form && !med.name.toLowerCase().includes(med.form.toLowerCase())) parts.push(med.form);
-                          if (med.category && med.category !== 'General Medicine') parts.push(med.category);
+                          if (med.form) parts.push(med.form);
+                          if (med.category) parts.push(med.category);
                           const text = parts.join(' • ');
                           return text ? <div className="text-xs text-gray-500">{text}</div> : null;
                         })()}
