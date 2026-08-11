@@ -964,9 +964,6 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                             </span>
                           )}
                         </div>
-                        {med.form && (
-                          <div className="text-xs text-[#7c766d] mt-0.5">{med.form}</div>
-                        )}
                       </div>
                     ))
                   ) : (
