@@ -8,6 +8,7 @@ import type { CasePaper, CasePaperMedicine } from '../types';
 import MedicineImportModal from './MedicineImportModal';
 import ReprintPreview from './ReprintPreview';
 import PatientEMRHistoryModal from './PatientEMRHistoryModal';
+import AddCustomMedicineModal from './AddCustomMedicineModal';
 
 import { calculateMedicineCount } from '../utils/countCalculator';
 import { translateFrequencyToMarathi } from '../utils/marathiTranslator';
@@ -276,6 +277,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
   const [isMedicineImportOpen, setIsMedicineImportOpen] = useState(false);
   const [showPrintOverlay, setShowPrintOverlay] = useState(false);
   const [showEMRModal, setShowEMRModal] = useState(false);
+  const [showAddCustomModal, setShowAddCustomModal] = useState(false);
   const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
   const [freqOpenIndex, setFreqOpenIndex] = useState<number | null>(null);
   const [freqInputDisplay, setFreqInputDisplay] = useState('');
@@ -948,12 +950,12 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
               </div>
               
               {showSearchDropdown && (
-                <div className="absolute z-50 w-full mt-1 bg-white border border-[#e4e2e1] rounded-xl shadow-xl max-h-64 overflow-auto">
+                <div className="absolute z-50 w-full mt-1 bg-white border border-[#e4e2e1] rounded-xl shadow-xl max-h-72 overflow-auto divide-y divide-[#f2eee3]">
                   {filteredMedicines.length > 0 ? (
                     filteredMedicines.map((med, idx) => (
                       <div 
                         key={med.id}
-                        className={`px-4 py-2.5 cursor-pointer border-b border-[#f2eee3] last:border-0 transition-colors ${highlightedIndex === idx ? 'bg-[#ecfdf5]' : 'hover:bg-[#f8f6f0]'}`}
+                        className={`px-4 py-2.5 cursor-pointer transition-colors ${highlightedIndex === idx ? 'bg-[#ecfdf5]' : 'hover:bg-[#f8f6f0]'}`}
                         onMouseDown={(e) => { e.preventDefault(); addMedicine(med.id); }}
                       >
                         <div className="flex items-center justify-between">
@@ -977,9 +979,26 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                     ))
                   ) : (
                     <div className="p-4 text-center text-[#7c766d] text-sm">
-                      No matches for "<strong>{searchQuery}</strong>". Use Import CSV to add medicines.
+                      No matching drugs found for "<strong>{searchQuery}</strong>".
                     </div>
                   )}
+
+                  {/* Add Custom Drug to Database option */}
+                  <div
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setShowAddCustomModal(true);
+                    }}
+                    className="p-3 bg-indigo-50 hover:bg-indigo-100 cursor-pointer flex items-center justify-between text-indigo-700 text-xs font-bold transition-colors"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Plus className="w-4 h-4" />
+                      <span>Add {searchQuery ? `"${searchQuery}"` : "New Drug"} as Custom Drug to Database</span>
+                    </span>
+                    <span className="text-[10px] font-sans font-extrabold uppercase bg-indigo-600 text-white px-2 py-0.5 rounded shadow-sm">
+                      + Save to DB
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
@@ -1480,6 +1499,24 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
               counsellingDone: pastCasePaper.counsellingDone || casePaper.counsellingDone,
             });
             setShowEMRModal(false);
+          }}
+        />
+      )}
+
+      {/* Add Custom Drug Modal */}
+      {showAddCustomModal && (
+        <AddCustomMedicineModal
+          initialName={searchQuery}
+          onClose={() => setShowAddCustomModal(false)}
+          onSuccess={(newMedicine) => {
+            setDbMedicines((prev) => [newMedicine, ...prev]);
+            addMedicine(newMedicine.id);
+            setSearchQuery('');
+            setShowSearchDropdown(false);
+            setToast({
+              type: 'success',
+              message: `✅ "${newMedicine.name}" saved to database and added to prescription!`,
+            });
           }}
         />
       )}
