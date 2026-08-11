@@ -964,6 +964,14 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                             </span>
                           )}
                         </div>
+                        {(() => {
+                          const parts = [];
+                          const s = (med.strength || '').trim();
+                          if (s && !/^\d+[\,\']?\s*(s|tab|tabs|cap|caps|strip|strips|kit|kits|vial|amp)$/i.test(s) && !/^\d+$/i.test(s)) parts.push(s);
+                          if (med.form) parts.push(med.form);
+                          const text = parts.join(' • ');
+                          return text ? <div className="text-xs text-[#7c766d] mt-0.5">{text}</div> : null;
+                        })()}
                       </div>
                     ))
                   ) : (
