@@ -21,10 +21,17 @@ function fallbackMedicalTranslate(text, lang = 'marathi') {
 
 function getGuidelines(lang) {
   return `STRICT TRANSLATION & TRANSLITERATION INSTRUCTIONS FOR ${lang.toUpperCase()}:
-1. DYNAMIC TRANSLATION & TRANSLITERATION:
+1. DYNAMIC MEDICAL TRANSLATION & TRANSLITERATION:
    - Translate or transliterate the exact medical frequency, timing, or dosage instruction into natural Devanagari ${lang} script.
-   - PRESERVE ALL WORDS AND TIMING MODIFIERS. Do NOT drop any words (e.g. "udya skali ghene" -> "उद्या सकाळी घेणे", "udya pasun 1 goli" -> "उद्यापासून १ गोळी घेणे", "somvari ratri" -> "सोमवारी रात्री", "1-0-1" -> "सकाळी १ व रात्री १ घेणे").
-2. CONSTRAINTS:
+   - PRESERVE ALL WORDS AND TIMING MODIFIERS (e.g. "udya skali ghene" -> "उद्या सकाळी घेणे", "udya pasun 1 goli" -> "उद्यापासून १ गोळी घेणे", "somvari ratri" -> "सोमवारी रात्री").
+2. MEDICAL FREQUENCY RULES IN MARATHI:
+   - "3 times a day" / "3 times" / "divsatun 3 vela" / "tid" / "tds" MUST be translated as "दिवसातून ३ वेळा घेणे" (NEVER "दुपारी ३ वेळा").
+   - "2 times a day" / "2 times" / "divsatun 2 vela" / "bid" MUST be translated as "दिवसातून २ वेळा घेणे" or "सकाळी १ व रात्री १ घेणे".
+   - "1 time a day" / "once a day" / "divsatun ekda" / "od" MUST be translated as "दिवसातून एकदा घेणे" or "दिवसातून १ वेळ घेणे".
+   - "dupari" = "दुपारी" (afternoon). "dupari 1 goli" = "दुपारी १ गोळी घेणे". NEVER use "दुपारी X वेळा" because afternoon is a single time of day, whereas "X times a day" is "दिवसातून X वेळा".
+   - "1-0-1" -> "सकाळी १ व रात्री १ घेणे".
+   - "1-1-1" -> "सकाळी १, दुपारी १ व रात्री १ घेणे".
+3. CONSTRAINTS:
    - Output ONLY the final translated string in Devanagari ${lang}.
    - Do NOT add quotes, brackets, preamble, conversational filler, or explanations.`;
 }
@@ -80,6 +87,13 @@ ${getGuidelines(lang)}`;
 
     // Clean any unwanted AI conversational artifacts or quotes
     translated = translated.replace(/^["']|["']$/g, '').trim();
+
+    // Correct invalid Marathi medical phrasing (e.g. "दुपारी ३ वेळा" -> "दिवसातून ३ वेळा")
+    translated = translated.replace(/दुपारी\s+([\u0966-\u096F\d]+)\s+वेळा/gi, 'दिवसातून $1 वेळा');
+    translated = translated.replace(/दुपारी\s+तीन\s+वेळा/gi, 'दिवसातून ३ वेळा');
+    translated = translated.replace(/दुपारी\s+दोन\s+वेळा/gi, 'दिवसातून २ वेळा');
+    translated = translated.replace(/दुपारी\s+एक\s+वेळ/gi, 'दिवसातून १ वेळ');
+
     translated = translated.replace(/\s*\((?:दिवसातून|दिन में|दिसून|दर|प्रति|दिन|times|वेळा)[^)]*\)?/gi, '').trim();
 
     cache.set(cacheKey, translated);
