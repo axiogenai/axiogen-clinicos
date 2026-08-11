@@ -30,7 +30,6 @@ export default function AddCustomMedicineModal({
   const [name, setName] = useState(initialName.trim());
   const [form, setForm] = useState('Tablet');
   const [strength, setStrength] = useState('');
-  const [brand, setBrand] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -49,7 +48,7 @@ export default function AddCustomMedicineModal({
         name: name.trim(),
         form: form || 'Tablet',
         strength: strength.trim(),
-        brand: brand.trim(),
+        brand: '',
         category: 'General Medicine',
         availability: true,
       };
@@ -140,19 +139,6 @@ export default function AddCustomMedicineModal({
                 className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-              Brand / Manufacturer (Optional)
-            </label>
-            <input
-              type="text"
-              value={brand}
-              onChange={(e) => setBrand(e.target.value)}
-              placeholder="e.g. Cipla, Mankind"
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500"
-            />
           </div>
 
           {/* Footer actions */}
