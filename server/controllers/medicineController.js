@@ -45,17 +45,7 @@ exports.searchMedicines = async (req, res, next) => {
       where: {
         [Op.or]: [
           { name: { [likeOp]: `${query}%` } },
-          { name: { [likeOp]: `Tab. ${query}%` } },
-          { name: { [likeOp]: `Cap. ${query}%` } },
-          { name: { [likeOp]: `Syp. ${query}%` } },
-          { name: { [likeOp]: `Cream ${query}%` } },
-          { name: { [likeOp]: `Lotion ${query}%` } },
-          { name: { [likeOp]: `Gel ${query}%` } },
-          { name: { [likeOp]: `Ointment ${query}%` } },
-          { name: { [likeOp]: `Soap ${query}%` } },
-          { name: { [likeOp]: `Cap ${query}%` } },
-          { name: { [likeOp]: `Tab ${query}%` } },
-          { name: { [likeOp]: `Syp ${query}%` } },
+          { name: { [likeOp]: `% ${query}%` } },
           { brand: { [likeOp]: `${query}%` } }
         ]
       },
