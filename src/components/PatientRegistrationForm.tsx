@@ -209,7 +209,7 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
                 {errors.name && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.name}</p>}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="form-label">Age (Optional)</label>
                   <input 
