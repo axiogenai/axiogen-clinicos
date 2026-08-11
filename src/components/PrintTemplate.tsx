@@ -78,6 +78,17 @@ export const cleanFrequencyForPrint = (freq?: string): string => {
   return cleanFrequencyString(freq);
 };
 
+export const getPrintMedicineName = (med: any): string => {
+  let name = (med.name || '').trim();
+  const strength = (med.dosage || med.strength || '').trim();
+  const isJunkPackSize = /^\d+\s*[\'"`;&]?\s*s?$/i.test(strength) || /[\d\`\'\,\-\;\:]+\s*(s|tab|tabs|cap|caps|strip|strips|kit|kits|vial|amp|nos|unit)\b/i.test(strength) || /^\d+$/i.test(strength);
+
+  if (strength && !isJunkPackSize && !name.toLowerCase().includes(strength.toLowerCase())) {
+    name = `${name} ${strength}`;
+  }
+  return name;
+};
+
 export const translateFrequency = (freq?: string, _medName?: string, lang: PrintLanguage = 'marathi'): string => {
   return translateMedicalText(freq, lang);
 };
@@ -123,11 +134,7 @@ export const GroqTranslatedCell: React.FC<{
   useEffect(() => {
     if (!fullTextToTranslate || fullTextToTranslate === '-') return;
 
-    // If target language is Marathi and the text is already Marathi, don't run AI translation
-    if (lang === 'marathi' && isDevanagari(fullTextToTranslate)) {
-      setTranslated(fullTextToTranslate);
-      return;
-    }
+    setTranslated(groqMemoryCache.get(cacheKey) || fallbackWithNotes);
 
     let isMounted = true;
 
@@ -166,7 +173,7 @@ export const GroqTranslatedCell: React.FC<{
     }
 
     return () => { isMounted = false; };
-  }, [cacheKey, marathiCacheKey, fullTextToTranslate, lang]);
+  }, [cacheKey, marathiCacheKey, fullTextToTranslate, lang, fallbackWithNotes]);
 
 
   return (
@@ -540,9 +547,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                   </thead>
                   <tbody>
                     {casePaper.medicines.map((med, index) => {
-                      const displayName = (med.dosage && !med.name.toLowerCase().includes(med.dosage.toLowerCase()))
-                        ? `${med.name} ${med.dosage}`
-                        : med.name;
+                      const displayName = getPrintMedicineName(med);
                       return (
                         <tr key={index} style={{ borderBottom: '1px solid #333', height: '26px' }}>
                           <td style={{ border: '1px solid #333', padding: '4px 6px', textAlign: 'center', fontFamily: 'monospace', fontSize: '11.5px' }}>{index + 1}</td>
@@ -842,7 +847,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                       <tbody>
                         {casePaper.medicines &&
                           casePaper.medicines.map((med, index) => {
-                            const displayName = (med.name || '').trim();
+                            const displayName = getPrintMedicineName(med);
                             return (
                               <tr key={index} style={{ borderBottom: '1px solid #333' }}>
                                 <td style={{ border: '1px solid #333', padding: '6px 6px', textAlign: 'center', fontFamily: 'monospace', fontSize: '11px' }}>{index + 1}</td>
