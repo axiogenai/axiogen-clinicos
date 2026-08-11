@@ -21,19 +21,25 @@ function fallbackMedicalTranslate(text, lang = 'marathi') {
 
 function getGuidelines(lang) {
   return `STRICT TRANSLATION & TRANSLITERATION INSTRUCTIONS FOR ${lang.toUpperCase()}:
-1. DYNAMIC MEDICAL TRANSLATION & TRANSLITERATION:
+1. PURE DYNAMIC MEDICAL TRANSLATION & TRANSLITERATION:
    - Translate or transliterate the exact medical frequency, timing, or dosage instruction into natural Devanagari ${lang} script.
-   - PRESERVE ALL WORDS AND TIMING MODIFIERS (e.g. "udya skali ghene" -> "उद्या सकाळी घेणे", "udya pasun 1 goli" -> "उद्यापासून १ गोळी घेणे", "somvari ratri" -> "सोमवारी रात्री").
-2. MEDICAL FREQUENCY RULES IN MARATHI:
-   - "3 times a day" / "3 times" / "divsatun 3 vela" / "tid" / "tds" MUST be translated as "दिवसातून ३ वेळा घेणे" (NEVER "दुपारी ३ वेळा").
-   - "2 times a day" / "2 times" / "divsatun 2 vela" / "bid" MUST be translated as "दिवसातून २ वेळा घेणे" or "सकाळी १ व रात्री १ घेणे".
-   - "1 time a day" / "once a day" / "divsatun ekda" / "od" MUST be translated as "दिवसातून एकदा घेणे" or "दिवसातून १ वेळ घेणे".
-   - "dupari" = "दुपारी" (afternoon). "dupari 1 goli" = "दुपारी १ गोळी घेणे". NEVER use "दुपारी X वेळा" because afternoon is a single time of day, whereas "X times a day" is "दिवसातून X वेळा".
-   - "1-0-1" -> "सकाळी १ व रात्री १ घेणे".
-   - "1-1-1" -> "सकाळी १, दुपारी १ व रात्री १ घेणे".
-3. CONSTRAINTS:
+   - PRESERVE EXACT VERBS AND MEANING ACCORDING TO INTENT:
+     * If the input specifies topical application (e.g. "lavne", "lav", "lavayche", "apply", "cream", "lotion", "gel"), USE THE VERB "लावणे" (Apply).
+     * If the input specifies oral intake (e.g. "ghene", "take", "goli"), USE THE VERB "घेणे" (Take).
+     * "sakali lavne" -> "सकाळी लावणे" (NEVER "सकाळी घेणे")
+     * "sakali ghene" -> "सकाळी घेणे"
+     * "udya skali lavne" -> "उद्या सकाळी लावणे"
+     * "udya skali ghene" -> "उद्या सकाळी घेणे"
+     * "chehryavar lavne" -> "चेहऱ्यावर लावणे"
+     * "somvari ratri lavne" -> "सोमवारी रात्री लावणे"
+   - PRESERVE ACCURATE FREQUENCY:
+     * "3 times a day" / "3 times" / "divsatun 3" -> "दिवसातून ३ वेळा"
+     * "2 times a day" / "2 times" / "divsatun 2" -> "दिवसातून २ वेळा"
+     * "dupari 1" -> "दुपारी १"
+
+2. CONSTRAINTS:
    - Output ONLY the final translated string in Devanagari ${lang}.
-   - Do NOT add quotes, brackets, preamble, conversational filler, or explanations.`;
+   - Do NOT add quotes, preamble, conversational filler, or explanations.`;
 }
 
 async function translateWithGroq(text, targetLang) {
@@ -71,7 +77,7 @@ ${getGuidelines(lang)}`;
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Translate/transliterate this prescription instruction into Devanagari ${lang}: "${cleanText}"` }
         ],
-        temperature: 0.1,
+        temperature: 0.0,
         max_tokens: 150
       })
     });
@@ -85,16 +91,8 @@ ${getGuidelines(lang)}`;
 
     if (!translated) return fallbackMedicalTranslate(cleanText, lang);
 
-    // Clean any unwanted AI conversational artifacts or quotes
+    // Strip leading/trailing quote marks if any
     translated = translated.replace(/^["']|["']$/g, '').trim();
-
-    // Correct invalid Marathi medical phrasing (e.g. "दुपारी ३ वेळा" -> "दिवसातून ३ वेळा")
-    translated = translated.replace(/दुपारी\s+([\u0966-\u096F\d]+)\s+वेळा/gi, 'दिवसातून $1 वेळा');
-    translated = translated.replace(/दुपारी\s+तीन\s+वेळा/gi, 'दिवसातून ३ वेळा');
-    translated = translated.replace(/दुपारी\s+दोन\s+वेळा/gi, 'दिवसातून २ वेळा');
-    translated = translated.replace(/दुपारी\s+एक\s+वेळ/gi, 'दिवसातून १ वेळ');
-
-    translated = translated.replace(/\s*\((?:दिवसातून|दिन में|दिसून|दर|प्रति|दिन|times|वेळा)[^)]*\)?/gi, '').trim();
 
     cache.set(cacheKey, translated);
     return translated;
