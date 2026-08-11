@@ -28,9 +28,13 @@ exports.searchMedicines = async (req, res, next) => {
     const { q } = req.query;
     const dialect = Medicine.sequelize ? Medicine.sequelize.getDialect() : 'sqlite';
     const likeOp = dialect === 'postgres' ? Op.iLike : Op.like;
+    const formNameJunk = ['Tab', 'Cap', 'Syp', 'Inj', 'Cream', 'Lotion', 'Gel', 'Ointment', 'Powder', 'Soap', 'Drops', 'Tablet', 'Capsule', 'Syrup', 'Injection', 'Oil', 'Sol', 'Susp'];
 
     if (!q || !q.trim()) {
       const defaultMeds = await Medicine.findAll({
+        where: {
+          name: { [Op.notIn]: formNameJunk }
+        },
         order: [['name', 'ASC']],
         limit: 50
       });
@@ -39,14 +43,17 @@ exports.searchMedicines = async (req, res, next) => {
 
     const query = q.trim();
 
-    // STRICT PREFIX ONLY: show medicines whose name starts with query
-    // Includes common form prefixes so 'Tab. Amox', 'Cap. Amox' etc also match when user types 'Amox'
     const results = await Medicine.findAll({
       where: {
-        [Op.or]: [
-          { name: { [likeOp]: `${query}%` } },
-          { name: { [likeOp]: `% ${query}%` } },
-          { brand: { [likeOp]: `${query}%` } }
+        [Op.and]: [
+          { name: { [Op.notIn]: formNameJunk } },
+          {
+            [Op.or]: [
+              { name: { [likeOp]: `${query}%` } },
+              { name: { [likeOp]: `% ${query}%` } },
+              { brand: { [likeOp]: `${query}%` } }
+            ]
+          }
         ]
       },
       order: [['name', 'ASC']],
