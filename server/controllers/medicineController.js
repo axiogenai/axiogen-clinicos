@@ -31,6 +31,9 @@ exports.searchMedicines = async (req, res, next) => {
 
     if (!q || !q.trim()) {
       const defaultMeds = await Medicine.findAll({
+        where: {
+          name: { [likeOp]: 'a%' }
+        },
         order: [['name', 'ASC']],
         limit: 50
       });
