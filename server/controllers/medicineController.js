@@ -4,12 +4,7 @@ const { cleanMedicineName } = require('../clean_medicine_db');
 
 exports.getMedicines = async (req, res, next) => {
   try {
-    const dialect = Medicine.sequelize ? Medicine.sequelize.getDialect() : 'sqlite';
-    const likeOp = dialect === 'postgres' ? Op.iLike : Op.like;
     const medicines = await Medicine.findAll({
-      where: {
-        name: { [likeOp]: 'a%' }
-      },
       order: [['name', 'ASC']],
       limit: 500
     });
@@ -36,9 +31,6 @@ exports.searchMedicines = async (req, res, next) => {
 
     if (!q || !q.trim()) {
       const defaultMeds = await Medicine.findAll({
-        where: {
-          name: { [likeOp]: 'a%' }
-        },
         order: [['name', 'ASC']],
         limit: 50
       });
