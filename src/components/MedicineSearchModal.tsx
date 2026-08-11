@@ -4,6 +4,7 @@ import type { Medicine } from '../data/medicines';
 import type { TemplateMedicine } from '../data/templates';
 import { api } from '../api/client';
 import { translateFrequencyToMarathi } from '../utils/marathiTranslator';
+import AddCustomMedicineModal from './AddCustomMedicineModal';
 
 interface MedicineSearchModalProps {
   onAdd: (med: TemplateMedicine & { medicineName: string }) => void;
@@ -272,6 +273,7 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
   const [duration, setDuration] = useState('7 Days');
   const [durOpen, setDurOpen] = useState(false);
   const [translatingFreq, setTranslatingFreq] = useState(false);
+  const [showAddCustomModal, setShowAddCustomModal] = useState(false);
 
   const handleAiTranslateFrequency = async (customText?: string) => {
     const textToTranslate = customText !== undefined ? customText : (freqInput || frequency);
@@ -436,15 +438,15 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
                     </div>
                   ))
                 ) : !loading ? (
-                  <div className="p-5 text-center space-y-2">
+                  <div className="p-5 text-center space-y-3">
                     <div className="text-xs text-gray-500">No match found for "{search}".</div>
                     <button
                       type="button"
-                      onClick={handleAddCustomDrug}
-                      className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-lg transition-colors inline-flex items-center gap-1"
+                      onClick={() => setShowAddCustomModal(true)}
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-colors inline-flex items-center gap-1.5 shadow-md shadow-indigo-100 active:scale-95"
                     >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Add "{search}" to Template</span>
+                      <Plus className="w-4 h-4" />
+                      <span>Add "{search}" as Custom Drug to Database</span>
                     </button>
                   </div>
                 ) : (
@@ -606,6 +608,16 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
           )}
         </div>
       </div>
+
+      {showAddCustomModal && (
+        <AddCustomMedicineModal
+          initialName={search}
+          onClose={() => setShowAddCustomModal(false)}
+          onSuccess={(newMed) => {
+            handleSelectMed(newMed);
+          }}
+        />
+      )}
     </div>
   );
 }
