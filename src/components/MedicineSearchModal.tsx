@@ -347,17 +347,17 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
   const countLabel = totalCount !== null ? `${totalCount.toLocaleString()} Available` : 'Loading...';
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
       {/* Container with overflow-visible so dropdowns float outside cleanly */}
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full border border-gray-200 animate-in fade-in duration-200 relative">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center rounded-t-2xl">
-          <h3 className="font-bold text-gray-900 text-base">Add Medicine to Template</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full border border-gray-200 animate-in fade-in duration-200 relative my-auto max-h-[92vh] flex flex-col">
+        <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center rounded-t-2xl shrink-0">
+          <h3 className="font-bold text-gray-900 text-sm sm:text-base">Add Medicine to Template</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-6 space-y-4">
+        <div className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
           {!selectedMed ? (
             <div>
               <div className="flex justify-between items-center mb-2">
@@ -574,7 +574,7 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
           )}
         </div>
 
-        <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex justify-end gap-2 rounded-b-2xl">
+        <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:py-3 border-t border-gray-200 flex justify-end gap-2 rounded-b-2xl shrink-0">
           <button
             type="button"
             onClick={onClose}
