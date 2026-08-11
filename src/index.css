@@ -297,3 +297,22 @@ select, select.form-input {
     margin: 0mm;
   }
 }
+
+/* ── Small iPhone & Mobile Responsiveness (iOS Safari Fixes) ── */
+@media (max-width: 640px) {
+  /* Prevent iOS Safari auto-zoom on input focus by enforcing 16px font-size */
+  input, select, textarea, .form-input {
+    font-size: 16px !important;
+  }
+  
+  /* Ensure smooth touch scrolling in dropdowns & modals */
+  .overflow-y-auto, .overflow-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Responsive padding adjustments for small screens */
+  .section-card {
+    padding: 0.875rem;
+  }
+}
+
