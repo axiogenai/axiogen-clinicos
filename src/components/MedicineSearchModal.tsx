@@ -398,15 +398,13 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
                       onClick={() => handleSelectMed(med)}
                       className="p-3 hover:bg-indigo-50 cursor-pointer transition-colors flex justify-between items-center group"
                     >
-                      <div>
-                        <div className="font-semibold text-gray-900 text-sm group-hover:text-indigo-900">{med.name}</div>
-                        {(() => {
-                          const parts = [];
-                          if (med.form) parts.push(med.form);
-                          if (med.category) parts.push(med.category);
-                          const text = parts.join(' • ');
-                          return text ? <div className="text-xs text-gray-500">{text}</div> : null;
-                        })()}
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <span className="font-semibold text-gray-900 text-sm group-hover:text-indigo-900">{med.name}</span>
+                        {med.category && (
+                          <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-semibold">
+                            {med.category}
+                          </span>
+                        )}
                       </div>
                       <span className="text-xs text-indigo-600 font-semibold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
                         <span>Select</span>
