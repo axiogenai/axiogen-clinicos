@@ -967,7 +967,8 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                         {(() => {
                           const parts = [];
                           const s = (med.strength || '').trim();
-                          if (s && !/^\d+[\,\']?\s*(s|tab|tabs|cap|caps|strip|strips|kit|kits|vial|amp)$/i.test(s) && !/^\d+$/i.test(s)) parts.push(s);
+                          const isJunkStrength = /[\d\`\'\,\-\;\:]+\s*(s|tab|tabs|cap|caps|strip|strips|kit|kits|vial|amp)\b/i.test(s) || /^\d+$/i.test(s) || s.includes('`');
+                          if (s && !isJunkStrength && !med.name.toLowerCase().includes(s.toLowerCase())) parts.push(s);
                           if (med.form) parts.push(med.form);
                           const text = parts.join(' • ');
                           return text ? <div className="text-xs text-[#7c766d] mt-0.5">{text}</div> : null;
