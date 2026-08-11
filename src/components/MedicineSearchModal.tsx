@@ -399,9 +399,8 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
                       className="p-3 hover:bg-indigo-50 cursor-pointer transition-colors flex justify-between items-center group"
                     >
                       <div>
-                        <div className="font-semibold text-gray-900 text-sm group-hover:text-indigo-900">{med.name}</div>
-                        <div className="text-xs text-gray-500">
-                          {med.strength || ''} {med.form ? `• ${med.form}` : ''} {med.category ? `• ${med.category}` : ''}
+                        <div className="font-bold text-gray-900 text-sm group-hover:text-indigo-900">
+                          {med.name.replace(/^(Tab\.|Cap\.|Syp\.|Inj\.|Tab|Cap|Syp|Inj)\.?\s+/i, '')}
                         </div>
                       </div>
                       <span className="text-xs text-indigo-600 font-semibold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
