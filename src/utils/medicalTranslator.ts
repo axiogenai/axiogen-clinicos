@@ -31,78 +31,63 @@ export function isDevanagari(text: string): boolean {
 }
 
 /**
- * Medical Translator with Instant Bidirectional Dictionaries
+ * Medical Translator with Instant Robust Bidirectional Dictionaries
  */
 export function translateMedicalText(text?: string, lang: PrintLanguage = 'marathi'): string {
   if (!text || !text.trim()) return '-';
   const clean = text.trim();
 
-  if (lang === 'english') {
-    let t = clean;
-    // Translate Marathi phrases to English
-    t = t.replace(/सकाळी १ व रात्री १ घेणे|१ गोळी सकाळी १ गोळी रात्री घेणे/g, '1-0-1 (1 Morning & 1 Night)');
-    t = t.replace(/सकाळी १ घेणे/g, '1-0-0 (1 Morning)');
-    t = t.replace(/रात्री १ घेणे|रात्री झोपताना घेणे|रात्री झोपताना/g, '0-0-1 (1 Night at Bedtime)');
-    t = t.replace(/दुपारी १ घेणे/g, '0-1-0 (1 Afternoon)');
-    t = t.replace(/सकाळी १, दुपारी १ व रात्री १ घेणे/g, '1-1-1 (1 Morning, 1 Afternoon & 1 Night)');
-    t = t.replace(/दिवसातून ४ वेळा घेणे/g, '1-1-1-1 (4 Times Daily)');
-    t = t.replace(/१\/२ गोळी सकाळी घेणे/g, '1/2 Tablet in Morning');
-    t = t.replace(/उपाशीपोटी घेणे|सकाळी उपाशीपोटी घेणे/g, 'Before Breakfast (Empty Stomach)');
-    t = t.replace(/जेवणानंतर घेणे/g, 'After Meals');
-    t = t.replace(/गरज असेल तेव्हा घेणे|त्रास झाल्यास घेणे \(SOS\)|त्रास झाल्यास घेणे/g, 'As Needed (SOS)');
-    t = t.replace(/pimples \(मोड्यांवर\) लावणे|मोड्यांवर लावणे/g, 'Apply on Pimples');
-    t = t.replace(/काळ्या डागांवर लावणे|काळ्या डागावर लावणे/g, 'Apply on Dark Spots');
-    t = t.replace(/संपूर्ण चेहऱ्यावर लावणे|full फेस लावणे/g, 'Apply on Full Face');
-    t = t.replace(/डोक्यात लावणे/g, 'Apply on Scalp');
-    t = t.replace(/केस \(डोके\) धुवावे|डोके धुणे/g, 'Wash Hair');
-    t = t.replace(/सकाळी लावणे १-२ तास ठेवणे/g, 'Apply in Morning for 1-2 Hours');
-    t = t.replace(/आठवड्यातून दोनदा/g, 'Twice a Week');
-    t = t.replace(/एक दिवस आड/g, 'Alternate Days');
-    return t;
+  if (lang === 'kannada') {
+    if (/सकाळी\s*[1१]\s*व\s*रात्री\s*[1१]\s*घेणे|1-0-1|bd|bid/i.test(clean)) return 'ಬೆಳಿಗ್ಗೆ ೧ ಮತ್ತು ರಾತ್ರಿ ೧';
+    if (/सकाळी\s*[1१]\s*घेणे|1-0-0|od|once daily/i.test(clean)) return 'ಬೆಳಿಗ್ಗೆ ೧';
+    if (/रात्री\s*[1१]\s*घेणे|रात्री\s*झोपताना|0-0-1|hs|at bedtime/i.test(clean)) return 'ರಾತ್ರಿ ೧';
+    if (/दुपारी\s*[1१]\s*घेणे|0-1-0/i.test(clean)) return 'ಮಧ್ಯಾಹ್ನ ೧';
+    if (/सकाळी\s*[1१],\s*दुपारी\s*[1१]\s*व\s*रात्री\s*[1१]\s*घेणे|1-1-1|tds|tid/i.test(clean)) return 'ಬೆಳಿಗ್ಗೆ ೧, ಮಧ್ಯಾಹ್ನ ೧ ಮತ್ತು ರಾತ್ರಿ ೧';
+    if (/दिवसातून\s*[4४]\s*वेळा\s*घेणे|1-1-1-1|qid/i.test(clean)) return 'ದಿನಕ್ಕೆ ೪ ಬಾರಿ';
+    if (/उपाशीपोटी|before meals|ac/i.test(clean)) return 'ಖಾಲಿ ಹೊಟ್ಟೆಯಲ್ಲಿ';
+    if (/जेवणानंतर|after meals|pc/i.test(clean)) return 'ಊಟದ ನಂತರ';
+    if (/त्रास\s*झाल्यास|sos/i.test(clean)) return 'ಅಗತ್ಯವಿದ್ದಾಗ (SOS)';
+    return clean;
   }
 
-  if (lang === 'marathi') {
-    let t = clean;
-    t = t.replace(/\b1-0-1\b|\bbd\b|\bbid\b|\btwice daily\b/gi, 'सकाळी १ व रात्री १ घेणे');
-    t = t.replace(/\b1-0-0\b|\bod\b|\bonce daily\b/gi, 'सकाळी १ घेणे');
-    t = t.replace(/\b0-0-1\b|\bhs\b|\bat bedtime\b/gi, 'रात्री झोपताना १ घेणे');
-    t = t.replace(/\b0-1-0\b/gi, 'दुपारी १ घेणे');
-    t = t.replace(/\b1-1-1\b|\btds\b|\btid\b|\bthrice daily\b/gi, 'सकाळी १, दुपारी १ व रात्री १ घेणे');
-    t = t.replace(/\b1-1-1-1\b|\bqid\b|\bfour times daily\b/gi, 'दिवसातून ४ वेळा घेणे');
-    t = t.replace(/\bsos\b/gi, 'त्रास झाल्यास घेणे');
-    t = t.replace(/\bstat\b/gi, 'तातडीने लगेच १ वेळा घेणे');
-
-    t = t.replace(/after meals?|after food|pc/gi, 'जेवणानंतर घेणे');
-    t = t.replace(/before meals?|before food|before breakfast|empty stomach|ac/gi, 'सकाळी उपाशीपोटी घेणे');
-    t = t.replace(/at bedtime/gi, 'रात्री झोपताना घेणे');
-    t = t.replace(/apply on pimples/gi, 'pimples (मोड्यांवर) लावणे');
-    t = t.replace(/apply on dark spots/gi, 'काळ्या डागांवर लावणे');
-    t = t.replace(/full face/gi, 'संपूर्ण चेहऱ्यावर लावणे');
-    t = t.replace(/on scalp/gi, 'डोक्यात लावणे');
-    t = t.replace(/wash hair/gi, 'केस (डोके) धुवावे');
-    return t;
+  if (lang === 'english') {
+    if (/सकाळी\s*[1१]\s*व\s*रात्री\s*[1१]\s*घेणे|1-0-1|bd|bid/i.test(clean)) return '1-0-1 (1 Morning & 1 Night)';
+    if (/सकाळी\s*[1१]\s*घेणे|1-0-0|od|once daily/i.test(clean)) return '1-0-0 (1 Morning)';
+    if (/रात्री\s*[1१]\s*घेणे|रात्री\s*झोपताना|0-0-1|hs|at bedtime/i.test(clean)) return '0-0-1 (1 Night at Bedtime)';
+    if (/दुपारी\s*[1१]\s*घेणे|0-1-0/i.test(clean)) return '0-1-0 (1 Afternoon)';
+    if (/सकाळी\s*[1१],\s*दुपारी\s*[1१]\s*व\s*रात्री\s*[1१]\s*घेणे|1-1-1|tds|tid/i.test(clean)) return '1-1-1 (1 Morning, 1 Afternoon & 1 Night)';
+    if (/दिवसातून\s*[4४]\s*वेळा\s*घेणे|1-1-1-1|qid/i.test(clean)) return '1-1-1-1 (4 Times Daily)';
+    if (/उपाशीपोटी|before meals|ac/i.test(clean)) return 'Before Breakfast (Empty Stomach)';
+    if (/जेवणानंतर|after meals|pc/i.test(clean)) return 'After Meals';
+    if (/त्रास\s*झाल्यास|sos/i.test(clean)) return 'As Needed (SOS)';
+    return clean;
   }
 
   if (lang === 'hindi') {
-    let t = clean;
-    t = t.replace(/\b1-0-1\b|\bbd\b|\bbid\b|\btwice daily\b|सकाळी १ व रात्री १ घेणे/gi, 'सुबह १ और रात १');
-    t = t.replace(/\b1-0-0\b|\bod\b|\bonce daily\b|सकाळी १ घेणे/gi, 'सुबह १');
-    t = t.replace(/\b0-0-1\b|\bhs\b|\bat bedtime\b|रात्री झोपताना १ घेणे|रात्री १ घेणे/gi, 'रात को सोते समय १');
-    t = t.replace(/\b0-1-0\b|दुपारी १ घेणे/gi, 'दोपहर १');
-    t = t.replace(/\b1-1-1\b|\btds\b|\btid\b|\bthrice daily\b|सकाळी १, दुपारी १ व रात्री १ घेणे/gi, 'सुबह १, दोपहर १ और रात १');
-    t = t.replace(/after meals?|after food|pc|जेवणानंतर घेणे/gi, 'भोजन के बाद');
-    t = t.replace(/before meals?|before food|empty stomach|ac|उपाशीपोटी घेणे/gi, 'खाली पेट');
-    return t;
+    if (/सकाळी\s*[1१]\s*व\s*रात्री\s*[1१]\s*घेणे|1-0-1|bd|bid/i.test(clean)) return 'सुबह १ और रात १';
+    if (/सकाळी\s*[1१]\s*घेणे|1-0-0|od|once daily/i.test(clean)) return 'सुबह १';
+    if (/रात्री\s*[1१]\s*घेणे|रात्री\s*झोपताना|0-0-1|hs|at bedtime/i.test(clean)) return 'रात को सोते समय १';
+    if (/दुपारी\s*[1१]\s*घेणे|0-1-0/i.test(clean)) return 'दोपहर १';
+    if (/सकाळी\s*[1१],\s*दुपारी\s*[1१]\s*व\s*रात्री\s*[1१]\s*घेणे|1-1-1|tds|tid/i.test(clean)) return 'सुबह १, दोपहर १ और रात १';
+    if (/दिवसातून\s*[4४]\s*वेळा\s*घेणे|1-1-1-1|qid/i.test(clean)) return 'दिन में ४ बार';
+    if (/उपाशीपोटी|before meals|ac/i.test(clean)) return 'खाली पेट';
+    if (/जेवणानंतर|after meals|pc/i.test(clean)) return 'भोजन के बाद';
+    if (/त्रास\s*झाल्यास|sos/i.test(clean)) return 'ज़रूरत पड़ने पर (SOS)';
+    return clean;
   }
 
-  if (lang === 'kannada') {
-    let t = clean;
-    t = t.replace(/\b1-0-1\b|\bbd\b|\bbid\b|\btwice daily\b|सकाळी १ व रात्री १ घेणे/gi, 'ಬೆಳಿಗ್ಗೆ ೧ ಮತ್ತು ರಾತ್ರಿ ೧');
-    t = t.replace(/\b1-0-0\b|\bod\b|\bonce daily\b|सकाळी १ घेणे/gi, 'ಬೆಳಿಗ್ಗೆ ೧');
-    t = t.replace(/\b0-0-1\b|\bhs\b|\bat bedtime\b|रात्री झोपताना १ घेणे/gi, 'ರಾತ್ರಿ ೧');
-    t = t.replace(/after meals?|after food|pc|जेवणानंतर घेणे/gi, 'ಊಟದ ನಂತರ');
-    t = t.replace(/before meals?|before food|empty stomach|ac|उपाशीपोटी घेणे/gi, 'ಖಾಲಿ ಹೊಟ್ಟೆಯಲ್ಲಿ');
-    return t;
+  // Marathi (default)
+  if (lang === 'marathi') {
+    if (/1-0-1|bd|bid|twice daily/i.test(clean)) return 'सकाळी १ व रात्री १ घेणे';
+    if (/1-0-0|od|once daily/i.test(clean)) return 'सकाळी १ घेणे';
+    if (/0-0-1|hs|at bedtime/i.test(clean)) return 'रात्री झोपताना १ घेणे';
+    if (/0-1-0/i.test(clean)) return 'दुपारी १ घेणे';
+    if (/1-1-1|tds|tid|thrice daily/i.test(clean)) return 'सकाळी १, दुपारी १ व रात्री १ घेणे';
+    if (/1-1-1-1|qid|four times daily/i.test(clean)) return 'दिवसातून ४ वेळा घेणे';
+    if (/sos/i.test(clean)) return 'त्रास झाल्यास घेणे';
+    if (/after meals?|after food|pc/i.test(clean)) return 'जेवणानंतर घेणे';
+    if (/before meals?|before food|empty stomach|ac/i.test(clean)) return 'सकाळी उपाशीपोटी घेणे';
+    return clean;
   }
 
   return clean;
