@@ -412,7 +412,7 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
                           const s = (med.strength || '').trim();
                           const isJunkStrength = /[\d\`\'\,\-\;\:]+\s*(s|tab|tabs|cap|caps|strip|strips|kit|kits|vial|amp)\b/i.test(s) || /^\d+$/i.test(s) || s.includes('`');
                           if (s && !isJunkStrength && !med.name.toLowerCase().includes(s.toLowerCase())) parts.push(s);
-                          if (med.form) parts.push(med.form);
+                          if (med.form && med.form !== 'Surgical' && med.form !== 'General') parts.push(med.form);
                           const text = parts.join(' • ');
                           return text ? <div className="text-xs text-gray-500 mt-0.5">{text}</div> : null;
                         })()}
