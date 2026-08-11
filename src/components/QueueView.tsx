@@ -92,7 +92,7 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
     <div className="space-y-5">
 
       {/* Doctor Queue Stats Bar */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
         <div className="stat-card stat-card-blue p-2.5 sm:p-4 flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-1 sm:gap-3 overflow-hidden">
           <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-xl bg-[#eff6ff] flex items-center justify-center shrink-0">
             <Clock className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 text-[#3b82f6]" />
@@ -529,7 +529,7 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
         <div className="fixed inset-0 z-50 bg-[#1a1c1a]/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-[#e4e2e1] overflow-hidden">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-[#e4e2e1] bg-[#f0fdf4] flex justify-between items-center">
+            <div className="px-6 py-4 border-b border-[#e4e2e1] bg-[#f0fdf4] flex justify-between items-center shrink-0">
               <div>
                 <h3 className="font-serif font-bold text-[#064e3b] text-base flex items-center gap-2">
                   <UserPlus className="w-4 h-4" />
@@ -537,12 +537,12 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                 </h3>
                 <p className="text-[11px] text-[#4b7c68] mt-0.5">Direct from Doctor's Room</p>
               </div>
-              <button onClick={() => setShowRegisterModal(false)} className="text-[#7c766d] hover:text-[#1a1c1a] p-1 rounded-lg">
+              <button onClick={() => setShowRegisterModal(false)} className="text-[#7c766d] hover:text-[#1a1c1a] p-1 rounded-lg shrink-0">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 overflow-y-auto">
               {/* Duplicate Warning */}
               {duplicatePatient && (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
@@ -559,41 +559,44 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                   value={regForm.name}
                   onChange={e => setRegForm(f => ({ ...f, name: e.target.value }))}
                   placeholder="Full name"
-                  className={`form-input text-sm ${regErrors.name ? 'border-red-400 bg-red-50' : ''}`}
+                  className={`form-input w-full text-sm ${regErrors.name ? 'border-red-400 bg-red-50' : ''}`}
                 />
                 {regErrors.name && <span className="text-xs text-red-500 mt-0.5 block">{regErrors.name}</span>}
               </div>
 
-              {/* Age */}
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Age (Optional)</label>
-                <input
-                  type="number"
-                  value={regForm.age}
-                  onChange={e => setRegForm(f => ({ ...f, age: e.target.value }))}
-                  placeholder="Age in years"
-                  min={1} max={120}
-                  className={`form-input text-sm ${regErrors.age ? 'border-red-400 bg-red-50' : ''}`}
-                />
-                {regErrors.age && <span className="text-xs text-red-500 mt-0.5 block">{regErrors.age}</span>}
-              </div>
+              {/* Age & Phone stacked on small screens */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Age */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Age (Optional)</label>
+                  <input
+                    type="number"
+                    value={regForm.age}
+                    onChange={e => setRegForm(f => ({ ...f, age: e.target.value }))}
+                    placeholder="Age in years"
+                    min={1} max={120}
+                    className={`form-input w-full text-sm ${regErrors.age ? 'border-red-400 bg-red-50' : ''}`}
+                  />
+                  {regErrors.age && <span className="text-xs text-red-500 mt-0.5 block">{regErrors.age}</span>}
+                </div>
 
-              {/* Phone */}
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Mobile Number</label>
-                <input
-                  type="tel"
-                  value={regForm.phone}
-                  onChange={e => setRegForm(f => ({ ...f, phone: e.target.value }))}
-                  placeholder="10-digit mobile number"
-                  maxLength={10}
-                  className="form-input text-sm"
-                />
+                {/* Phone */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Mobile Number</label>
+                  <input
+                    type="tel"
+                    value={regForm.phone}
+                    onChange={e => setRegForm(f => ({ ...f, phone: e.target.value }))}
+                    placeholder="10-digit mobile number"
+                    maxLength={10}
+                    className="form-input w-full text-sm"
+                  />
+                </div>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="px-6 py-4 bg-[#faf9f6] border-t border-[#e4e2e1] flex flex-col sm:flex-row gap-2">
+            <div className="px-6 py-4 bg-[#faf9f6] border-t border-[#e4e2e1] flex flex-col sm:flex-row gap-2 shrink-0">
               <button
                 type="button"
                 disabled={regLoading}
