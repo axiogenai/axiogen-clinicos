@@ -151,7 +151,7 @@ export default function ComingSoonLandingPage() {
                 </span>
               </div>
               <h3 className="text-base sm:text-lg font-serif font-bold text-[#1a1c1a] mt-0.5">Dr. Pramod Shingare</h3>
-              <p className="text-xs text-[#78716c] mt-0.5">M.D. (Dermatology, Venereology & Leprosy) • Consultant Cosmetologist</p>
+              <p className="text-xs text-[#78716c] mt-0.5">M.D. (Dermatology) • Consultant Cosmetologist</p>
             </div>
           </div>
 
