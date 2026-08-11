@@ -400,7 +400,7 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
                     >
                       <div>
                         <div className="font-bold text-gray-900 text-sm group-hover:text-indigo-900">
-                          {med.name.replace(/^(Tab\.|Cap\.|Syp\.|Inj\.|Tab|Cap|Syp|Inj)\.?\s+/i, '')}
+                          {med.name}
                         </div>
                       </div>
                       <span className="text-xs text-indigo-600 font-semibold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
