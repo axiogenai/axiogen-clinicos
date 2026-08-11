@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react';
 import type { Patient } from '../data/patients';
 import type { CasePaper } from '../types';
 import type { ClinicSettings } from '../data/clinicSettings';
 import { calculateMedicineCount } from '../utils/countCalculator';
 import { translateMedicalText, cleanFrequencyString } from '../utils/medicalTranslator';
-import { api } from '../api/client';
 
 export type PrintLanguage = 'marathi' | 'english' | 'hindi' | 'kannada';
 
@@ -93,14 +91,12 @@ export const translateFrequency = (freq?: string, _medName?: string, lang: Print
   return translateMedicalText(freq, lang);
 };
 
-const groqMemoryCache = new Map<string, string>();
-
 export const GroqTranslatedCell: React.FC<{
   freq?: string;
   medName?: string;
   lang: PrintLanguage;
   notes?: string;
-}> = ({ freq, medName, lang, notes }) => {
+}> = ({ freq, lang, notes }) => {
   const cleanFreq = cleanFrequencyForPrint(freq);
   const cleanNotes = (notes || '').trim();
 
@@ -108,78 +104,17 @@ export const GroqTranslatedCell: React.FC<{
     ? (cleanFreq && cleanFreq !== '-' ? `${cleanFreq} - ${cleanNotes}` : cleanNotes)
     : cleanFreq;
 
-  const fallbackText = translateMedicalText(fullTextToTranslate, lang);
-  const fallbackWithNotes = fallbackText;
+  if (!fullTextToTranslate || fullTextToTranslate === '-') {
+    return <span>-</span>;
+  }
 
-  // Check if text is already in Devanagari script (Marathi/Hindi)
-  const isDevanagari = (text: string) => /[\u0900-\u097F]/.test(text);
-
-  const cacheKey = `${lang}:${fullTextToTranslate}:${medName || ''}`;
-  const marathiCacheKey = `marathi:${fullTextToTranslate}:${medName || ''}`;
-
-  const [translated, setTranslated] = useState<string>(() => {
-    if (lang === 'marathi' && isDevanagari(fullTextToTranslate)) {
-      return fullTextToTranslate;
-    }
-    return groqMemoryCache.get(cacheKey) || fallbackWithNotes;
-  });
-
-  const [marathiSubtext, setMarathiSubtext] = useState<string>(() => {
-    if (isDevanagari(fullTextToTranslate)) {
-      return fullTextToTranslate;
-    }
-    return groqMemoryCache.get(marathiCacheKey) || (cleanNotes ? `${cleanFreq} (${cleanNotes})` : cleanFreq);
-  });
-
-  useEffect(() => {
-    if (!fullTextToTranslate || fullTextToTranslate === '-') return;
-
-    setTranslated(groqMemoryCache.get(cacheKey) || fallbackWithNotes);
-
-    let isMounted = true;
-
-    // 1. Fetch Primary Target Language Translation
-    if (groqMemoryCache.has(cacheKey)) {
-      setTranslated(groqMemoryCache.get(cacheKey)!);
-    } else {
-      api.translateText(fullTextToTranslate, lang)
-        .then((res) => {
-          if (res && res.translatedText) {
-            const cleanedRes = cleanFrequencyForPrint(res.translatedText);
-            groqMemoryCache.set(cacheKey, cleanedRes);
-            if (isMounted) setTranslated(cleanedRes);
-          }
-        })
-        .catch(() => {});
-    }
-
-    // 2. Fetch Marathi Subtext Explanation if target language is non-Marathi
-    if (lang !== 'marathi') {
-      if (isDevanagari(fullTextToTranslate)) {
-        setMarathiSubtext(fullTextToTranslate);
-      } else if (groqMemoryCache.has(marathiCacheKey)) {
-        setMarathiSubtext(groqMemoryCache.get(marathiCacheKey)!);
-      } else {
-        api.translateText(fullTextToTranslate, 'marathi')
-          .then((res) => {
-            if (res && res.translatedText) {
-              const cleanedRes = cleanFrequencyForPrint(res.translatedText);
-              groqMemoryCache.set(marathiCacheKey, cleanedRes);
-              if (isMounted) setMarathiSubtext(cleanedRes);
-            }
-          })
-          .catch(() => {});
-      }
-    }
-
-    return () => { isMounted = false; };
-  }, [cacheKey, marathiCacheKey, fullTextToTranslate, lang, fallbackWithNotes]);
-
+  const translatedText = translateMedicalText(fullTextToTranslate, lang);
+  const marathiSubtext = lang !== 'marathi' ? translateMedicalText(fullTextToTranslate, 'marathi') : null;
 
   return (
     <div style={{ whiteSpace: 'pre-line', lineHeight: '1.35' }}>
-      <div>{translated}</div>
-      {lang !== 'marathi' && marathiSubtext && (
+      <div>{translatedText}</div>
+      {lang !== 'marathi' && marathiSubtext && marathiSubtext !== translatedText && (
         <div style={{ fontSize: '10px', color: '#555', marginTop: '2px' }}>
           {marathiSubtext}
         </div>
