@@ -3,6 +3,8 @@ const router = express.Router();
 const whatsappController = require('../controllers/whatsappController');
 
 router.get('/status', whatsappController.getStatus);
+router.get('/webhook', whatsappController.handleMetaWebhookVerify);
+router.post('/webhook', whatsappController.handleMetaWebhookEvent);
 router.post('/trigger-auto-send', whatsappController.triggerAutoSend);
 router.post('/trigger-festival', whatsappController.triggerFestivalWishes);
 router.post('/send-single', whatsappController.sendSingleReminder);
