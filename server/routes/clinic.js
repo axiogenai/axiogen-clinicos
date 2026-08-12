@@ -8,5 +8,6 @@ router.use(verifyToken);
 router.get('/settings', clinicController.getSettings);
 router.put('/settings', clinicController.updateSettings);
 router.post('/translate', clinicController.translateText);
+router.post('/parse-sentence', clinicController.parseSentence);
 
 module.exports = router;

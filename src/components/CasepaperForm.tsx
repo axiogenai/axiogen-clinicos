@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Pill, FlaskConical, Lightbulb, Calendar, ArrowLeft, Printer, Trash2, CheckCircle2, Search, Plus, X, ChevronDown, FileText, Languages, Loader2 } from 'lucide-react';
+import { Pill, FlaskConical, Lightbulb, Calendar, ArrowLeft, Printer, Trash2, CheckCircle2, Search, Plus, X, ChevronDown, FileText, Languages, Loader2, Sparkles } from 'lucide-react';
 import type { Patient } from '../data/patients';
 import { medicines as initialLocalMedicines } from '../data/medicines';
 import { useClinic } from '../context/ClinicContext';
@@ -9,9 +9,11 @@ import MedicineImportModal from './MedicineImportModal';
 import ReprintPreview from './ReprintPreview';
 import PatientEMRHistoryModal from './PatientEMRHistoryModal';
 import AddCustomMedicineModal from './AddCustomMedicineModal';
+import ConfirmModal from './ConfirmModal';
 
 import { calculateMedicineCount } from '../utils/countCalculator';
 import { translateFrequencyToMarathi } from '../utils/marathiTranslator';
+import { parsePrescriptionSentence, parseSentenceWithGroqAI, type ParsedPrescriptionSentence } from '../utils/sentenceParser';
 
 interface CasepaperFormProps {
   patient: Patient;
@@ -283,6 +285,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
   const [freqInputDisplay, setFreqInputDisplay] = useState('');
   const [durOpenIndex, setDurOpenIndex] = useState<number | null>(null);
   const [translatingIndex, setTranslatingIndex] = useState<number | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const templateSearchRef = useRef<HTMLDivElement>(null);
 
@@ -410,11 +413,14 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     };
   }, []);
 
+  const parsedSentence = useMemo(() => parsePrescriptionSentence(searchQuery), [searchQuery]);
+
   // Instant client-side filter (0ms) + Fast debounced server search (50ms)
   useEffect(() => {
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
 
-    const q = searchQuery.trim().toLowerCase();
+    const parsed = parsePrescriptionSentence(searchQuery);
+    const q = (parsed.cleanedMedicineQuery || searchQuery).trim().toLowerCase();
     if (!q) {
       setFilteredMedicines(dbMedicines);
       setIsSearching(false);
@@ -464,6 +470,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
 
     return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); };
   }, [searchQuery, dbMedicines]);
+
   const applyTemplate = (templateId: string) => {
     const template = templates.find(t => t.id === templateId);
     if (!template) return;
@@ -488,21 +495,23 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     });
   };
 
-  const addMedicine = (medicineId: string) => {
-    const med = filteredMedicines.find(m => m.id === medicineId) || dbMedicines.find(m => m.id === medicineId);
-    if (!med) return;
+  const addMedicine = (medicineId: string, customRawSentence?: string) => {
+    const sentenceToParse = customRawSentence !== undefined ? customRawSentence : searchQuery;
+    const parsed = parsePrescriptionSentence(sentenceToParse);
 
-    let fullName = med.name.trim();
-    if (med.strength && !fullName.toLowerCase().includes(med.strength.toLowerCase())) {
+    const med = filteredMedicines.find(m => m.id === medicineId) || dbMedicines.find(m => m.id === medicineId);
+
+    let fullName = med ? med.name.trim() : (parsed.formattedMedicineName || 'Medicine');
+    if (med && med.strength && !fullName.toLowerCase().includes(med.strength.toLowerCase())) {
       fullName = `${fullName} ${med.strength}`;
     }
 
-    const freq = med.defaultFrequency || '';
-    const dur = med.defaultDuration || '7 Days';
+    const freq = parsed.frequency || (med ? med.defaultFrequency || '' : '');
+    const dur = parsed.duration || (med ? med.defaultDuration || '7 Days' : '7 Days');
     const autoCount = calculateMedicineCount({ name: fullName, frequency: freq, duration: dur });
 
     const newMedicine: CasePaperMedicine = {
-      medicineId: med.id,
+      medicineId: med ? med.id : `custom_${Date.now()}`,
       name: fullName,
       frequency: freq,
       duration: dur,
@@ -516,6 +525,38 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
 
     setSearchQuery('');
     setShowSearchDropdown(false);
+    setHighlightedIndex(-1);
+  };
+
+  const addParsedSentenceMedicine = (parsed: ParsedPrescriptionSentence) => {
+    const cleanQ = parsed.cleanedMedicineQuery.toLowerCase();
+    const med = dbMedicines.find(m => m.name.toLowerCase().includes(cleanQ) || (m.brand && m.brand.toLowerCase().includes(cleanQ))) || filteredMedicines[0];
+
+    let fullName = med ? med.name.trim() : (parsed.formattedMedicineName || parsed.originalInput);
+    if (med && med.strength && !fullName.toLowerCase().includes(med.strength.toLowerCase())) {
+      fullName = `${fullName} ${med.strength}`;
+    }
+
+    const freq = parsed.frequency || (med ? med.defaultFrequency || '' : '');
+    const dur = parsed.duration || (med ? med.defaultDuration || '7 Days' : '7 Days');
+    const autoCount = calculateMedicineCount({ name: fullName, frequency: freq, duration: dur });
+
+    const newMedicine: CasePaperMedicine = {
+      medicineId: med ? med.id : `custom_${Date.now()}`,
+      name: fullName,
+      frequency: freq,
+      duration: dur,
+      count: autoCount
+    };
+
+    onUpdateCasePaper({
+      ...casePaper,
+      medicines: [...casePaper.medicines, newMedicine],
+    });
+
+    setSearchQuery('');
+    setShowSearchDropdown(false);
+    setHighlightedIndex(-1);
   };
 
   const removeMedicine = (index: number) => {
@@ -582,29 +623,34 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     };
   };
 
-  const validateCasePaperBeforeSave = (): boolean => {
+  const executeWithValidation = async (action: () => void | Promise<void>) => {
     if (!patient || !patient.name) {
       setToast({ type: 'error', message: 'Invalid patient selected. Cannot save consultation.' });
-      return false;
+      return;
     }
 
     const todayStr = new Date().toISOString().split('T')[0];
     if (casePaper.followUpDate && casePaper.followUpDate < todayStr) {
       setToast({ type: 'error', message: 'Follow-up date cannot be in the past. Please select today or a future date.' });
-      return false;
+      return;
     }
 
     if ((!casePaper.medicines || casePaper.medicines.length === 0) && (!casePaper.complaint || !casePaper.complaint.trim())) {
-      if (!window.confirm('⚠️ No medicines prescribed or chief complaint specified. Save empty consultation record anyway?')) {
-        return false;
-      }
+      setConfirmAction({
+        title: 'Empty Consultation',
+        message: '⚠️ No medicines prescribed or chief complaint specified. Save empty consultation record anyway?',
+        onConfirm: async () => {
+          await action();
+        }
+      });
+      return;
     }
 
-    return true;
+    await action();
   };
 
   const handleSaveAndComplete = async () => {
-    if (!validateCasePaperBeforeSave()) return;
+    executeWithValidation(async () => {
 
     try {
       const { payload, effectiveQueueId } = buildCasePaperPayload();
@@ -639,11 +685,13 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
         message: `Clinical casepaper for ${patient.name} updated`,
       });
       onBack();
+      onBack();
     }
+  });
   };
 
   const handleSaveAndPrintPreview = () => {
-    if (!validateCasePaperBeforeSave()) return;
+    executeWithValidation(() => {
 
     try {
       const { payload, effectiveQueueId } = buildCasePaperPayload();
@@ -661,21 +709,50 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     }
     // Open print overlay directly inside this component
     setShowPrintOverlay(true);
+    });
   };
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!showSearchDropdown) return;
-
     if (e.key === 'ArrowDown') {
       e.preventDefault();
+      setShowSearchDropdown(true);
       setHighlightedIndex(prev => (prev < filteredMedicines.length - 1 ? prev + 1 : prev));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
+      setShowSearchDropdown(true);
       setHighlightedIndex(prev => (prev > 0 ? prev - 1 : prev));
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (highlightedIndex >= 0 && highlightedIndex < filteredMedicines.length) {
-        addMedicine(filteredMedicines[highlightedIndex].id);
+        addMedicine(filteredMedicines[highlightedIndex].id, searchQuery);
+      } else if (searchQuery.trim() && parsedSentence.hasSentenceElements) {
+        // Groq AI dynamic parse: fire async, use local parse as instant fallback
+        const localParsed = parsedSentence;
+        parseSentenceWithGroqAI(searchQuery).then((groqParsed) => {
+          if (groqParsed && groqParsed.hasSentenceElements) {
+            // Groq AI returned a better parse — update the last added medicine
+            const lastIdx = casePaper.medicines.length; // index of the medicine we just added
+            const cleanQ = groqParsed.cleanedMedicineQuery.toLowerCase();
+            const med = dbMedicines.find(m => m.name.toLowerCase().includes(cleanQ) || (m.brand && m.brand.toLowerCase().includes(cleanQ)));
+            let fullName = med ? med.name.trim() : (groqParsed.formattedMedicineName || groqParsed.originalInput);
+            if (med && med.strength && !fullName.toLowerCase().includes(med.strength.toLowerCase())) {
+              fullName = `${fullName} ${med.strength}`;
+            }
+            const freq = groqParsed.frequency || (med ? med.defaultFrequency || '' : '');
+            const dur = groqParsed.duration || (med ? med.defaultDuration || '7 Days' : '7 Days');
+            const autoCount = calculateMedicineCount({ name: fullName, frequency: freq, duration: dur });
+            const updatedMedicines = [...casePaper.medicines];
+            if (updatedMedicines[lastIdx]) {
+              updatedMedicines[lastIdx] = { ...updatedMedicines[lastIdx], name: fullName, frequency: freq, duration: dur, count: autoCount };
+              onUpdateCasePaper({ ...casePaper, medicines: updatedMedicines });
+            }
+          }
+        }).catch(() => { /* Groq failed, local parse already added */ });
+        addParsedSentenceMedicine(localParsed);
+      } else if (filteredMedicines.length > 0 && searchQuery.trim()) {
+        addMedicine(filteredMedicines[0].id, searchQuery);
+      } else if (searchQuery.trim()) {
+        addParsedSentenceMedicine(parsedSentence);
       }
     } else if (e.key === 'Escape') {
       setShowSearchDropdown(false);
@@ -951,12 +1028,48 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
               
               {showSearchDropdown && (
                 <div className="absolute z-50 w-full mt-1 bg-white border border-[#e4e2e1] rounded-xl shadow-xl max-h-72 overflow-auto divide-y divide-[#f2eee3]">
+                  {/* Dynamic Sentence Auto-Parse Quick-Add Banner */}
+                  {parsedSentence.hasSentenceElements && (
+                    <div
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        addParsedSentenceMedicine(parsedSentence);
+                      }}
+                      className="p-3 bg-[#ecfdf5] hover:bg-[#d1fae5] border-b border-[#a7f3d0] cursor-pointer flex flex-col gap-1 text-[#047857] transition-all"
+                    >
+                      <div className="flex items-center justify-between font-bold text-xs">
+                        <span className="flex items-center gap-1.5">
+                          <Sparkles className="w-4 h-4 text-[#047857] shrink-0" />
+                          <span>Auto-Parsed Sentence: <strong>{parsedSentence.formattedMedicineName}</strong></span>
+                        </span>
+                        <span className="text-[10px] bg-[#047857] text-white px-2 py-0.5 rounded font-sans font-extrabold uppercase shadow-sm">
+                          Press Enter ↵ to Add
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px] text-[#065f46] font-medium mt-0.5 flex-wrap">
+                        {parsedSentence.frequency && (
+                          <span className="bg-[#a7f3d0]/50 px-2 py-0.5 rounded border border-[#a7f3d0]">
+                            Frequency: <strong>{parsedSentence.frequency}</strong>
+                          </span>
+                        )}
+                        {parsedSentence.duration && (
+                          <span className="bg-[#a7f3d0]/50 px-2 py-0.5 rounded border border-[#a7f3d0]">
+                            Duration: <strong>{parsedSentence.duration}</strong>
+                          </span>
+                        )}
+                        <span className="bg-[#047857]/10 text-[#047857] px-2 py-0.5 rounded border border-[#047857]/20 font-bold">
+                          Calculated Count: <strong>{calculateMedicineCount({ name: parsedSentence.formattedMedicineName, frequency: parsedSentence.frequency, duration: parsedSentence.duration })}</strong>
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   {filteredMedicines.length > 0 ? (
                     filteredMedicines.map((med, idx) => (
                       <div 
                         key={med.id}
                         className={`px-4 py-2.5 cursor-pointer transition-colors ${highlightedIndex === idx ? 'bg-[#ecfdf5]' : 'hover:bg-[#f8f6f0]'}`}
-                        onMouseDown={(e) => { e.preventDefault(); addMedicine(med.id); }}
+                        onMouseDown={(e) => { e.preventDefault(); addMedicine(med.id, searchQuery); }}
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-[#1a1c1a] text-sm">{med.name}</span>
@@ -1520,8 +1633,21 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
           }}
         />
       )}
-
+      
+      {/* Confirm Modal */}
+      {confirmAction && (
+        <ConfirmModal
+          isOpen={!!confirmAction}
+          title={confirmAction.title}
+          message={confirmAction.message}
+          confirmText="Save Anyway"
+          cancelText="Cancel"
+          isDestructive={false}
+          onConfirm={confirmAction.onConfirm}
+          onCancel={() => setConfirmAction(null)}
+        />
+      )}
     </div>
-  </div>
+    </div>
   );
 }

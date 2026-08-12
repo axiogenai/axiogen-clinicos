@@ -107,8 +107,9 @@ export const api = {
   restartWhatsApp: () => apiRequest<any>('/whatsapp/restart', { method: 'POST' }),
   sendSingleWhatsApp: (phone: string, message?: string, patientName?: string, followUpDate?: string) => apiRequest<any>('/whatsapp/send-single', { method: 'POST', body: JSON.stringify({ phone, message, patientName, followUpDate }) }),
 
-  // Groq AI Translation
+  // Groq AI Translation & Prescription Sentence Parsing
   translateText: (text: string, targetLang: string) => apiRequest<{ translatedText: string }>('/clinic/translate', { method: 'POST', body: JSON.stringify({ text, targetLang }) }),
+  parseSentence: (sentence: string) => apiRequest<{ parsed?: any }>('/clinic/parse-sentence', { method: 'POST', body: JSON.stringify({ sentence }) }),
 
   // Permanent OPD Register (Day-wise, Month-wise, Year-wise)
   getDailyRegister: (date?: string) => apiRequest<any[]>(`/register/daily${date ? `?date=${date}` : ''}`),

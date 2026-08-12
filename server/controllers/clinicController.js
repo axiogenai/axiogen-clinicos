@@ -52,12 +52,23 @@ exports.updateSettings = async (req, res, next) => {
 };
 
 const { translateWithGroq } = require('../services/groqTranslationService');
+const { parseSentenceWithGroq } = require('../services/groqSentenceParserService');
 
 exports.translateText = async (req, res, next) => {
   try {
     const { text, targetLang } = req.body;
     const translated = await translateWithGroq(text, targetLang);
     res.json({ translatedText: translated });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.parseSentence = async (req, res, next) => {
+  try {
+    const { sentence } = req.body;
+    const parsed = await parseSentenceWithGroq(sentence);
+    res.json({ parsed });
   } catch (err) {
     next(err);
   }

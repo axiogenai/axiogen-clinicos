@@ -28,6 +28,14 @@ server/*.sqlite
 server/*.sqlite-wal
 server/*.sqlite-shm
 
+# Environment files
+.env
+.env.*
+
+# Temporary scripts
+*.cjs
+*.js.tmp
+
 # WhatsApp gateway credentials
 server/whatsapp_auth_info/
 server/whatsapp_auth/

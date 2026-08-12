@@ -24,7 +24,7 @@ function getGuidelines(lang) {
 1. PURE DYNAMIC MEDICAL TRANSLATION & TRANSLITERATION:
    - Translate or transliterate the exact medical frequency, timing, or dosage instruction into natural Devanagari ${lang} script.
    - PRESERVE EXACT VERBS AND MEANING ACCORDING TO INTENT:
-     * If the input specifies topical application (e.g. "lavne", "lav", "lavayche", "apply", "cream", "lotion", "gel"), USE THE VERB "लावणे" (Apply).
+     * If the input specifies topical application (e.g. "lavne", "lav", "lavayche", "apply", "cream", "lotion", "gel"), USE THE VERB "नावणे" or "लावणे" (Apply).
      * If the input specifies oral intake (e.g. "ghene", "take", "goli"), USE THE VERB "घेणे" (Take).
      * "sakali lavne" -> "सकाळी लावणे" (NEVER "सकाळी घेणे")
      * "sakali ghene" -> "सकाळी घेणे"
