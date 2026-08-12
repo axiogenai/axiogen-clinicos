@@ -13,7 +13,7 @@ import ConfirmModal from './ConfirmModal';
 
 import { calculateMedicineCount } from '../utils/countCalculator';
 import { translateFrequencyToMarathi } from '../utils/marathiTranslator';
-import { parsePrescriptionSentence, parseSentenceWithGroqAI, type ParsedPrescriptionSentence } from '../utils/sentenceParser';
+import { parsePrescriptionSentence, parseSentenceWithGroqAI } from '../utils/sentenceParser';
 
 interface CasepaperFormProps {
   patient: Patient;
@@ -528,35 +528,81 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     setHighlightedIndex(-1);
   };
 
-  const addParsedSentenceMedicine = (parsed: ParsedPrescriptionSentence) => {
-    const cleanQ = parsed.cleanedMedicineQuery.toLowerCase();
-    const med = dbMedicines.find(m => m.name.toLowerCase().includes(cleanQ) || (m.brand && m.brand.toLowerCase().includes(cleanQ))) || filteredMedicines[0];
+  const addSentenceWithGroqAI = async (rawSentence: string) => {
+    const sentenceToParse = rawSentence.trim();
+    if (!sentenceToParse) return;
 
-    let fullName = med ? med.name.trim() : (parsed.formattedMedicineName || parsed.originalInput);
+    // 1. Instant 0ms local parse for zero keypress latency UI feedback
+    const localParsed = parsePrescriptionSentence(sentenceToParse);
+    const cleanQ = (localParsed.cleanedMedicineQuery || sentenceToParse).toLowerCase().trim();
+    const med = dbMedicines.find(m => m.name.toLowerCase().includes(cleanQ) || (m.brand && m.brand.toLowerCase().includes(cleanQ)));
+
+    let fullName = med ? med.name.trim() : (localParsed.formattedMedicineName || sentenceToParse);
     if (med && med.strength && !fullName.toLowerCase().includes(med.strength.toLowerCase())) {
       fullName = `${fullName} ${med.strength}`;
     }
 
-    const freq = parsed.frequency || (med ? med.defaultFrequency || '' : '');
-    const dur = parsed.duration || (med ? med.defaultDuration || '7 Days' : '7 Days');
-    const autoCount = calculateMedicineCount({ name: fullName, frequency: freq, duration: dur });
+    const initialFreq = localParsed.frequency || (med ? med.defaultFrequency || '' : '');
+    const initialDur = localParsed.duration || (med ? med.defaultDuration || '7 Days' : '7 Days');
+    const autoCount = calculateMedicineCount({ name: fullName, frequency: initialFreq, duration: initialDur });
 
-    const newMedicine: CasePaperMedicine = {
-      medicineId: med ? med.id : `custom_${Date.now()}`,
+    const newMedId = med ? med.id : `custom_${Date.now()}`;
+    const initialMedicine: CasePaperMedicine = {
+      medicineId: newMedId,
       name: fullName,
-      frequency: freq,
-      duration: dur,
+      frequency: initialFreq,
+      duration: initialDur,
       count: autoCount
     };
 
+    const updatedList = [...casePaper.medicines, initialMedicine];
+    const targetIndex = updatedList.length - 1;
+
     onUpdateCasePaper({
       ...casePaper,
-      medicines: [...casePaper.medicines, newMedicine],
+      medicines: updatedList,
     });
 
     setSearchQuery('');
     setShowSearchDropdown(false);
     setHighlightedIndex(-1);
+
+    // 2. 100% Dynamic Groq AI parsing in background (~150ms)
+    try {
+      const groqParsed = await parseSentenceWithGroqAI(sentenceToParse);
+      if (groqParsed) {
+        const groqClean = (groqParsed.cleanedMedicineQuery || sentenceToParse).toLowerCase().trim();
+        const matchedMed = dbMedicines.find(m => m.name.toLowerCase().includes(groqClean) || (m.brand && m.brand.toLowerCase().includes(groqClean)));
+
+        let finalName = matchedMed ? matchedMed.name.trim() : (groqParsed.formattedMedicineName || sentenceToParse);
+        if (matchedMed && matchedMed.strength && !finalName.toLowerCase().includes(matchedMed.strength.toLowerCase())) {
+          finalName = `${finalName} ${matchedMed.strength}`;
+        }
+
+        const finalFreq = groqParsed.frequency || initialFreq;
+        const finalDur = groqParsed.duration || initialDur;
+        const finalCount = calculateMedicineCount({ name: finalName, frequency: finalFreq, duration: finalDur });
+
+        onUpdateCasePaper({
+          ...casePaper,
+          medicines: casePaper.medicines.map((m, idx) => {
+            if (idx === targetIndex || (m.name === fullName && m.medicineId === newMedId)) {
+              return {
+                ...m,
+                medicineId: matchedMed ? matchedMed.id : m.medicineId,
+                name: finalName,
+                frequency: finalFreq,
+                duration: finalDur,
+                count: finalCount
+              };
+            }
+            return m;
+          }),
+        });
+      }
+    } catch (err) {
+      console.warn('Groq AI parse fallback:', err);
+    }
   };
 
   const removeMedicine = (index: number) => {
@@ -725,34 +771,8 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
       e.preventDefault();
       if (highlightedIndex >= 0 && highlightedIndex < filteredMedicines.length) {
         addMedicine(filteredMedicines[highlightedIndex].id, searchQuery);
-      } else if (searchQuery.trim() && parsedSentence.hasSentenceElements) {
-        // Groq AI dynamic parse: fire async, use local parse as instant fallback
-        const localParsed = parsedSentence;
-        parseSentenceWithGroqAI(searchQuery).then((groqParsed) => {
-          if (groqParsed && groqParsed.hasSentenceElements) {
-            // Groq AI returned a better parse — update the last added medicine
-            const lastIdx = casePaper.medicines.length; // index of the medicine we just added
-            const cleanQ = groqParsed.cleanedMedicineQuery.toLowerCase();
-            const med = dbMedicines.find(m => m.name.toLowerCase().includes(cleanQ) || (m.brand && m.brand.toLowerCase().includes(cleanQ)));
-            let fullName = med ? med.name.trim() : (groqParsed.formattedMedicineName || groqParsed.originalInput);
-            if (med && med.strength && !fullName.toLowerCase().includes(med.strength.toLowerCase())) {
-              fullName = `${fullName} ${med.strength}`;
-            }
-            const freq = groqParsed.frequency || (med ? med.defaultFrequency || '' : '');
-            const dur = groqParsed.duration || (med ? med.defaultDuration || '7 Days' : '7 Days');
-            const autoCount = calculateMedicineCount({ name: fullName, frequency: freq, duration: dur });
-            const updatedMedicines = [...casePaper.medicines];
-            if (updatedMedicines[lastIdx]) {
-              updatedMedicines[lastIdx] = { ...updatedMedicines[lastIdx], name: fullName, frequency: freq, duration: dur, count: autoCount };
-              onUpdateCasePaper({ ...casePaper, medicines: updatedMedicines });
-            }
-          }
-        }).catch(() => { /* Groq failed, local parse already added */ });
-        addParsedSentenceMedicine(localParsed);
-      } else if (filteredMedicines.length > 0 && searchQuery.trim()) {
-        addMedicine(filteredMedicines[0].id, searchQuery);
       } else if (searchQuery.trim()) {
-        addParsedSentenceMedicine(parsedSentence);
+        addSentenceWithGroqAI(searchQuery);
       }
     } else if (e.key === 'Escape') {
       setShowSearchDropdown(false);
@@ -1033,7 +1053,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                     <div
                       onMouseDown={(e) => {
                         e.preventDefault();
-                        addParsedSentenceMedicine(parsedSentence);
+                        addSentenceWithGroqAI(searchQuery);
                       }}
                       className="p-3 bg-[#ecfdf5] hover:bg-[#d1fae5] border-b border-[#a7f3d0] cursor-pointer flex flex-col gap-1 text-[#047857] transition-all"
                     >

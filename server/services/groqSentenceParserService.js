@@ -11,22 +11,26 @@ async function parseSentenceWithGroq(sentence) {
 
   try {
     const systemPrompt = `You are an expert AI Medical Prescription Sentence Parser powered by Groq AI for ClinicOS.
-Your task is to take any raw free-text prescription sentence entered by a doctor (in English, Marathi, Hinglish, or Romanized script) and parse it into structured JSON.
+Your task is to take any raw free-text prescription sentence entered by a doctor (in English, Marathi, Hinglish, or Romanized Marathi script) and parse it into structured JSON.
 
 Return ONLY a JSON object with this exact key structure:
 {
-  "cleanedMedicineQuery": "core medicine search query without dosage directions or duration (e.g. 'tiniclean 200', 'paracetamol 500')",
-  "formattedMedicineName": "formatted medicine name with proper title case capitalization and form prefix (Tab. / Cap. / Syp. / Cream / Inj.) if specified (e.g. 'Cap. Tiniclean 200')",
-  "frequency": "translated Marathi frequency / directions in Devanagari script (e.g. 'सकाळी १ व रात्री १ घेणे', 'सकाळी १, दुपारी १ व रात्री १ घेणे', 'रात्री १ घेणे', 'उपाशीपोटी घेणे', 'सकाळी व रात्री लावणे')",
-  "duration": "formatted duration string (e.g. '15 Days', '7 Days', '2 Weeks', '1 Month')",
+  "cleanedMedicineQuery": "core medicine search query without dosage directions, timing or duration (e.g. 'dulcolax 10ml', 'tiniclean 200', 'paracetamol 500')",
+  "formattedMedicineName": "formatted medicine name with proper title case capitalization and form prefix (Tab. / Cap. / Syp. / Cream / Inj.) if specified (e.g. 'Syp. Dulcolax 10ml', 'Cap. Tiniclean 200')",
+  "frequency": "translated Marathi frequency / timing directions in Devanagari script (e.g. 'उद्या घेणे', 'सकाळी १ व रात्री १ घेणे', 'सकाळी १, दुपारी १ व रात्री १ घेणे', 'रात्री १ घेणे', 'उद्या रात्री घेणे', 'उपाशीपोटी घेणे', 'सकाळी व रात्री लावणे')",
+  "duration": "formatted duration string if specified (e.g. '15 Days', '7 Days', '3 Days', '2 Weeks', '1 Month')",
   "hasSentenceElements": true
 }
 
 Rules:
-1. "cleanedMedicineQuery": strip away the duration and frequency words, leaving the core medicine name & strength for database searching.
-2. "formattedMedicineName": format cleanly and convert "cap" -> "Cap. ", "tab" -> "Tab. ", "syp" -> "Syp. ", "inj" -> "Inj. ".
-3. "frequency": translate any frequency instructions into natural Marathi Devanagari script.
-   - Use "घेणे" for oral medicine intake, "नावणे" or "लावणे" for creams/lotions/topicals.
+1. "cleanedMedicineQuery": strip away frequency, timing, verbs and duration words (such as "udya", "tomorrow", "ghene", "take", "sakali", "ratri", "3 days"), leaving ONLY the core medicine name & strength/volume for database searching.
+2. "formattedMedicineName": format cleanly and convert "syrup" / "syp" -> "Syp. ", "cap" -> "Cap. ", "tab" -> "Tab. ", "inj" -> "Inj. ".
+3. "frequency": translate any frequency/timing/verb instructions into natural Marathi Devanagari script:
+   - "udya ghene" -> "उद्या घेणे"
+   - "udya ratri ghene" -> "उद्या रात्री घेणे"
+   - "udya sakali ghene" -> "उद्या सकाळी घेणे"
+   - "sakali ratri" -> "सकाळी १ व रात्री १ घेणे"
+   - Use "घेणे" for oral intake, "नावणे" or "लावणे" for topicals/creams.
 4. "duration": format numbers as "X Days", "X Weeks", or "X Months".
 5. Return ONLY the JSON object. No explanations, no markdown ticks, no preamble.`;
 

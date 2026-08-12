@@ -129,6 +129,7 @@ export function parsePrescriptionSentence(input: string): ParsedPrescriptionSent
       extractedFrequency = 'जेवणानंतर घेणे';
       text = text.replace(/\b(jevananantar|jevan\s*nantar|after\s*food|after\s*meals|pc)\b/gi, ' ').trim();
     } else {
+      const hasTomorrow = /\b(udya|udaya|udyaa|tomorrow|उद्या)\b/i.test(text);
       const hasMorning = /\b(sakali|sakale|morning|sakal|am|सकाळी)\b/i.test(text);
       const hasAfternoon = /\b(dupari|dupare|afternoon|noon|दुपारी)\b/i.test(text);
       const hasNight = /\b(ratri|rate|night|bedtime|hs|pm|रात्री)\b/i.test(text);
@@ -137,7 +138,16 @@ export function parsePrescriptionSentence(input: string): ParsedPrescriptionSent
       const hasTwice = /\b(bd|twice|2\s*times)\b/i.test(text);
       const hasOnce = /\b(od|once)\b/i.test(text);
 
-      if (hasQid) {
+      if (hasTomorrow) {
+        if (hasNight) {
+          extractedFrequency = 'उद्या रात्री घेणे';
+        } else if (hasMorning) {
+          extractedFrequency = 'उद्या सकाळी घेणे';
+        } else {
+          extractedFrequency = 'उद्या घेणे';
+        }
+        text = text.replace(/\b(udya|udaya|udyaa|tomorrow|उद्या|sakali|sakale|morning|sakal|ratri|rate|night|bedtime|hs)\b/gi, ' ').trim();
+      } else if (hasQid) {
         extractedFrequency = 'दिवसातून ४ वेळा घेणे';
         text = text.replace(/\b(qid|4\s*times|4\s*vela)\b/gi, ' ').trim();
       } else if (hasMorning && hasAfternoon && hasNight) {
@@ -187,7 +197,7 @@ export function parsePrescriptionSentence(input: string): ParsedPrescriptionSent
   // STEP 4: DYNAMIC MEDICINE NAME & STRENGTH CLEANING
   // -------------------------------------------------------------
   let cleanQuery = text
-    .replace(/\b(for|take|ghene|khane|ghya|lavane|apply|days?|day|goli|tablet|capsule)\b/gi, ' ')
+    .replace(/\b(for|take|ghene|khane|ghya|lavane|apply|days?|day|goli|tablet|capsule|udya|udaya|udyaa|tomorrow)\b/gi, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -201,8 +211,8 @@ export function parsePrescriptionSentence(input: string): ParsedPrescriptionSent
     formattedName = cleanQuery.replace(/^cap\s+/i, 'Cap. ');
   } else if (/^tab\s+/i.test(cleanQuery)) {
     formattedName = cleanQuery.replace(/^tab\s+/i, 'Tab. ');
-  } else if (/^syp\s+/i.test(cleanQuery)) {
-    formattedName = cleanQuery.replace(/^syp\s+/i, 'Syp. ');
+  } else if (/^(syrup|syp)\s+/i.test(cleanQuery)) {
+    formattedName = cleanQuery.replace(/^(syrup|syp)\s+/i, 'Syp. ');
   } else if (/^inj\s+/i.test(cleanQuery)) {
     formattedName = cleanQuery.replace(/^inj\s+/i, 'Inj. ');
   } else if (/^cream\s+/i.test(cleanQuery)) {
