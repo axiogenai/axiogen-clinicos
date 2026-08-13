@@ -532,77 +532,85 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     const sentenceToParse = rawSentence.trim();
     if (!sentenceToParse) return;
 
-    // 1. Instant 0ms local parse for zero keypress latency UI feedback
-    const localParsed = parsePrescriptionSentence(sentenceToParse);
-    const cleanQ = (localParsed.cleanedMedicineQuery || sentenceToParse).toLowerCase().trim();
-    const med = dbMedicines.find(m => m.name.toLowerCase().includes(cleanQ) || (m.brand && m.brand.toLowerCase().includes(cleanQ)));
+    // 1. Add a placeholder row immediately (raw text as name, loading indicator)
+    const placeholderId = `groq_pending_${Date.now()}`;
+    const placeholderName = sentenceToParse
+      .split(' ')
+      .map(w => w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : '')
+      .join(' ');
 
-    let fullName = med ? med.name.trim() : (localParsed.formattedMedicineName || sentenceToParse);
-    if (med && med.strength && !fullName.toLowerCase().includes(med.strength.toLowerCase())) {
-      fullName = `${fullName} ${med.strength}`;
-    }
-
-    const initialFreq = localParsed.frequency || (med ? med.defaultFrequency || '' : '');
-    const initialDur = localParsed.duration || (med ? med.defaultDuration || '7 Days' : '7 Days');
-    const autoCount = calculateMedicineCount({ name: fullName, frequency: initialFreq, duration: initialDur });
-
-    const newMedId = med ? med.id : `custom_${Date.now()}`;
-    const initialMedicine: CasePaperMedicine = {
-      medicineId: newMedId,
-      name: fullName,
-      frequency: initialFreq,
-      duration: initialDur,
-      count: autoCount
+    const placeholderMedicine: CasePaperMedicine = {
+      medicineId: placeholderId,
+      name: placeholderName,
+      frequency: '⏳ AI parsing...',
+      duration: '',
+      count: 0
     };
 
-    const updatedList = [...casePaper.medicines, initialMedicine];
-    const targetIndex = updatedList.length - 1;
-
+    const medsWithPlaceholder = [...casePaper.medicines, placeholderMedicine];
     onUpdateCasePaper({
       ...casePaper,
-      medicines: updatedList,
+      medicines: medsWithPlaceholder,
     });
 
     setSearchQuery('');
     setShowSearchDropdown(false);
     setHighlightedIndex(-1);
 
-    // 2. 100% Dynamic Groq AI parsing in background (~150ms)
+    // 2. Call Groq AI (100% dynamic, no hardcoded regex)
+    let finalMedicines = medsWithPlaceholder;
     try {
       const groqParsed = await parseSentenceWithGroqAI(sentenceToParse);
+
       if (groqParsed) {
         const groqClean = (groqParsed.cleanedMedicineQuery || sentenceToParse).toLowerCase().trim();
-        const matchedMed = dbMedicines.find(m => m.name.toLowerCase().includes(groqClean) || (m.brand && m.brand.toLowerCase().includes(groqClean)));
+        const matchedMed = dbMedicines.find(m =>
+          m.name.toLowerCase().includes(groqClean) ||
+          (m.brand && m.brand.toLowerCase().includes(groqClean))
+        );
 
         let finalName = matchedMed ? matchedMed.name.trim() : (groqParsed.formattedMedicineName || sentenceToParse);
         if (matchedMed && matchedMed.strength && !finalName.toLowerCase().includes(matchedMed.strength.toLowerCase())) {
           finalName = `${finalName} ${matchedMed.strength}`;
         }
 
-        const finalFreq = groqParsed.frequency || initialFreq;
-        const finalDur = groqParsed.duration || initialDur;
+        const finalFreq = groqParsed.frequency || (matchedMed?.defaultFrequency || '');
+        const finalDur = groqParsed.duration || (matchedMed?.defaultDuration || '7 Days');
         const finalCount = calculateMedicineCount({ name: finalName, frequency: finalFreq, duration: finalDur });
 
-        onUpdateCasePaper({
-          ...casePaper,
-          medicines: casePaper.medicines.map((m, idx) => {
-            if (idx === targetIndex || (m.name === fullName && m.medicineId === newMedId)) {
-              return {
+        finalMedicines = medsWithPlaceholder.map(m =>
+          m.medicineId === placeholderId
+            ? {
                 ...m,
-                medicineId: matchedMed ? matchedMed.id : m.medicineId,
+                medicineId: matchedMed ? matchedMed.id : placeholderId,
                 name: finalName,
                 frequency: finalFreq,
                 duration: finalDur,
                 count: finalCount
-              };
-            }
-            return m;
-          }),
-        });
+              }
+            : m
+        );
+      } else {
+        // Groq AI returned null — clear loading, keep raw name
+        finalMedicines = medsWithPlaceholder.map(m =>
+          m.medicineId === placeholderId
+            ? { ...m, frequency: '', duration: '7 Days', count: 0 }
+            : m
+        );
       }
     } catch (err) {
-      console.warn('Groq AI parse fallback:', err);
+      console.warn('Groq AI parse failed:', err);
+      finalMedicines = medsWithPlaceholder.map(m =>
+        m.medicineId === placeholderId
+          ? { ...m, frequency: '', duration: '7 Days', count: 0 }
+          : m
+      );
     }
+
+    onUpdateCasePaper({
+      ...casePaper,
+      medicines: finalMedicines,
+    });
   };
 
   const removeMedicine = (index: number) => {
