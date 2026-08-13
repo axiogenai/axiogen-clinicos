@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pill, FlaskConical, Lightbulb, AlertTriangle, X, Check, Eye, Sparkles, Loader2 } from 'lucide-react';
+import { Plus, Pill, FlaskConical, Lightbulb, AlertTriangle, X, Check, Eye, Loader2 } from 'lucide-react';
 import type { CaseTemplate, TemplateMedicine } from '../data/templates';
 import MedicineEditorRow from './MedicineEditorRow';
 import MedicineSearchModal from './MedicineSearchModal';
@@ -229,9 +229,8 @@ export default function TemplateEditor({ template, onSave, onCancel, onPreview }
           </button>
         </div>
 
-        {/* ✨ AI Sentence Input — type "dolo 500 sakali ratri 15 days" and press Enter */}
-        <div className="flex items-center gap-2 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-2.5">
-          <Sparkles className="w-4 h-4 text-indigo-500 shrink-0" />
+        {/* AI Sentence Input */}
+        <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl p-2.5">
           <input
             type="text"
             value={sentenceInput}
@@ -239,11 +238,11 @@ export default function TemplateEditor({ template, onSave, onCancel, onPreview }
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
+                e.stopPropagation();
                 handleSentenceAdd();
               }
             }}
-            placeholder='⚡ Type sentence: "dolo 500 sakali ratri 15 days" → Enter'
-            className="flex-1 bg-transparent border-none outline-none text-sm text-gray-800 placeholder-indigo-400/70 font-medium"
+            className="flex-1 bg-transparent border-none outline-none text-sm text-gray-800 font-medium"
             disabled={isParsing}
           />
           {isParsing ? (
