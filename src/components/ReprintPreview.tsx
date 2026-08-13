@@ -179,13 +179,21 @@ export default function ReprintPreview({ patient, casePaper, onBack, onReturnToQ
             {pill(!isDerm, () => updateClinicSettings({ ...clinicSettings, templateVariant: 'general' }, false), 'General')}
           </div>
           {sep}
-          {pill(printOnStationery, () => {
-             const next = !printOnStationery;
-             setPrintOnStationery(next);
-             setHideHeader(next);
-           }, printOnStationery ? '📄 On Pre-printed Pad' : '📑 On Plain Paper', 'bg-blue-600 text-white')}
-          {sep}
-          {pill(hideHeader, () => setHideHeader(h => !h), hideHeader ? '📄 No Header' : '📑 Full Header', 'bg-amber-600 text-white')}
+          <button
+            type="button"
+            onClick={() => {
+              const next = !printOnStationery;
+              setPrintOnStationery(next);
+              setHideHeader(next);
+            }}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm border ${
+              printOnStationery
+                ? 'bg-blue-600 text-white border-blue-700 hover:bg-blue-700'
+                : 'bg-emerald-700 text-white border-emerald-800 hover:bg-emerald-800'
+            }`}
+          >
+            {printOnStationery ? '📄 Pre-printed Pad' : '📑 Plain Paper'}
+          </button>
           {sep}
           <button type="button" onClick={() => setIsSettingsOpen(true)}
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-white text-[#4b463e] border border-[#d6d3ce] hover:bg-[#f2eee3] transition-colors shrink-0">
@@ -253,13 +261,8 @@ export default function ReprintPreview({ patient, casePaper, onBack, onReturnToQ
                 setHideHeader(next);
               }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center gap-1.5 transition-all
-                  ${printOnStationery ? 'bg-blue-100 text-blue-900 border-blue-300' : 'bg-white text-[#4b463e] border-[#cdc6ba]'}`}>
+                  ${printOnStationery ? 'bg-blue-600 text-white border-blue-700' : 'bg-emerald-700 text-white border-emerald-800'}`}>
                 {printOnStationery ? '📄 Pre-printed Pad' : '📑 Plain Paper'}
-              </button>
-              <button type="button" onClick={() => setHideHeader(h => !h)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center gap-1.5 transition-all
-                  ${hideHeader ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-white text-[#4b463e] border-[#cdc6ba]'}`}>
-                {hideHeader ? '📄 No Header' : '📑 Full Header'}
               </button>
               <button type="button" onClick={() => setIsSettingsOpen(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-[#cdc6ba] text-[#4b463e] hover:bg-[#f2eee3] transition-colors">
