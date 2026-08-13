@@ -306,13 +306,15 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               style={{
                 fontSize: '20px',
                 fontWeight: 700,
-                color: '#442E4A',
+                color: '#3b2c63',
                 fontFamily: "'Mukta', 'Poppins', sans-serif",
                 lineHeight: 1,
                 paddingTop: '4px',
               }}
             >
-              {clinicNameEn || 'स्किन & कॉस्मेटीक क्लिनिक'}
+              {(clinicNameEn && clinicNameEn !== 'Clinics' && !clinicNameEn.toLowerCase().includes('shingare'))
+                ? clinicNameEn
+                : 'स्किन & कॉस्मेटीक क्लिनिक'}
             </span>
           </div>
         </div>
