@@ -243,7 +243,7 @@ export default function TemplateEditor({ template, onSave, onCancel, onPreview }
               }
             }}
             className="flex-1 bg-transparent border-none outline-none text-sm text-gray-800 font-medium"
-            placeholder="e.g. dolo 500 sakali ratri 15 days"
+            placeholder="Type here and press Enter to add..."
             disabled={isParsing}
           />
           {isParsing ? (
