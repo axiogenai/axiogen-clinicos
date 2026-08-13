@@ -394,77 +394,72 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
       {/* ══════════════════════════════════════════════════════ */}
       <div
         style={{
-          height: '16mm',
-          minHeight: '16mm',
-          maxHeight: '16mm',
-          position: 'relative',
-          boxSizing: 'border-box',
-          padding: '1mm 10mm 1mm 20mm',
-          borderBottom: printOnStationery ? 'none' : '2px solid #a53b3b',
+          height: "16mm",
+          minHeight: "16mm",
+          maxHeight: "16mm",
+          position: "relative",
+          boxSizing: "border-box",
+          padding: "1mm 10mm 1mm 20mm",
+          borderBottom: printOnStationery ? "none" : "2px solid #a53b3b",
           fontFamily: "'Mukta', sans-serif",
-          fontSize: '13px',
+          fontSize: "13px",
           fontWeight: 600,
         }}
       >
         {printOnStationery ? (
           /* PRE-PRINTED STATIONERY MODE: Absolute positioning on top of preprinted slots */
-          <div style={{ position: 'relative', width: '100%', height: '100%', fontWeight: 700, color: '#111' }}>
+          <div style={{ position: "relative", width: "100%", height: "100%", fontWeight: 700, color: "#111" }}>
             {/* Name slot (x = 4.0 cm = 40mm from left edge -> inside pad container: left 20mm) */}
-            <div style={{ position: 'absolute', top: '0.5mm', left: '20mm', fontSize: '13px' }}>
+            <div style={{ position: "absolute", top: "0.5mm", left: "20mm", fontSize: "13px" }}>
               {patient.name}
             </div>
             {/* Date slot (x = 15.5 cm = 155mm from left edge -> inside pad container: left 135mm) */}
-            <div style={{ position: 'absolute', top: '0.5mm', left: '135mm', fontSize: '12.5px' }}>
+            <div style={{ position: "absolute", top: "0.5mm", left: "135mm", fontSize: "12.5px" }}>
               {formatDate(casePaper.date)}
             </div>
-
             {/* Village slot (x = 4.0 cm = 40mm) */}
-            <div style={{ position: 'absolute', top: '7.5mm', left: '20mm', fontSize: '12.5px' }}>
-              {patient.village || ''}
+            <div style={{ position: "absolute", top: "7.5mm", left: "20mm", fontSize: "12.5px" }}>
+              {patient.village || ""}
             </div>
             {/* Age/Sex slot (x = 15.5 cm = 155mm) */}
-            <div style={{ position: 'absolute', top: '7.5mm', left: '135mm', fontSize: '12.5px' }}>
-              {patient.age} Yrs / {patient.gender === 'M' ? 'Male' : 'Female'}
+            <div style={{ position: "absolute", top: "7.5mm", left: "135mm", fontSize: "12.5px" }}>
+              {patient.age} Yrs / {patient.gender === "M" ? "Male" : "Female"}
             </div>
           </div>
         ) : (
-          /* PLAIN PAPER MODE */
-          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-              <div style={{ width: '65%', display: 'flex', alignItems: 'baseline' }}>
-                <span style={{ marginRight: '5px', whiteSpace: 'nowrap' }}>{labels.name}</span>
-                <span style={{ flex: 1, borderBottom: '1px solid #333', minHeight: '1.1em', paddingLeft: '6px', fontWeight: 700, color: '#111' }}>
-                  {patient.name}
-                </span>
-              </div>
-              <div style={{ width: '32%', display: 'flex', alignItems: 'baseline' }}>
-                <span style={{ marginRight: '5px', whiteSpace: 'nowrap' }}>{labels.date}</span>
-                <span style={{ flex: 1, borderBottom: '1px solid #333', minHeight: '1.1em', paddingLeft: '6px', fontWeight: 700, color: '#111' }}>
-                  {formatDate(casePaper.date)}
-                </span>
-              </div>
+          /* PLAIN PAPER MODE: Exact millimeter coordinates matching stationery slots */
+          <div style={{ position: "relative", width: "100%", height: "100%" }}>
+            {/* Row 1: Name (x = 40mm) & Date (x = 155mm) */}
+            <div style={{ position: "absolute", top: "0.5mm", left: "0mm", width: "20mm", whiteSpace: "nowrap" }}>
+              {labels.name}
             </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-              <div style={{ width: '65%', display: 'flex', alignItems: 'baseline' }}>
-                <span style={{ marginRight: '5px', whiteSpace: 'nowrap' }}>{labels.village}</span>
-                <span style={{ flex: 1, borderBottom: '1px solid #333', minHeight: '1.1em', paddingLeft: '6px', fontWeight: 700, color: '#111' }}>
-                  {patient.village || ''}
-                </span>
-              </div>
-              <div style={{ width: '32%', display: 'flex', alignItems: 'baseline' }}>
-                <span style={{ marginRight: '5px', whiteSpace: 'nowrap' }}>{labels.age}</span>
-                <span style={{ flex: 1, borderBottom: '1px solid #333', minHeight: '1.1em', paddingLeft: '6px', fontWeight: 700, color: '#111' }}>
-                  {patient.age} Yrs / {patient.gender === 'M' ? 'Male' : 'Female'}
-                </span>
-              </div>
+            <div style={{ position: "absolute", top: "0.5mm", left: "20mm", width: "95mm", borderBottom: "1px solid #333", paddingLeft: "4px", fontWeight: 700, color: "#111" }}>
+              {patient.name}
+            </div>
+            <div style={{ position: "absolute", top: "0.5mm", left: "120mm", width: "15mm", whiteSpace: "nowrap" }}>
+              {labels.date}
+            </div>
+            <div style={{ position: "absolute", top: "0.5mm", left: "135mm", width: "55mm", borderBottom: "1px solid #333", paddingLeft: "4px", fontWeight: 700, color: "#111" }}>
+              {formatDate(casePaper.date)}
+            </div>
+            {/* Row 2: Village (x = 40mm) & Age/Sex (x = 155mm) */}
+            <div style={{ position: "absolute", top: "7.5mm", left: "0mm", width: "20mm", whiteSpace: "nowrap" }}>
+              {labels.village}
+            </div>
+            <div style={{ position: "absolute", top: "7.5mm", left: "20mm", width: "95mm", borderBottom: "1px solid #333", paddingLeft: "4px", fontWeight: 700, color: "#111" }}>
+              {patient.village || ""}
+            </div>
+            <div style={{ position: "absolute", top: "7.5mm", left: "120mm", width: "15mm", whiteSpace: "nowrap" }}>
+              {labels.age}
+            </div>
+            <div style={{ position: "absolute", top: "7.5mm", left: "135mm", width: "55mm", borderBottom: "1px solid #333", paddingLeft: "4px", fontWeight: 700, color: "#111" }}>
+              {patient.age} Yrs / {patient.gender === "M" ? "Male" : "Female"}
             </div>
           </div>
         )}
       </div>
 
-      {/* ══════════════════════════════════════════════════════ */}
-      {/* MAIN BODY AREA (y: 70mm to 245mm = 175mm H)            */}
+      {/* ══════════════════════════════════════════════════════MAIN BODY AREA (y: 70mm to 245mm = 175mm H)            */}
       {/* ══════════════════════════════════════════════════════ */}
       {isGeneralPad ? (
         /* OPTION A: TEMPLATE 2 - GENERAL MEDICINE PAD LAYOUT */
