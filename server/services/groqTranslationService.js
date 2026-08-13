@@ -19,26 +19,26 @@ function fallbackMedicalTranslate(text, lang = 'marathi') {
   return text.trim();
 }
 
-function getGuidelines(lang) {
-  return `STRICT TRANSLATION & TRANSLITERATION INSTRUCTIONS FOR ${lang.toUpperCase()}:
-1. PURE DYNAMIC MEDICAL TRANSLATION & TRANSLITERATION:
-   - Translate or transliterate the exact medical frequency, timing, or dosage instruction into natural Devanagari ${lang} script.
-   - PRESERVE EXACT VERBS AND MEANING ACCORDING TO INTENT:
-     * If the input specifies topical application (e.g. "lavne", "lav", "lavayche", "apply", "cream", "lotion", "gel"), USE THE VERB "नावणे" or "लावणे" (Apply).
-     * If the input specifies oral intake (e.g. "ghene", "take", "goli"), USE THE VERB "घेणे" (Take).
-     * "sakali lavne" -> "सकाळी लावणे" (NEVER "सकाळी घेणे")
-     * "sakali ghene" -> "सकाळी घेणे"
-     * "udya skali lavne" -> "उद्या सकाळी लावणे"
-     * "udya skali ghene" -> "उद्या सकाळी घेणे"
-     * "chehryavar lavne" -> "चेहऱ्यावर लावणे"
-     * "somvari ratri lavne" -> "सोमवारी रात्री लावणे"
-   - PRESERVE ACCURATE FREQUENCY:
-     * "3 times a day" / "3 times" / "divsatun 3" -> "दिवसातून ३ वेळा"
-     * "2 times a day" / "2 times" / "divsatun 2" -> "दिवसातून २ वेळा"
-     * "dupari 1" -> "दुपारी १"
+function getScriptForLang(lang) {
+  const l = (lang || '').toLowerCase();
+  if (l === 'kannada') return 'Kannada script';
+  if (l === 'english') return 'English script';
+  if (l === 'hindi') return 'Hindi (Devanagari) script';
+  return 'Marathi (Devanagari) script';
+}
 
+function getGuidelines(lang) {
+  const script = getScriptForLang(lang);
+  return `STRICT TRANSLATION & TRANSLITERATION INSTRUCTIONS FOR ${lang.toUpperCase()}:
+1. PURE DYNAMIC MEDICAL TRANSLATION:
+   - Translate or transliterate the exact medical frequency, timing, dosage, or tapering instruction into natural ${script}.
+   - PRESERVE EXACT VERBS AND INTENT:
+     * Oral intake: "take", "घेणे", "लें", "ತೆಗೆದುಕೊಳ್ಳಿ"
+     * Application: "apply", "नावणे", "नाव", "लावणे", "अप्लाई करें", "ಹಚ್ಚಿ"
+   - PRESERVE ACCURATE REGIMEN & DURATION:
+     * Keep numbers, days, frequency, and tapering steps 100% accurate (e.g. "7 days 3 times then 2 times then 1 time").
 2. CONSTRAINTS:
-   - Output ONLY the final translated string in Devanagari ${lang}.
+   - Output ONLY the final translated text in ${script}.
    - Do NOT add quotes, preamble, conversational filler, or explanations.`;
 }
 
@@ -59,9 +59,10 @@ async function translateWithGroq(text, targetLang) {
   }
 
   try {
-    const systemPrompt = `You are an expert Indian Clinical Dermatologist & Medical Translation Engine specializing in ${lang} prescription guidance.
+    const script = getScriptForLang(lang);
+    const systemPrompt = `You are an expert Indian Clinical Dermatologist & Medical Translation Engine specializing in ${lang} (${script}) prescription guidance.
 
-Your task is to dynamically translate and transliterate any medical frequency, dosage, or instruction into natural Devanagari ${lang} script.
+Your task is to dynamically translate and transliterate any medical frequency, dosage, or instruction into natural ${script}.
 
 ${getGuidelines(lang)}`;
 
@@ -75,7 +76,7 @@ ${getGuidelines(lang)}`;
         model: 'llama-3.3-70b-versatile',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Translate/transliterate this prescription instruction into Devanagari ${lang}: "${cleanText}"` }
+          { role: 'user', content: `Translate/transliterate this prescription instruction into natural ${script}: "${cleanText}"` }
         ],
         temperature: 0.0,
         max_tokens: 150
