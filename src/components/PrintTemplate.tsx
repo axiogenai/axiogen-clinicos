@@ -227,12 +227,12 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
       className="rx-paper-root"
       style={{
         boxSizing: 'border-box',
-        width: '210mm',
-        minWidth: '210mm',
-        maxWidth: '210mm',
-        height: '297mm',
-        minHeight: '297mm',
-        maxHeight: '297mm',
+        width: '220mm',
+        minWidth: '220mm',
+        maxWidth: '220mm',
+        height: '270mm',
+        minHeight: '270mm',
+        maxHeight: '270mm',
         backgroundColor: '#ffffff',
         fontFamily: "'Inter', sans-serif",
         color: '#333',

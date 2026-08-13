@@ -293,23 +293,23 @@ select, select.form-input {
 /* ── Print: handled via iframe in ReprintPreview ── */
 @media print {
   @page {
-    size: 210mm 297mm;
+    size: 220mm 270mm;
     margin: 0;
   }
   html, body {
     margin: 0 !important;
     padding: 0 !important;
-    width: 210mm !important;
-    height: 297mm !important;
+    width: 220mm !important;
+    height: 270mm !important;
     overflow: hidden !important;
   }
   .rx-paper-root {
-    width: 210mm !important;
-    min-width: 210mm !important;
-    max-width: 210mm !important;
-    height: 297mm !important;
-    min-height: 297mm !important;
-    max-height: 297mm !important;
+    width: 220mm !important;
+    min-width: 220mm !important;
+    max-width: 220mm !important;
+    height: 270mm !important;
+    min-height: 270mm !important;
+    max-height: 270mm !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
