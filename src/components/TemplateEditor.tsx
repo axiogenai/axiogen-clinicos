@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Plus, Pill, FlaskConical, Lightbulb, AlertTriangle, X, Check, Eye } from 'lucide-react';
+import { Plus, Pill, FlaskConical, Lightbulb, AlertTriangle, X, Check, Eye, Sparkles, Loader2 } from 'lucide-react';
 import type { CaseTemplate, TemplateMedicine } from '../data/templates';
 import MedicineEditorRow from './MedicineEditorRow';
 import MedicineSearchModal from './MedicineSearchModal';
+import { parseSentenceWithGroqAI } from '../utils/sentenceParser';
 
 interface TemplateEditorProps {
   template: CaseTemplate;
@@ -33,6 +34,54 @@ export default function TemplateEditor({ template, onSave, onCancel, onPreview }
   const [customInv, setCustomInv] = useState('');
   const [customAdvice, setCustomAdvice] = useState('');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [sentenceInput, setSentenceInput] = useState('');
+  const [isParsing, setIsParsing] = useState(false);
+
+  // Groq AI sentence parser — type "dolo 500 sakali ratri 15 days" and press Enter
+  const handleSentenceAdd = async () => {
+    const raw = sentenceInput.trim();
+    if (!raw || isParsing) return;
+
+    setIsParsing(true);
+    setSentenceInput('');
+
+    try {
+      const parsed = await parseSentenceWithGroqAI(raw);
+
+      const medicineName = parsed?.formattedMedicineName || raw;
+      const frequency = parsed?.frequency || '';
+      const duration = parsed?.duration || '7 Days';
+
+      const newMed: TemplateMedicine & { medicineName: string } = {
+        medicineId: `ai_${Date.now()}`,
+        medicineName: medicineName,
+        dosage: '',
+        frequency,
+        duration,
+      };
+
+      setFormData((prev: CaseTemplate) => ({
+        ...prev,
+        medicines: [...prev.medicines, newMed],
+      }));
+    } catch (err) {
+      console.warn('Groq AI template parse failed:', err);
+      // Fallback: add raw text as medicine name
+      const fallbackMed: TemplateMedicine & { medicineName: string } = {
+        medicineId: `custom_${Date.now()}`,
+        medicineName: raw,
+        dosage: '',
+        frequency: '',
+        duration: '7 Days',
+      };
+      setFormData((prev: CaseTemplate) => ({
+        ...prev,
+        medicines: [...prev.medicines, fallbackMed],
+      }));
+    } finally {
+      setIsParsing(false);
+    }
+  };
 
   const handleAddMedicineFromModal = (med: TemplateMedicine & { medicineName: string }) => {
     setFormData((prev: CaseTemplate) => ({
@@ -180,6 +229,37 @@ export default function TemplateEditor({ template, onSave, onCancel, onPreview }
           </button>
         </div>
 
+        {/* ✨ AI Sentence Input — type "dolo 500 sakali ratri 15 days" and press Enter */}
+        <div className="flex items-center gap-2 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-2.5">
+          <Sparkles className="w-4 h-4 text-indigo-500 shrink-0" />
+          <input
+            type="text"
+            value={sentenceInput}
+            onChange={(e) => setSentenceInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSentenceAdd();
+              }
+            }}
+            placeholder='⚡ Type sentence: "dolo 500 sakali ratri 15 days" → Enter'
+            className="flex-1 bg-transparent border-none outline-none text-sm text-gray-800 placeholder-indigo-400/70 font-medium"
+            disabled={isParsing}
+          />
+          {isParsing ? (
+            <Loader2 className="w-4 h-4 text-indigo-500 animate-spin shrink-0" />
+          ) : (
+            <button
+              type="button"
+              onClick={handleSentenceAdd}
+              disabled={!sentenceInput.trim()}
+              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add
+            </button>
+          )}
+        </div>
+
         {errors.medicines && (
           <div className="bg-red-50 text-red-700 border border-red-200 p-3 rounded-lg text-xs font-semibold flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
@@ -190,7 +270,7 @@ export default function TemplateEditor({ template, onSave, onCancel, onPreview }
         <div className="space-y-3">
           {formData.medicines.length === 0 ? (
             <div className="text-center py-8 text-gray-400 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
-              No medicines added yet. Click "+ Add Medicine" to pick from formulary.
+              No medicines added yet. Type a sentence above or click "+ Add Medicine" to start.
             </div>
           ) : (
             formData.medicines.map((item: TemplateMedicine, idx: number) => (
