@@ -227,8 +227,11 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
       className="rx-paper-root"
       style={{
         boxSizing: 'border-box',
-        width: '100%',
+        width: '210mm',
+        minWidth: '210mm',
+        maxWidth: '210mm',
         height: '297mm',
+        minHeight: '297mm',
         maxHeight: '297mm',
         backgroundColor: '#ffffff',
         fontFamily: "'Inter', sans-serif",
@@ -239,6 +242,8 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
         fontSize: '11px',
         lineHeight: 1.15,
         overflow: 'hidden',
+        margin: 0,
+        padding: 0,
         pageBreakAfter: 'avoid' as any,
         pageBreakInside: 'avoid' as any,
       }}
@@ -249,10 +254,12 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
       <div 
         className="clinic-print-header" 
         style={{ 
-          paddingTop: '10mm', 
+          paddingTop: '6mm', 
+          paddingLeft: '4mm',
+          paddingRight: '4mm',
           marginBottom: '4px',
           visibility: (hideHeader || printOnStationery) ? 'hidden' : 'visible',
-          height: (hideHeader || printOnStationery) ? '40mm' : 'auto',
+          height: (hideHeader || printOnStationery) ? '38mm' : 'auto',
         }}
       >
         {/* Title Row */}
