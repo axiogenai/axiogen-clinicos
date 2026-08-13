@@ -86,13 +86,10 @@ export const GroqTranslatedCell: React.FC<{
 }> = ({ freq, lang, notes }) => {
   const cleanFreq = cleanFrequencyForPrint(freq);
   const cleanNotes = (notes || '').trim();
-
   const fullTextToTranslate = cleanNotes
     ? (cleanFreq && cleanFreq !== '-' ? `${cleanFreq} - ${cleanNotes}` : cleanNotes)
     : cleanFreq;
-
   const [aiText, setAiText] = useState<string | null>(null);
-
   useEffect(() => {
     if (!fullTextToTranslate || fullTextToTranslate === '-') {
       setAiText(null);
@@ -108,13 +105,10 @@ export const GroqTranslatedCell: React.FC<{
       .catch(() => {});
     return () => { isMounted = false; };
   }, [fullTextToTranslate, lang]);
-
   if (!fullTextToTranslate || fullTextToTranslate === '-') {
     return <span>-</span>;
   }
-
   const displayText = aiText || translateMedicalText(fullTextToTranslate, lang);
-
   return (
     <div style={{ whiteSpace: 'pre-line', lineHeight: '1.3', fontSize: '11.5px', fontWeight: 600 }}>
       {displayText}
