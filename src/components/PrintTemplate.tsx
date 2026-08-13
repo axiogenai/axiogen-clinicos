@@ -312,9 +312,9 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                 paddingTop: '4px',
               }}
             >
-              {(clinicNameEn && clinicNameEn !== 'Clinics' && !clinicNameEn.toLowerCase().includes('shingare'))
-                ? clinicNameEn
-                : 'स्किन & कॉस्मेटीक क्लिनिक'}
+              {(!clinicNameEn || clinicNameEn.toLowerCase().includes('clinic'))
+                ? 'स्किन & कॉस्मेटीक क्लिनिक'
+                : clinicNameEn}
             </span>
           </div>
         </div>
