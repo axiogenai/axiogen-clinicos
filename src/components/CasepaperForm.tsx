@@ -267,6 +267,7 @@ const COUNSELLING = [
 export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCasePaper, onBack }: CasepaperFormProps) {
   const { templates, queue, updateQueueStatus, setToast } = useClinic();
   const [searchQuery, setSearchQuery] = useState('');
+  const [sentenceInput, setSentenceInput] = useState('');
   const [templateSearchQuery, setTemplateSearchQuery] = useState('');
   const [showTemplateDropdown, setShowTemplateDropdown] = useState(false);
   const [dbMedicines, setDbMedicines] = useState<any[]>(initialLocalMedicines);
@@ -1033,6 +1034,40 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
               </span>
             </div>
             
+            {/* Free-text Sentence Input Bar */}
+            <div className="flex items-center gap-2 bg-[#faf9f6] border border-[#e4e2e1] rounded-xl p-2.5 mb-3">
+              <input
+                type="text"
+                value={sentenceInput}
+                onChange={(e) => setSentenceInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (sentenceInput.trim()) {
+                      addSentenceWithGroqAI(sentenceInput.trim());
+                      setSentenceInput('');
+                    }
+                  }
+                }}
+                className="flex-1 bg-transparent border-none outline-none text-sm text-[#1a1c1a] font-medium"
+                placeholder="Type here and press Enter to add..."
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (sentenceInput.trim()) {
+                    addSentenceWithGroqAI(sentenceInput.trim());
+                    setSentenceInput('');
+                  }
+                }}
+                disabled={!sentenceInput.trim()}
+                className="px-3.5 py-1.5 bg-[#047857] hover:bg-[#065f46] text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 shrink-0"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add
+              </button>
+            </div>
+
             {/* Medicine Search */}
             <div className="relative mb-4">
               <div className="relative">
