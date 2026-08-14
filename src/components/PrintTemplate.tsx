@@ -394,8 +394,8 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
             <div style={{ position: "absolute", top: "11.5mm", left: "20mm", fontSize: "12.5px" }}>
               {patient.village || ""}
             </div>
-            {/* Age/Sex slot (top: 9.5mm, left: 135mm) */}
-            <div style={{ position: "absolute", top: "9.5mm", left: "135mm", fontSize: "12.5px" }}>
+            {/* Age/Sex slot (top: 9.9mm, left: 135mm) */}
+            <div style={{ position: "absolute", top: "9.9mm", left: "135mm", fontSize: "12.5px" }}>
               {patient.age} Yrs / {patient.gender === "M" ? "Male" : "Female"}
             </div>
           </div>
@@ -523,6 +523,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                 marginTop: 'auto',
                 paddingTop: '6px',
                 borderTop: printOnStationery ? 'none' : '1px dashed #ccc',
+                transform: printOnStationery ? 'translateY(15mm)' : 'none',
               }}
             >
               <span style={{ width: '50%', visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
@@ -810,6 +811,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                 marginTop: 'auto',
                 paddingTop: '6px',
                 borderTop: printOnStationery ? 'none' : '1px dashed #ccc',
+                transform: printOnStationery ? 'translateY(15mm)' : 'none',
               }}
             >
               <span style={{ width: '50%', visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
