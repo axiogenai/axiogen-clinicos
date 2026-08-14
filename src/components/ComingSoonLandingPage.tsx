@@ -14,27 +14,27 @@ export default function ComingSoonLandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#faf9f6] text-[#1a1c1a] font-sans selection:bg-[#047857] selection:text-white flex flex-col items-center justify-between relative overflow-hidden p-4 sm:p-8 md:p-12">
+    <div className="min-h-screen bg-[#faf9f6] text-[#1a1c1a] font-sans selection:bg-[#047857] selection:text-white flex flex-col items-center justify-start relative overflow-x-hidden pt-3 sm:pt-5 pb-12 px-4 sm:px-8 md:px-12">
       
       {/* Subtle Background Aesthetic Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-to-b from-[#ecfdf5]/80 via-[#f5f5f0]/40 to-transparent blur-3xl pointer-events-none rounded-full" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-gradient-to-b from-[#ecfdf5]/80 via-[#f5f5f0]/40 to-transparent blur-3xl pointer-events-none rounded-full" />
 
       {/* ── Centered Logo & Brand Mark ── */}
-      <div className="relative z-10 pt-3 sm:pt-6 flex flex-col items-center justify-center text-center">
+      <div className="relative z-10 flex flex-col items-center justify-center text-center">
         <img 
           src={logoHd} 
           alt="Shingare Skin Clinic Logo" 
-          className="h-16 sm:h-20 w-auto object-contain drop-shadow-md mb-3" 
+          className="h-14 sm:h-18 w-auto object-contain drop-shadow-md mb-2" 
         />
         <h1 className="text-2xl sm:text-4xl font-serif font-bold text-[#1a1c1a] tracking-tight leading-none">
           Shingare Skin & Hair Clinic
         </h1>
-        <p className="text-xs sm:text-sm text-[#047857] tracking-widest font-bold mt-1.5 uppercase">
+        <p className="text-xs sm:text-sm text-[#047857] tracking-widest font-bold mt-1 uppercase">
           Dermatology & Aesthetic Medicine
         </p>
         
         {/* Made with love link */}
-        <div className="mt-2.5 flex items-center gap-1.5 text-xs text-[#78716c]">
+        <div className="mt-2 flex items-center gap-1.5 text-xs text-[#78716c]">
           <span>Made with ❤️ by</span>
           <a
             href="https://team.axiogen.in"
@@ -47,8 +47,8 @@ export default function ComingSoonLandingPage() {
         </div>
 
         {/* Status Pill Badge */}
-        <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#ecfdf5] border-2 border-[#10b981]/35 text-[#047857] text-xs sm:text-sm font-extrabold tracking-wider uppercase shadow-md mt-5">
-          <Clock className="w-4 h-4 sm:w-4.5 h-4.5 text-[#047857]" />
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#ecfdf5] border-2 border-[#10b981]/35 text-[#047857] text-xs sm:text-sm font-extrabold tracking-wider uppercase shadow-sm mt-3.5">
+          <Clock className="w-4 h-4 text-[#047857]" />
           <span>Official Clinic Website • Launching Soon</span>
         </div>
       </div>
@@ -61,12 +61,12 @@ export default function ComingSoonLandingPage() {
           Advanced Dermatology & <span className="text-[#047857]">Radiant Skin Care</span>
         </h2>
 
-        <p className="mt-5 text-sm sm:text-base md:text-lg text-[#57534e] max-w-2xl font-normal leading-relaxed">
+        <p className="mt-4 text-sm sm:text-base md:text-lg text-[#57534e] max-w-2xl font-normal leading-relaxed">
           Dr. Pramod Shingare’s premier skin, hair, and laser clinic is crafting a brand-new digital patient portal for seamless online appointments and dermatological care.
         </p>
 
         {/* Notify / Subscribe Box */}
-        <div className="mt-8 w-full max-w-md px-1.5">
+        <div className="mt-6 w-full max-w-md px-1.5">
           {emailSubscribed ? (
             <div className="p-4 rounded-2xl bg-[#ecfdf5] border border-[#a7f3d0] text-[#047857] flex items-center justify-center gap-2 text-sm font-bold shadow-md">
               <CheckCircle2 className="w-5 h-5 text-[#047857]" />
@@ -94,7 +94,7 @@ export default function ComingSoonLandingPage() {
         </div>
 
         {/* ── Key Clinical Specializations Grid ── */}
-        <div className="mt-12 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-left">
+        <div className="mt-10 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-left">
           
           <div className="p-4 rounded-2xl bg-white border border-[#e7e5e4] shadow-md hover:shadow-lg transition-all">
             <div className="w-10 h-10 rounded-xl bg-[#ecfdf5] border border-[#a7f3d0] flex items-center justify-center text-[#047857] mb-3">
@@ -139,7 +139,7 @@ export default function ComingSoonLandingPage() {
         </div>
 
         {/* ── Doctor Info Banner ── */}
-        <div className="mt-10 w-full p-5 sm:p-7 rounded-3xl bg-white border border-[#e7e5e4] shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-5 text-left">
+        <div className="mt-8 w-full p-5 sm:p-7 rounded-3xl bg-white border border-[#e7e5e4] shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-5 text-left">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-[#047857] text-white font-bold flex items-center justify-center text-lg shadow-md shrink-0">
               PS
@@ -170,7 +170,7 @@ export default function ComingSoonLandingPage() {
       </main>
 
       {/* ── Footer ── */}
-      <footer className="relative z-10 w-full max-w-4xl mx-auto pt-5 border-t border-[#e7e5e4] text-center text-xs text-[#78716c]">
+      <footer className="relative z-10 w-full max-w-4xl mx-auto pt-4 border-t border-[#e7e5e4] text-center text-xs text-[#78716c]">
         <p>© {new Date().getFullYear()} Shingare Skin & Hair Clinic. All rights reserved.</p>
       </footer>
 
