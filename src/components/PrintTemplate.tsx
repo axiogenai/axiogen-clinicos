@@ -391,11 +391,11 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               {formatDate(casePaper.date)}
             </div>
             {/* Village slot (top: 11.5mm, left: 20mm) */}
-            <div style={{ position: "absolute", top: "11.5mm", left: "20mm", fontSize: "12.5px" }}>
+            <div style={{ position: "absolute", top: "8.5mm", left: "20mm", fontSize: "12.5px" }}>
               {patient.village || ""}
             </div>
             {/* Age/Sex slot (top: 9.7mm, left: 135mm) */}
-            <div style={{ position: "absolute", top: "8.7mm", left: "135mm", fontSize: "12.5px" }}>
+            <div style={{ position: "absolute", top: "8.7mm", left: "130mm", fontSize: "12.5px" }}>
               {patient.age} Yrs / {patient.gender === "M" ? "Male" : "Female"}
             </div>
           </div>
@@ -527,7 +527,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               }}
             >
               <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
-              <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: printOnStationery ? 'translate(-15mm, 9.7mm)' : 'none' }}>
+              <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: printOnStationery ? 'translate(-15mm, 5.7mm)' : 'none' }}>
                 <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Follow up - </span>
                 <span>{formatDate(casePaper.followUpDate)}</span>
               </span>
@@ -813,7 +813,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               }}
             >
               <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
-              <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: printOnStationery ? 'translate(-15mm, 9.7mm)' : 'none' }}>
+              <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: printOnStationery ? 'translate(-15mm, 5.7mm)' : 'none' }}>
                 <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Follow up - </span>
                 <span>{formatDate(casePaper.followUpDate)}</span>
               </span>
