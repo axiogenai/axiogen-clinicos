@@ -383,19 +383,19 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
           /* PRE-PRINTED STATIONERY MODE: Absolute positioning on top of preprinted slots */
           <div style={{ position: "relative", width: "100%", height: "100%", fontWeight: 700, color: "#111" }}>
             {/* Name slot (x = 4.0 cm = 40mm from left edge -> inside pad container: left 20mm) */}
-            <div style={{ position: "absolute", top: "5.5mm", left: "20mm", fontSize: "13px" }}>
+            <div style={{ position: "absolute", top: "0.5mm", left: "20mm", fontSize: "13px" }}>
               {patient.name}
             </div>
-            {/* Date slot (top: 4.5mm, left: 138.5mm) */}
-            <div style={{ position: "absolute", top: "4.5mm", left: "138.5mm", fontSize: "12.5px" }}>
+            {/* Date slot (x = 15.5 cm = 155mm from left edge -> inside pad container: left 135mm) */}
+            <div style={{ position: "absolute", top: "0.5mm", left: "135mm", fontSize: "12.5px" }}>
               {formatDate(casePaper.date)}
             </div>
-            {/* Village slot (top: 11.5mm, left: 20mm) */}
-            <div style={{ position: "absolute", top: "11.5mm", left: "20mm", fontSize: "12.5px" }}>
+            {/* Village slot (x = 4.0 cm = 40mm) */}
+            <div style={{ position: "absolute", top: "7.5mm", left: "20mm", fontSize: "12.5px" }}>
               {patient.village || ""}
             </div>
-            {/* Age/Sex slot (top: 9.7mm, left: 135mm) */}
-            <div style={{ position: "absolute", top: "9.7mm", left: "135mm", fontSize: "12.5px" }}>
+            {/* Age/Sex slot (x = 15.5 cm = 155mm) */}
+            <div style={{ position: "absolute", top: "7.5mm", left: "135mm", fontSize: "12.5px" }}>
               {patient.age} Yrs / {patient.gender === "M" ? "Male" : "Female"}
             </div>
           </div>
@@ -526,7 +526,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               }}
             >
               <span style={{ width: '50%', visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
-              <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: 'translate(-13mm, 15mm)' }}>
+              <span style={{ fontWeight: 700, color: '#111' }}>
                 <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Follow up - </span>
                 <span style={{ color: '#111' }}>
                   {formatDate(casePaper.followUpDate)}
@@ -813,7 +813,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               }}
             >
               <span style={{ width: '50%', visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
-              <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: 'translate(-13mm, 15mm)' }}>
+              <span style={{ fontWeight: 700, color: '#111' }}>
                 <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Follow up - </span>
                 <span style={{ color: '#111' }}>
                   {formatDate(casePaper.followUpDate)}
