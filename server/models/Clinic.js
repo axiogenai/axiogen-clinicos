@@ -48,6 +48,11 @@ const Clinic = sequelize.define('Clinic', {
     type: DataTypes.TEXT,
     allowNull: true
   },
+  customFrequencies: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: []
+  },
   sections: {
     type: DataTypes.JSON,
     defaultValue: {
