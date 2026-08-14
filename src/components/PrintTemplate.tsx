@@ -511,6 +511,28 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                 </div>
               )}
             </div>
+            {/* Signature & Follow-up Line */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontWeight: 600,
+                fontSize: '12px',
+                color: '#222',
+                marginTop: 'auto',
+                paddingTop: '6px',
+                borderTop: printOnStationery ? 'none' : '1px dashed #ccc',
+              }}
+            >
+              <span style={{ width: '50%', visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
+              <span style={{ fontWeight: 700, color: '#111' }}>
+                <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Follow up - </span>
+                <span style={{ visibility: 'visible', color: '#111' }}>
+                  {formatDate(casePaper.followUpDate)}
+                </span>
+              </span>
+            </div>
           </div>
         </div>
       ) : (
@@ -779,21 +801,23 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
             {/* Signature & Follow-up Line */}
             <div
               style={{
-                position: 'absolute',
-                bottom: '2px',
-                left: '6mm',
-                right: '6mm',
                 display: 'flex',
                 justifyContent: 'space-between',
+                alignItems: 'center',
                 fontWeight: 600,
                 fontSize: '12px',
                 color: '#222',
+                marginTop: 'auto',
+                paddingTop: '6px',
+                borderTop: printOnStationery ? 'none' : '1px dashed #ccc',
               }}
             >
-              <span style={{ width: '55%', visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
-              <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>
-                <span>Follow up - </span>
-                {formatDate(casePaper.followUpDate)}
+              <span style={{ width: '50%', visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
+              <span style={{ fontWeight: 700, color: '#111' }}>
+                <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Follow up - </span>
+                <span style={{ visibility: 'visible', color: '#111' }}>
+                  {formatDate(casePaper.followUpDate)}
+                </span>
               </span>
             </div>
           </main>
