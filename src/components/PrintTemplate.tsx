@@ -383,11 +383,11 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
           /* PRE-PRINTED STATIONERY MODE: Absolute positioning on top of preprinted slots */
           <div style={{ position: "relative", width: "100%", height: "100%", fontWeight: 700, color: "#111" }}>
             {/* Name slot (x = 4.0 cm = 40mm from left edge -> inside pad container: left 20mm) */}
-            <div style={{ position: "absolute", top: "5.5mm", left: "20mm", fontSize: "13px" }}>
+            <div style={{ position: "absolute", top: "2.5mm", left: "20mm", fontSize: "13px" }}>
               {patient.name}
             </div>
             {/* Date slot (top: 4.5mm, left: 138.5mm) */}
-            <div style={{ position: "absolute", top: "4.5mm", left: "138.5mm", fontSize: "12.5px" }}>
+            <div style={{ position: "absolute", top: "2.5mm", left: "138.5mm", fontSize: "12.5px" }}>
               {formatDate(casePaper.date)}
             </div>
             {/* Village slot (top: 11.5mm, left: 20mm) */}
@@ -395,7 +395,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               {patient.village || ""}
             </div>
             {/* Age/Sex slot (top: 9.7mm, left: 135mm) */}
-            <div style={{ position: "absolute", top: "9.7mm", left: "135mm", fontSize: "12.5px" }}>
+            <div style={{ position: "absolute", top: "8.7mm", left: "135mm", fontSize: "12.5px" }}>
               {patient.age} Yrs / {patient.gender === "M" ? "Male" : "Female"}
             </div>
           </div>
@@ -527,7 +527,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               }}
             >
               <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
-              <span style={{ fontWeight: 700, color: '#111' }}>
+              <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: printOnStationery ? 'translate(-15mm, 10mm)' : 'none' }}>
                 <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Follow up - </span>
                 <span>{formatDate(casePaper.followUpDate)}</span>
               </span>
@@ -536,7 +536,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
         </div>
       ) : (
         /* OPTION B: TEMPLATE 1 - DERMATOLOGY / DETAILED PAD LAYOUT */
-        <div style={{ display: 'flex', height: '175mm', width: '220mm', overflow: 'hidden', borderTop: printOnStationery ? 'none' : '3px double #a53b3b' }}>
+        <div style={{ display: 'flex', height: '175mm', width: '220mm', overflow: printOnStationery ? 'visible' : 'hidden', borderTop: printOnStationery ? 'none' : '3px double #a53b3b' }}>
           {/* ─── LEFT SIDEBAR (x: 20mm to 73mm = 53mm W, y: 70mm to 245mm = 175mm H) ─── */}
           <aside
             style={{
@@ -813,7 +813,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               }}
             >
               <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
-              <span style={{ fontWeight: 700, color: '#111' }}>
+              <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: printOnStationery ? 'translate(-15mm, 10mm)' : 'none' }}>
                 <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Follow up - </span>
                 <span>{formatDate(casePaper.followUpDate)}</span>
               </span>
