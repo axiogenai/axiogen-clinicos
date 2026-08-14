@@ -439,7 +439,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
       {/* ══════════════════════════════════════════════════════ */}
       {isGeneralPad ? (
         /* OPTION A: TEMPLATE 2 - GENERAL MEDICINE PAD LAYOUT */
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, height: '175mm', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, height: '175mm', overflow: printOnStationery ? 'visible' : 'hidden' }}>
           <div
             style={{
               display: 'flex',
@@ -526,7 +526,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               }}
             >
               <span style={{ width: '50%', visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
-              <span style={{ fontWeight: 700, color: '#111' }}>
+              <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: 'translate(-13mm, 15mm)' }}>
                 <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Follow up - </span>
                 <span style={{ color: '#111' }}>
                   {formatDate(casePaper.followUpDate)}
@@ -537,7 +537,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
         </div>
       ) : (
         /* OPTION B: TEMPLATE 1 - DERMATOLOGY / DETAILED PAD LAYOUT */
-        <div style={{ display: 'flex', height: '175mm', width: '220mm', overflow: 'hidden', borderTop: printOnStationery ? 'none' : '3px double #a53b3b' }}>
+        <div style={{ display: 'flex', height: '175mm', width: '220mm', overflow: printOnStationery ? 'visible' : 'hidden', borderTop: printOnStationery ? 'none' : '3px double #a53b3b' }}>
           {/* ─── LEFT SIDEBAR (x: 20mm to 73mm = 53mm W, y: 70mm to 245mm = 175mm H) ─── */}
           <aside
             style={{
@@ -813,7 +813,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               }}
             >
               <span style={{ width: '50%', visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
-              <span style={{ fontWeight: 700, color: '#111' }}>
+              <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: 'translate(-13mm, 15mm)' }}>
                 <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Follow up - </span>
                 <span style={{ color: '#111' }}>
                   {formatDate(casePaper.followUpDate)}
