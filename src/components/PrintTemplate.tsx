@@ -403,31 +403,31 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                     /* PLAIN PAPER MODE: Fully Dynamic Flexbox Layout - Automatically adjusts to any label language length */
           <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", width: "100%", height: "100%" }}>
             {/* Row 1: Name & Date */}
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", width: "100%" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: "1 1 62%", minWidth: 0 }}>
-                <span style={{ whiteSpace: "nowrap", fontSize: "12.5px" }}>{labels.name}</span>
-                <span style={{ flex: 1, borderBottom: "1px solid #333", paddingLeft: "4px", fontWeight: 700, color: "#111", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: "12px", width: "100%" }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: "6px", flex: "1 1 62%", minWidth: 0 }}>
+                <span style={{ whiteSpace: "nowrap", fontSize: "12.5px", fontWeight: 600 }}>{labels.name}</span>
+                <span style={{ flex: 1, borderBottom: "1px solid #333", paddingLeft: "4px", paddingBottom: "1px", fontWeight: 700, color: "#111", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {patient.name}
                 </span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: "0 0 36%", minWidth: 0 }}>
-                <span style={{ whiteSpace: "nowrap", fontSize: "12.5px" }}>{labels.date}</span>
-                <span style={{ flex: 1, borderBottom: "1px solid #333", paddingLeft: "4px", fontWeight: 700, color: "#111", whiteSpace: "nowrap" }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: "6px", flex: "0 0 36%", minWidth: 0 }}>
+                <span style={{ whiteSpace: "nowrap", fontSize: "12.5px", fontWeight: 600 }}>{labels.date}</span>
+                <span style={{ flex: 1, borderBottom: "1px solid #333", paddingLeft: "4px", paddingBottom: "1px", fontWeight: 700, color: "#111", whiteSpace: "nowrap" }}>
                   {formatDate(casePaper.date)}
                 </span>
               </div>
             </div>
             {/* Row 2: Village/Address & Age/Sex */}
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", width: "100%" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: "1 1 62%", minWidth: 0 }}>
-                <span style={{ whiteSpace: "nowrap", fontSize: "12.5px" }}>{labels.village}</span>
-                <span style={{ flex: 1, borderBottom: "1px solid #333", paddingLeft: "4px", fontWeight: 700, color: "#111", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: "12px", width: "100%" }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: "6px", flex: "1 1 62%", minWidth: 0 }}>
+                <span style={{ whiteSpace: "nowrap", fontSize: "12.5px", fontWeight: 600 }}>{labels.village}</span>
+                <span style={{ flex: 1, borderBottom: "1px solid #333", paddingLeft: "4px", paddingBottom: "1px", fontWeight: 700, color: "#111", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {patient.village || ""}
                 </span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: "0 0 36%", minWidth: 0 }}>
-                <span style={{ whiteSpace: "nowrap", fontSize: "12.5px" }}>{labels.age}</span>
-                <span style={{ flex: 1, borderBottom: "1px solid #333", paddingLeft: "4px", fontWeight: 700, color: "#111", whiteSpace: "nowrap" }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: "6px", flex: "0 0 36%", minWidth: 0 }}>
+                <span style={{ whiteSpace: "nowrap", fontSize: "12.5px", fontWeight: 600 }}>{labels.age}</span>
+                <span style={{ flex: 1, borderBottom: "1px solid #333", paddingLeft: "4px", paddingBottom: "1px", fontWeight: 700, color: "#111", whiteSpace: "nowrap" }}>
                   {patient.age} Yrs / {patient.gender === "M" ? "Male" : "Female"}
                 </span>
               </div>
@@ -518,19 +518,18 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 fontWeight: 600,
-                fontSize: '12px',
+                fontSize: '11.5px',
                 color: '#222',
                 marginTop: 'auto',
                 paddingTop: '4px',
-                borderTop: printOnStationery ? 'none' : '1px dashed #ccc',
+                paddingBottom: '2px',
+                borderTop: printOnStationery ? 'none' : '1px dashed #999',
               }}
             >
-              <span style={{ width: '50%', visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
+              <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
               <span style={{ fontWeight: 700, color: '#111' }}>
                 <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Follow up - </span>
-                <span style={{ color: '#111' }}>
-                  {formatDate(casePaper.followUpDate)}
-                </span>
+                <span>{formatDate(casePaper.followUpDate)}</span>
               </span>
             </div>
           </div>
@@ -805,19 +804,18 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 fontWeight: 600,
-                fontSize: '12px',
+                fontSize: '11.5px',
                 color: '#222',
                 marginTop: 'auto',
                 paddingTop: '4px',
-                borderTop: printOnStationery ? 'none' : '1px dashed #ccc',
+                paddingBottom: '2px',
+                borderTop: printOnStationery ? 'none' : '1px dashed #999',
               }}
             >
-              <span style={{ width: '50%', visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
+              <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
               <span style={{ fontWeight: 700, color: '#111' }}>
                 <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Follow up - </span>
-                <span style={{ color: '#111' }}>
-                  {formatDate(casePaper.followUpDate)}
-                </span>
+                <span>{formatDate(casePaper.followUpDate)}</span>
               </span>
             </div>
           </main>
