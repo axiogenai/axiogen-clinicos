@@ -527,7 +527,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               }}
             >
               <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
-              <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: printOnStationery ? 'translate(-15mm, 10mm)' : 'none' }}>
+              <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: printOnStationery ? 'translate(-15mm, 9.7mm)' : 'none' }}>
                 <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Follow up - </span>
                 <span>{formatDate(casePaper.followUpDate)}</span>
               </span>
@@ -813,7 +813,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               }}
             >
               <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
-              <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: printOnStationery ? 'translate(-15mm, 10mm)' : 'none' }}>
+              <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: printOnStationery ? 'translate(-15mm, 9.7mm)' : 'none' }}>
                 <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Follow up - </span>
                 <span>{formatDate(casePaper.followUpDate)}</span>
               </span>
