@@ -394,8 +394,8 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
             <div style={{ position: "absolute", top: "11.5mm", left: "20mm", fontSize: "12.5px" }}>
               {patient.village || ""}
             </div>
-            {/* Age/Sex slot (top: 9.9mm, left: 135mm) */}
-            <div style={{ position: "absolute", top: "9.9mm", left: "135mm", fontSize: "12.5px" }}>
+            {/* Age/Sex slot (top: 9.7mm, left: 135mm) */}
+            <div style={{ position: "absolute", top: "9.7mm", left: "135mm", fontSize: "12.5px" }}>
               {patient.age} Yrs / {patient.gender === "M" ? "Male" : "Female"}
             </div>
           </div>
