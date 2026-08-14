@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Users, Clock, Stethoscope, CheckCircle2, ArrowRight, FileText, Phone, MapPin, Search, X, Trash2, UserPlus } from 'lucide-react';
 import type { Patient, QueueItem } from '../data/patients';
 import PatientEMRHistoryModal from './PatientEMRHistoryModal';
+import ConfirmModal from './ConfirmModal';
 import { useClinic } from '../context/ClinicContext';
 
 interface QueueViewProps {
@@ -10,7 +11,7 @@ interface QueueViewProps {
   onSelectPatient: (queueItem: QueueItem, patient: Patient) => void;
 }
 
-const EMPTY_FORM = { name: '', age: '', phone: '' };
+const EMPTY_FORM = { name: '', age: '', gender: 'M' as 'M' | 'F' | 'Other', phone: '', village: '' };
 
 export default function QueueView({ queue, patients, onSelectPatient }: QueueViewProps) {
   const { deletePatient, registerAndEnqueue, patients: allPatients } = useClinic();
@@ -20,6 +21,7 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
   const [regForm, setRegForm] = useState(EMPTY_FORM);
   const [regErrors, setRegErrors] = useState<Record<string, string>>({});
   const [regLoading, setRegLoading] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   // Duplicate phone check
   const duplicatePatient = useMemo(() => {
@@ -42,7 +44,9 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
       const patientData = {
         name,
         age: regForm.age ? Number(regForm.age) : 0,
+        gender: regForm.gender || 'M',
         phone: regForm.phone.replace(/\D/g, ''),
+        village: (regForm.village || '').trim(),
         complaint: 'Walk-in consultation',
       };
       const result = await registerAndEnqueue(patientData, duplicatePatient || undefined);
@@ -229,9 +233,13 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                       <button
                         type="button"
                         onClick={() => {
-                          if (window.confirm(`⚠️ Are you sure you want to permanently delete patient '${p.name}' (ID: ${p.id}) from database registers?`)) {
-                            deletePatient(p.id);
-                          }
+                          setConfirmAction({
+                            title: 'Delete Patient Record',
+                            message: `⚠️ Are you sure you want to permanently delete patient '${p.name}' (ID: ${p.id}) from database registers?`,
+                            onConfirm: () => {
+                              deletePatient(p.id);
+                            }
+                          });
                         }}
                         className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all border border-red-200 cursor-pointer"
                         title="Delete Patient Record from DB"
@@ -564,23 +572,63 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                 {regErrors.name && <span className="text-xs text-red-500 mt-0.5 block">{regErrors.name}</span>}
               </div>
 
-              {/* Age & Phone stacked on small screens */}
+              {/* Age & Gender Row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Age */}
+                {/* Age Input */}
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Age (Optional)</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Age (Years) *</label>
                   <input
                     type="number"
                     value={regForm.age}
                     onChange={e => setRegForm(f => ({ ...f, age: e.target.value }))}
-                    placeholder="Age in years"
-                    min={1} max={120}
-                    className={`form-input w-full text-sm ${regErrors.age ? 'border-red-400 bg-red-50' : ''}`}
+                    placeholder="उदा. 28"
+                    min={0} max={120}
+                    className={`form-input w-full text-sm font-semibold ${regErrors.age ? 'border-red-400 bg-red-50' : ''}`}
                   />
                   {regErrors.age && <span className="text-xs text-red-500 mt-0.5 block">{regErrors.age}</span>}
                 </div>
 
-                {/* Phone */}
+                {/* Gender Selector */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Gender</label>
+                  <div className="flex gap-2">
+                    {[
+                      { val: 'M' as const, label: 'Male' },
+                      { val: 'F' as const, label: 'Female' },
+                      { val: 'Other' as const, label: 'Other' }
+                    ].map(g => (
+                      <button
+                        key={g.val}
+                        type="button"
+                        onClick={() => setRegForm(f => ({ ...f, gender: g.val }))}
+                        className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-all ${
+                          regForm.gender === g.val
+                            ? 'bg-[#047857] text-white border-[#047857] shadow-xs'
+                            : 'bg-white text-[#4b463e] border-[#e4e2e1] hover:bg-[#faf9f6]'
+                        }`}
+                      >
+                        {g.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Village/City & Phone */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Village / City */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Village / City</label>
+                  <input
+                    type="text"
+                    value={regForm.village}
+                    onChange={e => setRegForm(f => ({ ...f, village: e.target.value }))}
+                    placeholder="उदा. पेठ वडगांव"
+                    className="form-input w-full text-sm font-medium"
+                  />
+                </div>
+
+                {/* Mobile Phone */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Mobile Number</label>
                   <input
@@ -589,7 +637,7 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                     onChange={e => setRegForm(f => ({ ...f, phone: e.target.value }))}
                     placeholder="10-digit mobile number"
                     maxLength={10}
-                    className="form-input w-full text-sm"
+                    className="form-input w-full text-sm font-medium"
                   />
                 </div>
               </div>
@@ -618,6 +666,19 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
             </div>
           </div>
         </div>
+      )}
+
+      {/* Confirm Modal */}
+      {confirmAction && (
+        <ConfirmModal
+          isOpen={!!confirmAction}
+          title={confirmAction.title}
+          message={confirmAction.message}
+          confirmText="Delete"
+          cancelText="Cancel"
+          onConfirm={confirmAction.onConfirm}
+          onCancel={() => setConfirmAction(null)}
+        />
       )}
     </div>
   );

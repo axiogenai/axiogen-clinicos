@@ -810,6 +810,21 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
               <p className="text-[10px] sm:text-xs text-[#7c766d] mt-0.5 truncate">
                 {patient.age} Yrs / {patient.gender === 'M' ? 'Male' : 'Female'} · {patient.phone} · {patient.village || 'N/A'}
               </p>
+            </div>
+          </div>
+
+          {/* Prescription Date (Custom Date Picker) */}
+          <div className="flex items-center gap-2 self-start sm:self-auto bg-white px-3 py-1.5 rounded-xl border border-[#e4e2e1] shadow-xs">
+            <Calendar className="w-4 h-4 text-[#047857] shrink-0" />
+            <div className="flex flex-col">
+              <label className="text-[9px] font-bold uppercase tracking-wider text-[#7c766d]">Prescription Date</label>
+              <input
+                type="date"
+                value={casePaper.date || new Date().toISOString().split('T')[0]}
+                onChange={(e) => onUpdateCasePaper({ ...casePaper, date: e.target.value })}
+                className="text-xs font-bold text-[#1a1c1a] bg-transparent border-0 p-0 focus:ring-0 cursor-pointer"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -1551,7 +1566,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
               </button>
             </div>
 
-            {!showCustomDatePicker ? (
+            <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-2">
                 {[
                   { label: '3 Days', days: 3 },
@@ -1577,13 +1592,18 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                   );
                 })}
               </div>
-            ) : (
-              <div className="flex items-center gap-3">
+
+              {/* Direct Custom Date Picker */}
+              <div className="flex items-center gap-3 pt-2 border-t border-[#e4e2e1]">
+                <span className="text-xs font-bold text-[#4b463e] flex items-center gap-1.5 shrink-0">
+                  <Calendar className="w-3.5 h-3.5 text-[#047857]" />
+                  Or Custom Follow-up Date:
+                </span>
                 <input
                   type="date"
                   value={casePaper.followUpDate || ''}
                   onChange={(e) => onUpdateCasePaper({ ...casePaper, followUpDate: e.target.value })}
-                  className="form-input w-full sm:w-56"
+                  className="form-input form-input-sm w-auto text-xs font-semibold"
                 />
                 {casePaper.followUpDate && (
                   <button
@@ -1595,7 +1615,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                   </button>
                 )}
               </div>
-            )}
+            </div>
           </div>
 
           {/* ── Bottom Action Bar ── */}
@@ -1710,7 +1730,6 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
           onCancel={() => setConfirmAction(null)}
         />
       )}
-    </div>
     </div>
   );
 }
