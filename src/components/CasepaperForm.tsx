@@ -276,7 +276,11 @@ const COUNSELLING = [
 ];
 
 export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCasePaper, onBack }: CasepaperFormProps) {
-  const { templates, queue, updateQueueStatus, setToast } = useClinic();
+  const { templates, queue, clinicSettings, addCustomFrequency, updateQueueStatus, setToast } = useClinic();
+  const allFrequencies = useMemo(() => {
+    const custom = clinicSettings?.customFrequencies || [];
+    return Array.from(new Set([...custom, ...FREQUENCIES])).filter(Boolean);
+  }, [clinicSettings?.customFrequencies]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sentenceInput, setSentenceInput] = useState('');
   const [templateSearchQuery, setTemplateSearchQuery] = useState('');
@@ -310,6 +314,9 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
       if (translated) {
         updateMedicineField(index, 'frequency', translated);
         setFreqInputDisplay(translated);
+        if (translated) {
+          addCustomFrequency(translated);
+        }
         setToast({ type: 'success', title: 'मराठी रूपांतर', message: `रूपांतरित: "${translated}"` });
       }
     } catch {
@@ -521,6 +528,9 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     const freq = parsed.frequency || (med ? med.defaultFrequency || '' : '');
     const dur = parsed.duration || (med ? med.defaultDuration || '7 Days' : '7 Days');
     const autoCount = calculateMedicineCount({ name: fullName, frequency: freq, duration: dur });
+    if (freq) {
+      addCustomFrequency(freq);
+    }
 
     const newMedicine: CasePaperMedicine = {
       medicineId: med ? med.id : `custom_${Date.now()}`,
@@ -589,6 +599,12 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
         const finalFreq = groqParsed.frequency || (matchedMed?.defaultFrequency || '');
         const finalDur = groqParsed.duration || (matchedMed?.defaultDuration || '7 Days');
         const finalCount = calculateMedicineCount({ name: finalName, frequency: finalFreq, duration: finalDur });
+        if (finalFreq) {
+          addCustomFrequency(finalFreq);
+        }
+        if (finalFreq) {
+          addCustomFrequency(finalFreq);
+        }
 
         finalMedicines = medsWithPlaceholder.map(m =>
           m.medicineId === placeholderId
@@ -1293,7 +1309,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                                 <span className="text-[10px] font-sans font-extrabold uppercase bg-[#047857] text-white px-1.5 py-0.5 rounded">मराठी</span>
                               </div>
                             )}
-                            {FREQUENCIES.filter(f => freqMatchesSearch(f, freqInputDisplay)).map(f => (
+                            {allFrequencies.filter((f: string) => freqMatchesSearch(f, freqInputDisplay)).map((f: string) => (
                               <div
                                 key={f}
                                 onClick={() => {
@@ -1465,7 +1481,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                                   <span className="text-[10px] font-sans font-extrabold uppercase bg-[#047857] text-white px-1.5 py-0.5 rounded">मराठी</span>
                                 </div>
                               )}
-                              {FREQUENCIES.filter(f => freqMatchesSearch(f, freqInputDisplay)).map(f => (
+                              {allFrequencies.filter((f: string) => freqMatchesSearch(f, freqInputDisplay)).map((f: string) => (
                                 <div
                                   key={f}
                                   onClick={() => {

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Trash2, Languages, Loader2 } from 'lucide-react';
 import type { TemplateMedicine } from '../data/templates';
 import { translateFrequencyToMarathi } from '../utils/marathiTranslator';
+import { useClinic } from '../context/ClinicContext';
 
 interface MedicineEditorRowProps {
   item: TemplateMedicine;
@@ -68,6 +69,7 @@ const FREQUENCIES = [
 ];
 
 export default function MedicineEditorRow({ item, index, onUpdate, onRemove }: MedicineEditorRowProps) {
+  const { clinicSettings, addCustomFrequency } = useClinic();
   const [translating, setTranslating] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -89,6 +91,7 @@ export default function MedicineEditorRow({ item, index, onUpdate, onRemove }: M
       const translated = await translateFrequencyToMarathi(item.frequency);
       if (translated) {
         onUpdate(index, 'frequency', translated);
+        addCustomFrequency(translated);
       }
     } catch {
       /* silent */
@@ -98,7 +101,12 @@ export default function MedicineEditorRow({ item, index, onUpdate, onRemove }: M
     }
   };
 
-  const filteredFrequencies = FREQUENCIES.filter(f =>
+  const allFrequencies = Array.from(new Set([
+    ...(clinicSettings?.customFrequencies || []),
+    ...FREQUENCIES
+  ])).filter(Boolean);
+
+  const filteredFrequencies = allFrequencies.filter(f =>
     !item.frequency || f.toLowerCase().includes(item.frequency.toLowerCase())
   );
 

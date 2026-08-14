@@ -20,6 +20,7 @@ export interface ClinicSettings {
   headerTextColor: string;
   pharmacyInfo: string;
   templateVariant?: 'dermatology' | 'general';
+  customFrequencies?: string[];
   sections: {
     showPastHistory: boolean;
     showDrugHistory: boolean;
@@ -60,6 +61,7 @@ export const defaultClinicSettings: ClinicSettings = {
   headerTextColor: "#FFFFFF",
   pharmacyInfo: "",
   templateVariant: "dermatology",
+  customFrequencies: [],
   sections: {
     showPastHistory: true,
     showDrugHistory: true,

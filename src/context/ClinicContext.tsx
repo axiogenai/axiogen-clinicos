@@ -44,6 +44,7 @@ interface ClinicContextType {
   toggleFavoriteTemplate: (templateId: string) => void;
   duplicateTemplate: (templateId: string) => void;
   updateClinicSettings: (settings: ClinicSettings, showToast?: boolean) => void;
+  addCustomFrequency: (frequency: string) => void;
   updatePatientDetails: (
     patientId: string,
     queueId: string,
@@ -83,7 +84,18 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
 
   const [templates, setTemplates] = useState<CaseTemplate[]>([]);
 
-  const [clinicSettings, setClinicSettings] = useState<ClinicSettings>(defaultClinicSettings);
+  const [clinicSettings, setClinicSettings] = useState<ClinicSettings>(() => {
+    try {
+      const savedFrequencies = localStorage.getItem('clinicos_custom_frequencies');
+      if (savedFrequencies) {
+        const parsed = JSON.parse(savedFrequencies);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return { ...defaultClinicSettings, customFrequencies: parsed };
+        }
+      }
+    } catch (e) {}
+    return defaultClinicSettings;
+  });
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
   // Real Supabase + Database Login Action
@@ -176,17 +188,33 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
         setTemplates(parsedTemplates);
       }
       if (dbSettings.status === 'fulfilled' && dbSettings.value) {
-        setClinicSettings((prev) => ({
-          ...prev,
-          clinicNameHi: dbSettings.value.nameHi || prev.clinicNameHi,
-          clinicNameEn: dbSettings.value.nameEn || prev.clinicNameEn,
-          address: dbSettings.value.address || prev.address,
-          phone: dbSettings.value.phone || prev.phone,
-          openingHours: dbSettings.value.openingHours || prev.openingHours,
-          closedDay: dbSettings.value.closedDay || prev.closedDay,
-          headerBgColor: dbSettings.value.headerBgColor || prev.headerBgColor,
-          pharmacyInfo: dbSettings.value.pharmacyInfo ?? prev.pharmacyInfo,
-        }));
+        setClinicSettings((prev) => {
+          let serverFrequencies = dbSettings.value.customFrequencies;
+          if (typeof serverFrequencies === 'string') {
+            try { serverFrequencies = JSON.parse(serverFrequencies); } catch (e) { serverFrequencies = []; }
+          }
+          const mergedFrequencies = Array.from(new Set([
+            ...(Array.isArray(serverFrequencies) ? serverFrequencies : []),
+            ...(prev.customFrequencies || [])
+          ])).filter(Boolean);
+
+          try {
+            localStorage.setItem('clinicos_custom_frequencies', JSON.stringify(mergedFrequencies));
+          } catch (e) {}
+
+          return {
+            ...prev,
+            clinicNameHi: dbSettings.value.nameHi || prev.clinicNameHi,
+            clinicNameEn: dbSettings.value.nameEn || prev.clinicNameEn,
+            address: dbSettings.value.address || prev.address,
+            phone: dbSettings.value.phone || prev.phone,
+            openingHours: dbSettings.value.openingHours || prev.openingHours,
+            closedDay: dbSettings.value.closedDay || prev.closedDay,
+            headerBgColor: dbSettings.value.headerBgColor || prev.headerBgColor,
+            pharmacyInfo: dbSettings.value.pharmacyInfo ?? prev.pharmacyInfo,
+            customFrequencies: mergedFrequencies,
+          };
+        });
       }
     } catch {
       // Offline mode
@@ -405,6 +433,11 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
 
   const updateClinicSettings = useCallback((settings: ClinicSettings, showToast = false) => {
     setClinicSettings(settings);
+    try {
+      if (settings.customFrequencies) {
+        localStorage.setItem('clinicos_custom_frequencies', JSON.stringify(settings.customFrequencies));
+      }
+    } catch (e) {}
     api.updateClinicSettings({
       nameHi: settings.clinicNameHi,
       nameEn: settings.clinicNameEn,
@@ -414,10 +447,44 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
       closedDay: settings.closedDay,
       headerBgColor: settings.headerBgColor,
       pharmacyInfo: settings.pharmacyInfo,
+      customFrequencies: settings.customFrequencies || [],
     }).catch(() => {});
     if (showToast) {
       setToast({ type: 'success', message: 'Clinic settings updated.' });
     }
+  }, []);
+
+  const addCustomFrequency = useCallback((freq: string) => {
+    if (!freq || typeof freq !== 'string') return;
+    const clean = freq.trim();
+    if (!clean || clean.length < 2 || clean.includes('AI parsing') || clean === '-') return;
+
+    setClinicSettings(prev => {
+      const existing = prev.customFrequencies || [];
+      if (existing.some(f => f.toLowerCase() === clean.toLowerCase())) {
+        return prev;
+      }
+      const updatedList = [clean, ...existing.filter(f => f.toLowerCase() !== clean.toLowerCase())];
+      const newSettings = { ...prev, customFrequencies: updatedList };
+      
+      try {
+        localStorage.setItem('clinicos_custom_frequencies', JSON.stringify(updatedList));
+      } catch (e) {}
+
+      api.updateClinicSettings({
+        nameHi: newSettings.clinicNameHi,
+        nameEn: newSettings.clinicNameEn,
+        address: newSettings.address,
+        phone: newSettings.phone,
+        openingHours: newSettings.openingHours,
+        closedDay: newSettings.closedDay,
+        headerBgColor: newSettings.headerBgColor,
+        pharmacyInfo: newSettings.pharmacyInfo,
+        customFrequencies: updatedList,
+      }).catch(() => {});
+
+      return newSettings;
+    });
   }, []);
 
   const updatePatientDetails = useCallback(async (
@@ -519,6 +586,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
         toggleFavoriteTemplate,
         duplicateTemplate,
         updateClinicSettings,
+        addCustomFrequency,
         updatePatientDetails,
       }}
     >
