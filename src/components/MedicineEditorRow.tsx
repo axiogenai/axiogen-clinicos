@@ -189,13 +189,24 @@ export default function MedicineEditorRow({ item, index, onUpdate, onRemove }: M
           )}
         </div>
 
-        <input
-          type="text"
-          value={item.duration}
-          onChange={(e) => onUpdate(index, 'duration', e.target.value)}
-          placeholder="Duration"
-          className="w-24 sm:w-28 px-2.5 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 shrink-0"
-        />
+        <div className="relative shrink-0">
+          <input
+            type="text"
+            value={item.duration}
+            onChange={(e) => onUpdate(index, 'duration', e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                const val = (item.duration || '').trim();
+                if (/^\d+$/.test(val)) {
+                  onUpdate(index, 'duration', `${val} Days`);
+                }
+              }
+            }}
+            placeholder="Duration (7 Days)"
+            className="w-28 sm:w-32 px-2.5 py-1.5 text-xs sm:text-sm font-semibold border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+          />
+        </div>
       </div>
     </div>
   );

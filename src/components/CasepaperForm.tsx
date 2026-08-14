@@ -235,18 +235,29 @@ function freqMatchesSearch(freq: string, query: string): boolean {
 }
 
 const DURATIONS = [
+  '1 Day',
+  '2 Days',
   '3 Days',
+  '4 Days',
   '5 Days',
+  '6 Days',
   '7 Days',
+  '8 Days',
+  '9 Days',
   '10 Days',
+  '12 Days',
   '14 Days',
   '15 Days',
+  '20 Days',
   '21 Days',
+  '25 Days',
+  '28 Days',
+  '30 Days',
   '1 Month',
+  '45 Days',
   '2 Months',
   '3 Months',
-  '4 Weeks',
-  '6 Weeks'
+  'SOS / गरज असेल तेव्हा'
 ];
 
 const INVESTIGATIONS = [
@@ -1300,18 +1311,59 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                           </div>
                         )}
                       </div>
-                      {/* Duration — input with dropdown suggestions */}
+                      {/* Duration — input with custom days helper & dropdown */}
                       <div className="relative" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="text"
-                          placeholder="7 Days"
+                          placeholder="उदा. 7 Days"
                           value={med.duration}
                           onFocus={() => { setDurOpenIndex(index); setFreqOpenIndex(null); }}
                           onChange={(e) => updateMedicineField(index, 'duration', e.target.value)}
-                          className="form-input form-input-sm w-full"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              const val = (med.duration || '').trim();
+                              if (/^\d+$/.test(val)) {
+                                updateMedicineField(index, 'duration', `${val} Days`);
+                              }
+                              setDurOpenIndex(null);
+                            }
+                          }}
+                          className="form-input form-input-sm w-full font-semibold text-xs"
                         />
                         {durOpenIndex === index && (
-                          <div className="absolute left-0 top-full mt-1 bg-white border border-[#e4e2e1] rounded-xl shadow-2xl divide-y divide-gray-50 overflow-y-auto" style={{ zIndex: 9999, width: '130px', maxHeight: '200px' }}>
+                          <div className="absolute left-0 top-full mt-1 bg-white border border-[#e4e2e1] rounded-xl shadow-2xl overflow-hidden" style={{ zIndex: 9999, width: '180px', maxHeight: '240px', overflowY: 'auto' }}>
+                            {/* Quick custom number helper */}
+                            {med.duration && /^\d+$/.test(med.duration.trim()) && (
+                              <div
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  updateMedicineField(index, 'duration', `${med.duration.trim()} Days`);
+                                  setDurOpenIndex(null);
+                                }}
+                                className="px-3 py-2 text-xs font-bold text-[#047857] bg-[#ecfdf5] hover:bg-[#d1fae5] border-b border-[#a7f3d0] cursor-pointer flex items-center justify-between"
+                              >
+                                <span>📅 {med.duration.trim()} Days</span>
+                                <span className="text-[10px] font-sans font-extrabold uppercase bg-[#047857] text-white px-1.5 py-0.5 rounded">लागू करा</span>
+                              </div>
+                            )}
+                            {/* Quick Day Chips */}
+                            <div className="p-1.5 bg-[#faf9f6] border-b border-[#e4e2e1] flex flex-wrap gap-1">
+                              {[1, 2, 3, 5, 7, 10, 14, 15, 20, 30].map(days => (
+                                <button
+                                  key={days}
+                                  type="button"
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    updateMedicineField(index, 'duration', `${days} Days`);
+                                    setDurOpenIndex(null);
+                                  }}
+                                  className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-white hover:bg-[#ecfdf5] hover:text-[#047857] border border-[#e4e2e1] text-[#4b463e]"
+                                >
+                                  {days}d
+                                </button>
+                              ))}
+                            </div>
                             {DURATIONS.map(d => (
                               <div
                                 key={d}
@@ -1434,14 +1486,53 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                         <div className="relative" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="text"
-                            placeholder="Duration (e.g. 7 Days)"
+                            placeholder="Duration (उदा. 7 Days)"
                             value={med.duration}
                             onFocus={() => { setDurOpenIndex(index); setFreqOpenIndex(null); }}
                             onChange={(e) => updateMedicineField(index, 'duration', e.target.value)}
-                            className="form-input form-input-sm w-full"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const val = (med.duration || '').trim();
+                                if (/^\d+$/.test(val)) {
+                                  updateMedicineField(index, 'duration', `${val} Days`);
+                                }
+                                setDurOpenIndex(null);
+                              }
+                            }}
+                            className="form-input form-input-sm w-full font-semibold text-xs"
                           />
                           {durOpenIndex === index && (
-                            <div className="absolute left-0 top-full mt-1 bg-white border border-[#e4e2e1] rounded-xl shadow-2xl divide-y divide-gray-50 overflow-y-auto" style={{ zIndex: 9999, width: '130px', maxHeight: '200px' }}>
+                            <div className="absolute left-0 top-full mt-1 bg-white border border-[#e4e2e1] rounded-xl shadow-2xl overflow-hidden" style={{ zIndex: 9999, width: '180px', maxHeight: '240px', overflowY: 'auto' }}>
+                              {med.duration && /^\d+$/.test(med.duration.trim()) && (
+                                <div
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    updateMedicineField(index, 'duration', `${med.duration.trim()} Days`);
+                                    setDurOpenIndex(null);
+                                  }}
+                                  className="px-3 py-2 text-xs font-bold text-[#047857] bg-[#ecfdf5] hover:bg-[#d1fae5] border-b border-[#a7f3d0] cursor-pointer flex items-center justify-between"
+                                >
+                                  <span>📅 {med.duration.trim()} Days</span>
+                                  <span className="text-[10px] font-sans font-extrabold uppercase bg-[#047857] text-white px-1.5 py-0.5 rounded">लागू करा</span>
+                                </div>
+                              )}
+                              <div className="p-1.5 bg-[#faf9f6] border-b border-[#e4e2e1] flex flex-wrap gap-1">
+                                {[1, 2, 3, 5, 7, 10, 14, 15, 20, 30].map(days => (
+                                  <button
+                                    key={days}
+                                    type="button"
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      updateMedicineField(index, 'duration', `${days} Days`);
+                                      setDurOpenIndex(null);
+                                    }}
+                                    className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-white hover:bg-[#ecfdf5] hover:text-[#047857] border border-[#e4e2e1] text-[#4b463e]"
+                                  >
+                                    {days}d
+                                  </button>
+                                ))}
+                              </div>
                               {DURATIONS.map(d => (
                                 <div
                                   key={d}
