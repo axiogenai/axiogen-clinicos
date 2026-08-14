@@ -33,8 +33,34 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
   const [selectedLanguage, setSelectedLanguage] = useState<PrintLanguage>('marathi');
   const [isSettingsOpen, setIsSettingsOpen]     = useState(false);
   const [drawerOpen, setDrawerOpen]             = useState(false); // mobile drawer
-  const barRef    = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLDivElement>(null);
+  const barRef       = useRef<HTMLDivElement>(null);
+  const canvasRef    = useRef<HTMLDivElement>(null);
+  const printPageRef = useRef<HTMLDivElement>(null);
+
+  const iframePrint = useCallback(() => {
+    const el = printPageRef.current;
+    if (!el) { window.print(); return; }
+    const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+      .map(s => s.outerHTML)
+      .join('\n');
+    const html = el.innerHTML;
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:220mm;height:270mm;border:0;visibility:hidden;';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) { document.body.removeChild(iframe); window.print(); return; }
+    doc.open();
+    doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8">${styles}<style>@page{size:220mm 270mm;margin:0}html,body{margin:0;padding:0;width:220mm;height:270mm;background:#fff;overflow:hidden}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}.rx-paper-root{width:220mm!important;min-width:220mm!important;max-width:220mm!important;height:270mm!important;min-height:270mm!important;max-height:270mm!important;margin:0!important;padding:0!important;overflow:hidden!important;box-sizing:border-box!important}</style></head><body><div class="rx-paper-root print-page" style="width:220mm;height:270mm;overflow:hidden;box-sizing:border-box;margin:0;padding:0;background:#fff">${html}</div></body></html>`);
+    doc.close();
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } finally {
+        setTimeout(() => { try { document.body.removeChild(iframe); } catch {} }, 2000);
+      }
+    }, 600);
+  }, []);
 
   const fitToScreen = useCallback(() => {
     if (!canvasRef.current) return;
@@ -123,14 +149,14 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
           <div className="flex-1" />
 
           <button type="button"
-            onClick={() => { setToast({ type: 'info', message: 'Select "Save as PDF" in the print dialog.' }); window.print(); }}
+            onClick={() => { setToast({ type: 'info', message: 'Select "Save as PDF" in the print dialog.' }); iframePrint(); }}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#f2eee3] border border-[#d6d3ce] text-[#4b463e] text-xs font-semibold hover:bg-[#e8e4da] transition-colors shrink-0">
             <FileText className="w-3.5 h-3.5 text-red-500" />
             Save PDF
           </button>
 
           <button type="button"
-            onClick={() => { window.print(); if (onReturnToQueue) setTimeout(onReturnToQueue, 600); else onBack(); }}
+            onClick={() => { iframePrint(); if (onReturnToQueue) setTimeout(onReturnToQueue, 2000); else setTimeout(onBack, 2000); }}
             className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[#047857] hover:bg-[#064e3b] text-white text-xs font-bold transition-colors shadow-sm shrink-0">
             <Printer className="w-3.5 h-3.5" />
             Print Prescription
@@ -200,7 +226,7 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
           {/* Right: Print + Options toggle */}
           <div className="flex items-center gap-2 shrink-0">
             <button type="button"
-              onClick={() => { window.print(); if (onReturnToQueue) setTimeout(onReturnToQueue, 600); else onBack(); }}
+              onClick={() => { iframePrint(); if (onReturnToQueue) setTimeout(onReturnToQueue, 2000); else setTimeout(onBack, 2000); }}
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#047857] hover:bg-[#064e3b] text-white text-xs font-bold transition-colors shadow shrink-0">
               <Printer className="w-4 h-4" />
               <span>Print</span>
@@ -254,7 +280,7 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
                 Branding
               </button>
               <button type="button"
-                onClick={() => { setToast({ type: 'info', message: 'Select "Save as PDF" in the print dialog.' }); window.print(); }}
+                onClick={() => { setToast({ type: 'info', message: 'Select "Save as PDF" in the print dialog.' }); iframePrint(); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white border border-[#cdc6ba] text-red-700 hover:bg-red-50 transition-colors">
                 <FileText className="w-3.5 h-3.5" />
                 Save as PDF
@@ -278,6 +304,7 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
           style={{ width: A4_W * scale, height: A4_H * scale, flexShrink: 0 }}
         >
           <div
+            ref={printPageRef}
             className="print-page bg-white"
             style={{ width: A4_W, height: A4_H, transform: `scale(${scale})`, transformOrigin: 'top left' }}
           >

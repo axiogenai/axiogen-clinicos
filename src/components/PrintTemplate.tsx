@@ -235,7 +235,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
           height: '54mm',
           minHeight: '54mm',
           maxHeight: '54mm',
-          paddingTop: '9mm', 
+          paddingTop: '4mm', 
           paddingLeft: '10mm',
           paddingRight: '10mm',
           boxSizing: 'border-box',
