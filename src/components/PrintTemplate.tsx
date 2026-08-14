@@ -395,7 +395,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               {patient.village || ""}
             </div>
             {/* Age/Sex slot (top: 9.7mm, left: 135mm) */}
-            <div style={{ position: "absolute", top: "9.9mm", left: "135mm", fontSize: "12.5px" }}>
+            <div style={{ position: "absolute", top: "9.7mm", left: "135mm", fontSize: "12.5px" }}>
               {patient.age} Yrs / {patient.gender === "M" ? "Male" : "Female"}
             </div>
           </div>
@@ -526,7 +526,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               }}
             >
               <span style={{ width: '50%', visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
-              <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: printOnStationery ? 'translate(-13mm, 14.8mm)' : 'none' }}>
+              <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: 'translate(-13mm, 15mm)' }}>
                 <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Follow up - </span>
                 <span style={{ color: '#111' }}>
                   {formatDate(casePaper.followUpDate)}
@@ -813,7 +813,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               }}
             >
               <span style={{ width: '50%', visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
-              <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: printOnStationery ? 'translate(-13mm, 14.8mm)' : 'none' }}>
+              <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: 'translate(-13mm, 15mm)' }}>
                 <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Follow up - </span>
                 <span style={{ color: '#111' }}>
                   {formatDate(casePaper.followUpDate)}
