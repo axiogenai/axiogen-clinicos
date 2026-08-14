@@ -521,15 +521,14 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                 fontSize: '12px',
                 color: '#222',
                 marginTop: 'auto',
-                paddingTop: '6px',
+                paddingTop: '4px',
                 borderTop: printOnStationery ? 'none' : '1px dashed #ccc',
-                transform: printOnStationery ? 'translateY(15mm)' : 'none',
               }}
             >
               <span style={{ width: '50%', visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
               <span style={{ fontWeight: 700, color: '#111' }}>
                 <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Follow up - </span>
-                <span style={{ visibility: 'visible', color: '#111' }}>
+                <span style={{ color: '#111' }}>
                   {formatDate(casePaper.followUpDate)}
                 </span>
               </span>
@@ -809,15 +808,14 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                 fontSize: '12px',
                 color: '#222',
                 marginTop: 'auto',
-                paddingTop: '6px',
+                paddingTop: '4px',
                 borderTop: printOnStationery ? 'none' : '1px dashed #ccc',
-                transform: printOnStationery ? 'translateY(15mm)' : 'none',
               }}
             >
               <span style={{ width: '50%', visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
               <span style={{ fontWeight: 700, color: '#111' }}>
                 <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Follow up - </span>
-                <span style={{ visibility: 'visible', color: '#111' }}>
+                <span style={{ color: '#111' }}>
                   {formatDate(casePaper.followUpDate)}
                 </span>
               </span>
