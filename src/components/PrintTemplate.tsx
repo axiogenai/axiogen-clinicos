@@ -386,16 +386,16 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
             <div style={{ position: "absolute", top: "5.5mm", left: "20mm", fontSize: "13px" }}>
               {patient.name}
             </div>
-            {/* Date slot (x = 15.6 cm = 156mm from left edge -> inside pad container: left 136mm, top: 4.5mm) */}
-            <div style={{ position: "absolute", top: "4.5mm", left: "136mm", fontSize: "12.5px" }}>
+            {/* Date slot (top: 4.5mm, left: 138.5mm) */}
+            <div style={{ position: "absolute", top: "4.5mm", left: "138.5mm", fontSize: "12.5px" }}>
               {formatDate(casePaper.date)}
             </div>
             {/* Village slot (top: 11.5mm, left: 20mm) */}
             <div style={{ position: "absolute", top: "11.5mm", left: "20mm", fontSize: "12.5px" }}>
               {patient.village || ""}
             </div>
-            {/* Age/Sex slot (top: 11.5mm, left: 135mm) */}
-            <div style={{ position: "absolute", top: "11.5mm", left: "135mm", fontSize: "12.5px" }}>
+            {/* Age/Sex slot (top: 9.5mm, left: 135mm) */}
+            <div style={{ position: "absolute", top: "9.5mm", left: "135mm", fontSize: "12.5px" }}>
               {patient.age} Yrs / {patient.gender === "M" ? "Male" : "Female"}
             </div>
           </div>
