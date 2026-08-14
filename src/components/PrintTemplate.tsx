@@ -185,19 +185,19 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
       showSignature: true,
     },
   } = clinicSettings;
-  const doc1 = doctors[0] || {
-    name: 'डॉ. प्रियांका प्रमोद शिनगारे',
-    title: 'BHMS, FCHD (MUHS)',
-    subTitle: '(Consultant Homeopathy Dermatologist)',
-    regNo: 'Reg. No. 73338',
-    specialty: 'त्वचारोग तज्ज्ञ',
-  };
-  const doc2 = doctors[1] || {
+  const doc1 = (doctors && doctors[0] && doctors[0].name.includes('प्रमोद')) ? doctors[0] : (doctors && doctors[1] && doctors[1].name.includes('प्रमोद')) ? doctors[1] : {
     name: 'डॉ. प्रमोद सुरेश शिनगारे',
     title: 'MD (Ayu) - D.Dermatology (Ay.)',
     subTitle: '(MUHS)',
     regNo: 'Reg. No. I-87218-A',
     specialty: 'त्वचारोग व सौंदर्य विशेष तज्ज्ञ',
+  };
+  const doc2 = (doctors && doctors[0] && doctors[0].name.includes('प्रियांका')) ? doctors[0] : (doctors && doctors[1] && doctors[1].name.includes('प्रियांका')) ? doctors[1] : {
+    name: 'डॉ. प्रियांका प्रमोद शिनगारे',
+    title: 'BHMS, FCHD (MUHS)',
+    subTitle: '(Consultant Homeopathy Dermatologist)',
+    regNo: 'Reg. No. 73338',
+    specialty: 'त्वचारोग तज्ज्ञ',
   };
   const isGeneralPad = templateVariant === 'general';
   return (
@@ -229,17 +229,18 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
       {/* ══════════════════════════════════════════════════════ */}
       {/* HEADER SECTION (Top Margin 9mm + Header 45mm = 54mm)   */}
       {/* ══════════════════════════════════════════════════════ */}
+      {/* HEADER / TOP OFFSET: 60mm (6cm) for General A5 Pad, 54mm for Dermatology Pad */}
       <div 
         className="clinic-print-header" 
         style={{ 
-          height: '54mm',
-          minHeight: '54mm',
-          maxHeight: '54mm',
-          paddingTop: '9mm', 
+          height: isGeneralPad ? '60mm' : '54mm',
+          minHeight: isGeneralPad ? '60mm' : '54mm',
+          maxHeight: isGeneralPad ? '60mm' : '54mm',
+          paddingTop: isGeneralPad ? '0' : '9mm', 
           paddingLeft: '10mm',
           paddingRight: '10mm',
           boxSizing: 'border-box',
-          visibility: (hideHeader || printOnStationery) ? 'hidden' : 'visible',
+          visibility: isGeneralPad ? 'hidden' : ((hideHeader || printOnStationery) ? 'hidden' : 'visible'),
         }}
       >
         {/* Title Row */}
@@ -367,13 +368,13 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
       {/* ══════════════════════════════════════════════════════ */}
       <div
         style={{
-          height: "16mm",
-          minHeight: "16mm",
-          maxHeight: "16mm",
+          height: isGeneralPad ? "8mm" : "16mm",
+          minHeight: isGeneralPad ? "8mm" : "16mm",
+          maxHeight: isGeneralPad ? "8mm" : "16mm",
           position: "relative",
           boxSizing: "border-box",
-          padding: "1mm 10mm 1mm 20mm",
-          borderBottom: printOnStationery ? "none" : "2px solid #a53b3b",
+          padding: isGeneralPad ? "0 10mm 0 10mm" : "1mm 10mm 1mm 20mm",
+          borderBottom: (printOnStationery || isGeneralPad) ? "none" : "2px solid #a53b3b",
           fontFamily: "'Mukta', sans-serif",
           fontSize: "13px",
           fontWeight: 600,
@@ -399,8 +400,15 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               {patient.age} Yrs / {patient.gender === "M" ? "Male" : "Female"}
             </div>
           </div>
+        ) : isGeneralPad ? (
+          /* GENERAL PAD (PLAIN/STATIONERY): Only Date displayed at top right, name/age/village removed */
+          <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", width: "100%", height: "100%" }}>
+            <span style={{ fontSize: "12px", fontWeight: 700, color: "#111" }}>
+              {labels.date} {formatDate(casePaper.date)}
+            </span>
+          </div>
         ) : (
-                    /* PLAIN PAPER MODE: Fully Dynamic Flexbox Layout - Automatically adjusts to any label language length */
+          /* DERMATOLOGY PLAIN PAPER: Fully Dynamic Flexbox Layout with Name, Date, Village, Age */
           <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", width: "100%", height: "100%" }}>
             {/* Row 1: Name & Date */}
             <div style={{ display: "flex", alignItems: "baseline", gap: "12px", width: "100%" }}>
