@@ -383,19 +383,19 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
           /* PRE-PRINTED STATIONERY MODE: Absolute positioning on top of preprinted slots */
           <div style={{ position: "relative", width: "100%", height: "100%", fontWeight: 700, color: "#111" }}>
             {/* Name slot (x = 4.0 cm = 40mm from left edge -> inside pad container: left 20mm) */}
-            <div style={{ position: "absolute", top: "0.5mm", left: "20mm", fontSize: "13px" }}>
+            <div style={{ position: "absolute", top: "5.5mm", left: "20mm", fontSize: "13px" }}>
               {patient.name}
             </div>
             {/* Date slot (x = 15.5 cm = 155mm from left edge -> inside pad container: left 135mm) */}
-            <div style={{ position: "absolute", top: "0.5mm", left: "135mm", fontSize: "12.5px" }}>
+            <div style={{ position: "absolute", top: "5.5mm", left: "135mm", fontSize: "12.5px" }}>
               {formatDate(casePaper.date)}
             </div>
             {/* Village slot (x = 4.0 cm = 40mm) */}
-            <div style={{ position: "absolute", top: "7.5mm", left: "20mm", fontSize: "12.5px" }}>
+            <div style={{ position: "absolute", top: "12.5mm", left: "20mm", fontSize: "12.5px" }}>
               {patient.village || ""}
             </div>
             {/* Age/Sex slot (x = 15.5 cm = 155mm) */}
-            <div style={{ position: "absolute", top: "7.5mm", left: "135mm", fontSize: "12.5px" }}>
+            <div style={{ position: "absolute", top: "12.5mm", left: "135mm", fontSize: "12.5px" }}>
               {patient.age} Yrs / {patient.gender === "M" ? "Male" : "Female"}
             </div>
           </div>
