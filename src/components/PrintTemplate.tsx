@@ -141,6 +141,7 @@ export const toMarathiDuration = (dur?: string): string => {
 };
 export default function PrintTemplate({ patient, casePaper, clinicSettings, hideHeader = false, language = 'marathi', printOnStationery = false }: PrintTemplateProps) {
   const labels = getPatientLabels(language);
+  const headers = getTableHeaders(language);
   const formatDate = (dateString?: string) => {
     if (!dateString) return '__________';
     try {
@@ -745,40 +746,92 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                   </svg>
                 )}
               </div>
-              {/* Pure Text Medicine Prescription List (No table borders, no headers) */}
+              {/* Prescription Medicine Section */}
               <div style={{ marginTop: printOnStationery ? '10mm' : '4px' }}>
-                {casePaper.medicines && casePaper.medicines.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    {casePaper.medicines.map((med, index) => {
-                      const displayName = getPrintMedicineName(med);
-                      const count = calculateMedicineCount(med);
-                      return (
-                        <div
-                          key={index}
-                          style={{
-                            display: 'grid',
-                            gridTemplateColumns: '22px minmax(110px, 1fr) minmax(130px, auto) 55px 35px',
-                            alignItems: 'baseline',
-                            gap: '6px',
-                            fontSize: '11.5px',
-                            lineHeight: 1.3,
-                            padding: '2.5px 0',
-                            borderBottom: printOnStationery ? 'none' : '1px dotted #cbd5e1',
-                          }}
-                        >
-                          <span style={{ fontWeight: 700, color: '#333', fontFamily: 'monospace', fontSize: '11px' }}>{index + 1}.</span>
-                          <span style={{ fontWeight: 700, color: '#111' }}>{displayName}</span>
-                          <span style={{ fontWeight: 600, color: '#222' }}>
-                            {renderFrequencyCell(med.frequency, med.name, language, med.instructions || med.notes)}
-                          </span>
-                          <span style={{ color: '#333', fontSize: '11px' }}>{translateDuration(med.duration, language)}</span>
-                          <span style={{ fontWeight: 700, color: '#047857', textAlign: 'right', fontSize: '11.5px' }}>{count}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
+                {!printOnStationery ? (
+                  /* PLAIN TEMPLATE: Full structured table with Sr. No., headers & borders */
+                  <table
+                    style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      border: '1.5px solid #444',
+                      fontSize: '11px',
+                      lineHeight: 1.15,
+                    }}
+                  >
+                    <thead>
+                      <tr
+                        style={{
+                          background: '#f8f8f8',
+                          borderBottom: '1.5px solid #444',
+                          fontWeight: 700,
+                        }}
+                      >
+                        <th style={{ border: '1px solid #555', padding: '3px 1px', textAlign: 'center', width: '24px', fontSize: '10px' }}>{headers.srNo || 'Sr. No.'}</th>
+                        <th style={{ border: '1px solid #555', padding: '3px 4px', textAlign: 'left', width: '30%' }}>{headers.medName}</th>
+                        <th style={{ border: '1px solid #555', padding: '3px 4px', textAlign: 'left', width: '50%' }}>{headers.freq}</th>
+                        <th style={{ border: '1px solid #555', padding: '3px 3px', textAlign: 'left', width: '48px' }}>{headers.duration}</th>
+                        <th style={{ border: '1px solid #555', padding: '3px 2px', textAlign: 'center', width: '32px', color: '#93231f', fontSize: '11px' }}>{headers.count}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {casePaper.medicines && casePaper.medicines.length > 0 ? (
+                        casePaper.medicines.map((med, index) => {
+                          const displayName = getPrintMedicineName(med);
+                          const count = calculateMedicineCount(med);
+                          return (
+                            <tr key={index} style={{ borderBottom: '1px solid #666', height: '22px' }}>
+                              <td style={{ border: '1px solid #666', padding: '2px 1px', textAlign: 'center', fontFamily: 'monospace', fontSize: '10px', color: '#333' }}>{index + 1}</td>
+                              <td style={{ border: '1px solid #666', padding: '2px 4px', fontWeight: 700, color: '#111' }}>{displayName}</td>
+                              <td style={{ border: '1px solid #666', padding: '2px 4px', fontWeight: 600, color: '#222' }}>
+                                {renderFrequencyCell(med.frequency, med.name, language, med.instructions || med.notes)}
+                              </td>
+                              <td style={{ border: '1px solid #666', padding: '2px 3px', color: '#333', fontSize: '11px' }}>{translateDuration(med.duration, language)}</td>
+                              <td style={{ border: '1px solid #666', padding: '2px 2px', textAlign: 'center', fontWeight: 700, color: '#047857', fontSize: '11px' }}>{count}</td>
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr>
+                          <td colSpan={5} style={{ height: '120px', border: '1px solid #666' }} />
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 ) : (
-                  <div style={{ minHeight: '120px' }} />
+                  /* STATIONERY PAD: Unchanged clean text without borders/headers */
+                  casePaper.medicines && casePaper.medicines.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {casePaper.medicines.map((med, index) => {
+                        const displayName = getPrintMedicineName(med);
+                        const count = calculateMedicineCount(med);
+                        return (
+                          <div
+                            key={index}
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: '22px minmax(110px, 1fr) minmax(130px, auto) 55px 35px',
+                              alignItems: 'baseline',
+                              gap: '6px',
+                              fontSize: '11.5px',
+                              lineHeight: 1.3,
+                              padding: '2.5px 0',
+                            }}
+                          >
+                            <span style={{ fontWeight: 700, color: '#333', fontFamily: 'monospace', fontSize: '11px' }}>{index + 1}.</span>
+                            <span style={{ fontWeight: 700, color: '#111' }}>{displayName}</span>
+                            <span style={{ fontWeight: 600, color: '#222' }}>
+                              {renderFrequencyCell(med.frequency, med.name, language, med.instructions || med.notes)}
+                            </span>
+                            <span style={{ color: '#333', fontSize: '11px' }}>{translateDuration(med.duration, language)}</span>
+                            <span style={{ fontWeight: 700, color: '#047857', textAlign: 'right', fontSize: '11.5px' }}>{count}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{ minHeight: '120px' }} />
+                  )
                 )}
               </div>
               {casePaper.counsellingDone && casePaper.counsellingDone.length > 0 && (
