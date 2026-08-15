@@ -929,17 +929,26 @@ export default function DailyPatientRegister() {
 
       {/* Search & Filter Toolbar */}
       <div className="bg-white rounded-xl p-4 border border-[#e4e2e1] shadow-sm flex flex-col sm:flex-row justify-between items-center gap-3">
-        {/* Live Search */}
-        <div className="relative w-full sm:w-80">
+        {/* Universal All-Time Search */}
+        <div className="relative w-full sm:w-96">
           <Search className="w-4 h-4 text-[#7c766d] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
           <input 
             type="text"
-            placeholder="Search patient name, phone, OPD No..."
+            placeholder="Search all dates: name, phone, OPD No, casepaper..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="form-input"
-            style={{ paddingLeft: '2.5rem' }}
+            style={{ paddingLeft: '2.5rem', paddingRight: searchQuery ? '2rem' : '0.75rem' }}
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 font-bold text-xs"
+            >
+              ✕
+            </button>
+          )}
         </div>
 
         {/* Status Filter Tabs */}
@@ -1233,7 +1242,12 @@ export default function DailyPatientRegister() {
               {filteredItems.map((item) => (
                 <tr key={item.opdNo} className="hover:bg-[#f8f6f0]/60 transition-colors">
                   <td className="text-center font-bold text-[#7c766d] text-xs">{item.srNo}</td>
-                  <td><span className="font-mono font-bold text-xs text-[#047857]">{item.opdNo}</span></td>
+                  <td>
+                    <span className="font-mono font-bold text-xs text-[#047857]">{item.opdNo}</span>
+                    {searchQuery.trim() && (
+                      <div className="text-[10px] text-gray-500 font-mono">{item.date}</div>
+                    )}
+                  </td>
                   <td className="text-xs font-semibold text-[#7c766d]">{item.time}</td>
                   <td>
                     <div className="font-bold text-[#1a1c1a] text-sm">{item.name}</div>
