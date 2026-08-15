@@ -41,7 +41,7 @@ export default function TemplatePreview({ template, onBack, onUseInEMR }: Templa
         {/* Prescription Header */}
         <div className="border-b border-gray-200 pb-4 text-center">
           <div className="text-xl font-bold text-indigo-900">शिनगारे स्किन & कॉस्मेटीक क्लिनिक</div>
-          <div className="text-xs text-gray-600 font-medium">डॉ. प्रियंका प्रमोद शिनगारे | BHMS, FCHD (MUHS)</div>
+          <div className="text-xs text-gray-600 font-medium">डॉ. प्रियांका प्रमोद शिनगारे | BHMS, FCHD, CCHC, CCMP (MUHS) | (Consultant Homeopathy Dermatologist & Cosmetologist)</div>
           <div className="text-[11px] text-gray-400 mt-1">Prescription Template Preview</div>
         </div>
 
