@@ -1,4 +1,5 @@
-import { Phone, MapPin, Clock, Stethoscope, Check, X, ArrowRight, Eye, Trash2 } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Phone, MapPin, Clock, Stethoscope, Check, X, ArrowRight, Eye, Trash2, Banknote, QrCode, ChevronDown } from 'lucide-react';
 import type { Patient, QueueItem } from '../data/patients';
 import { useClinic } from '../context/ClinicContext';
 
@@ -8,6 +9,112 @@ interface Props {
   onStatusChange: (queueId: string, status: QueueItem['status']) => void;
   onRemove: (queueId: string) => void;
   onViewDetails: (queueItem: QueueItem) => void;
+}
+
+function PaymentDropdown({
+  item,
+  onUpdate
+}: {
+  item: QueueItem;
+  onUpdate: (queueId: string, status: 'paid' | 'unpaid', mode?: 'cash' | 'online') => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const isPaid = item.paymentStatus !== 'unpaid';
+  const mode = item.paymentMode || 'cash';
+
+  return (
+    <div className="relative inline-block text-left" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border transition-all shadow-sm cursor-pointer ${
+          !isPaid
+            ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
+            : mode === 'online'
+            ? 'bg-blue-50 text-blue-800 border-blue-300 hover:bg-blue-100'
+            : 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+        }`}
+      >
+        {!isPaid ? (
+          <>
+            <Clock className="w-3 h-3 text-amber-600 shrink-0" />
+            <span>Unpaid</span>
+          </>
+        ) : mode === 'online' ? (
+          <>
+            <QrCode className="w-3 h-3 text-blue-600 shrink-0" />
+            <span>Paid (Online)</span>
+          </>
+        ) : (
+          <>
+            <Banknote className="w-3 h-3 text-emerald-600 shrink-0" />
+            <span>Paid (Cash)</span>
+          </>
+        )}
+        <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-50 mt-1 right-0 sm:left-0 sm:right-auto w-36 bg-white rounded-xl shadow-lg border border-[#e4e2e1] py-1 text-xs font-bold overflow-hidden">
+          <button
+            type="button"
+            onClick={() => {
+              onUpdate(item.queueId, 'paid', 'cash');
+              setIsOpen(false);
+            }}
+            className={`w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-emerald-50 transition-colors cursor-pointer ${
+              isPaid && mode === 'cash' ? 'text-emerald-700 bg-emerald-50/70' : 'text-[#4b463e]'
+            }`}
+          >
+            <Banknote className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Paid (Cash)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              onUpdate(item.queueId, 'paid', 'online');
+              setIsOpen(false);
+            }}
+            className={`w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-blue-50 transition-colors cursor-pointer ${
+              isPaid && mode === 'online' ? 'text-blue-700 bg-blue-50/70' : 'text-[#4b463e]'
+            }`}
+          >
+            <QrCode className="w-3.5 h-3.5 text-blue-600" />
+            <span>Paid (Online)</span>
+          </button>
+
+          <div className="border-t border-[#e4e2e1] my-0.5" />
+
+          <button
+            type="button"
+            onClick={() => {
+              onUpdate(item.queueId, 'unpaid');
+              setIsOpen(false);
+            }}
+            className={`w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-amber-50 transition-colors cursor-pointer ${
+              !isPaid ? 'text-amber-700 bg-amber-50/70' : 'text-[#4b463e]'
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5 text-amber-600" />
+            <span>Unpaid</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function QueueList({
@@ -67,44 +174,7 @@ export default function QueueList({
   };
 
   const renderPaymentControl = (item: QueueItem) => {
-    const isPaid = item.paymentStatus !== 'unpaid';
-    const mode = item.paymentMode || 'cash';
-    const currentValue = isPaid ? mode : 'unpaid';
-
-    return (
-      <div className="inline-block relative">
-        <select
-          value={currentValue}
-          onChange={(e) => {
-            const val = e.target.value;
-            if (val === 'unpaid') {
-              updateQueuePayment(item.queueId, 'unpaid');
-            } else if (val === 'cash') {
-              updateQueuePayment(item.queueId, 'paid', 'cash');
-            } else if (val === 'online') {
-              updateQueuePayment(item.queueId, 'paid', 'online');
-            }
-          }}
-          className={`text-[11px] font-bold pl-2.5 pr-6 py-1 rounded-full border cursor-pointer appearance-none transition-all focus:outline-none shadow-sm ${
-            currentValue === 'cash'
-              ? 'bg-[#ecfdf5] text-[#047857] border-[#a7f3d0] hover:bg-[#d1fae5]'
-              : currentValue === 'online'
-              ? 'bg-[#eff6ff] text-[#1d4ed8] border-[#bfdbfe] hover:bg-[#dbeafe]'
-              : 'bg-[#fffbeb] text-[#b45309] border-[#fde68a] hover:bg-[#fef3c7]'
-          }`}
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'right 6px center',
-            backgroundSize: '12px 12px',
-          }}
-        >
-          <option value="cash">💵 Paid (Cash)</option>
-          <option value="online">📱 Paid (Online)</option>
-          <option value="unpaid">⏳ Unpaid</option>
-        </select>
-      </div>
-    );
+    return <PaymentDropdown item={item} onUpdate={updateQueuePayment} />;
   };
 
   return (

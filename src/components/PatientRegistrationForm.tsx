@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { UserCheck, UserPlus, Phone, MapPin, AlertCircle, AlertTriangle, ArrowRight, Plus } from 'lucide-react';
+import { UserCheck, UserPlus, Phone, MapPin, AlertCircle, AlertTriangle, ArrowRight, Plus, CreditCard, Banknote, QrCode, Check, Clock } from 'lucide-react';
 import type { Patient } from '../data/patients';
 import { useClinic } from '../context/ClinicContext';
 
@@ -314,7 +314,10 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
           {/* Payment Details */}
           <div className="bg-[#f8f6f0] p-3.5 rounded-xl border border-[#e4e2e1] space-y-2.5">
             <label className="form-label text-[#047857] flex items-center justify-between">
-              <span>💳 Consultation Fee Payment</span>
+              <span className="flex items-center gap-1.5 font-bold">
+                <CreditCard className="w-4 h-4 text-[#047857]" />
+                Consultation Fee Payment
+              </span>
               <span className="text-[11px] font-normal text-[#7c766d]">Receptionist Desk</span>
             </label>
             
@@ -325,24 +328,26 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, paymentStatus: 'paid' })}
-                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
+                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1 ${
                       formData.paymentStatus === 'paid'
                         ? 'bg-[#047857] text-white shadow-sm'
                         : 'text-[#4b463e] hover:text-[#1a1c1a]'
                     }`}
                   >
-                    ✓ Paid
+                    <Check className="w-3 h-3" />
+                    <span>Paid</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, paymentStatus: 'unpaid' })}
-                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
+                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1 ${
                       formData.paymentStatus === 'unpaid'
                         ? 'bg-amber-600 text-white shadow-sm'
                         : 'text-[#4b463e] hover:text-[#1a1c1a]'
                     }`}
                   >
-                    Unpaid
+                    <Clock className="w-3 h-3" />
+                    <span>Unpaid</span>
                   </button>
                 </div>
               </div>
@@ -354,25 +359,27 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
                     type="button"
                     disabled={formData.paymentStatus === 'unpaid'}
                     onClick={() => setFormData({ ...formData, paymentMode: 'cash' })}
-                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
+                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1 ${
                       formData.paymentMode === 'cash' && formData.paymentStatus === 'paid'
                         ? 'bg-[#064e3b] text-white shadow-sm'
                         : 'text-[#4b463e] hover:text-[#1a1c1a] disabled:opacity-40'
                     }`}
                   >
-                    💵 Cash
+                    <Banknote className="w-3.5 h-3.5" />
+                    <span>Cash</span>
                   </button>
                   <button
                     type="button"
                     disabled={formData.paymentStatus === 'unpaid'}
                     onClick={() => setFormData({ ...formData, paymentMode: 'online' })}
-                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
+                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1 ${
                       formData.paymentMode === 'online' && formData.paymentStatus === 'paid'
                         ? 'bg-blue-600 text-white shadow-sm'
                         : 'text-[#4b463e] hover:text-[#1a1c1a] disabled:opacity-40'
                     }`}
                   >
-                    📱 Online
+                    <QrCode className="w-3.5 h-3.5" />
+                    <span>Online (UPI)</span>
                   </button>
                 </div>
               </div>
