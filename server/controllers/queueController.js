@@ -44,7 +44,7 @@ exports.getQueue = async (req, res, next) => {
 exports.addToQueue = async (req, res, next) => {
   try {
     const clinicId = req.user?.clinicId || 1;
-    const { queueId, patientId, name, age, phone, village, complaint, notes, date } = req.body;
+    const { queueId, patientId, name, age, phone, village, complaint, notes, date, paymentStatus, paymentMode } = req.body;
 
     const currentDate = date || getISTDateStr();
 
@@ -96,7 +96,9 @@ exports.addToQueue = async (req, res, next) => {
       notes: notes || '',
       date: currentDate,
       timeAdded,
-      status: 'waiting'
+      status: 'waiting',
+      paymentStatus: paymentStatus || 'paid',
+      paymentMode: paymentMode || 'cash'
     });
 
     // Auto-sync into OpdRegister database table
@@ -119,7 +121,9 @@ exports.addToQueue = async (req, res, next) => {
           village: village || '',
           complaint: complaint || '',
           timeAdded,
-          status: 'waiting'
+          status: 'waiting',
+          paymentStatus: paymentStatus || 'paid',
+          paymentMode: paymentMode || 'cash'
         }
       });
     } catch (e) {
@@ -187,6 +191,20 @@ exports.updateQueueStatus = async (req, res, next) => {
         }
       } catch (e) {}
     }
+
+    // Also sync OpdRegister if status, paymentStatus, or paymentMode updated
+    try {
+      const { OpdRegister } = require('../models');
+      const opdUpdate = {};
+      if (updateData.status) opdUpdate.status = updateData.status;
+      if (updateData.paymentStatus) opdUpdate.paymentStatus = updateData.paymentStatus;
+      if (updateData.paymentMode) opdUpdate.paymentMode = updateData.paymentMode;
+      if (Object.keys(opdUpdate).length > 0) {
+        await OpdRegister.update(opdUpdate, {
+          where: { queueId: id }
+        });
+      }
+    } catch (e) {}
 
     console.log(`✅ [QUEUE STATUS/DETAILS UPDATED] Updated queue item '${id}'`);
     res.json({ success: true, updatedCount, data: updateData });

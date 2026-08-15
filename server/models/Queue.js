@@ -49,6 +49,14 @@ const Queue = sequelize.define('Queue', {
   status: {
     type: DataTypes.ENUM('waiting', 'in-consultation', 'in_consultation', 'completed', 'cancelled'),
     defaultValue: 'waiting'
+  },
+  paymentStatus: {
+    type: DataTypes.STRING,
+    defaultValue: 'paid'
+  },
+  paymentMode: {
+    type: DataTypes.STRING,
+    defaultValue: 'cash'
   }
 });
 

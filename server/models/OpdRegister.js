@@ -101,6 +101,14 @@ const OpdRegister = sequelize.define('OpdRegister', {
   status: {
     type: DataTypes.STRING,
     defaultValue: 'waiting' // waiting, in-consultation, completed, cancelled
+  },
+  paymentStatus: {
+    type: DataTypes.STRING,
+    defaultValue: 'paid'
+  },
+  paymentMode: {
+    type: DataTypes.STRING,
+    defaultValue: 'cash'
   }
 }, {
   tableName: 'opd_registers',
