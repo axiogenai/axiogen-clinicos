@@ -394,7 +394,7 @@ function MainApp() {
       <main className="w-full px-3 sm:px-5 lg:px-8 py-4 sm:py-6 overflow-x-hidden">
         {tab === 'receptionist' && <ReceptionistDashboard />}
         {tab === 'doctor' && isDoctor && <DoctorDashboardView />}
-        {tab === 'register' && <DailyPatientRegister />}
+        {tab === 'register' && <DailyPatientRegister isDoctor={true} />}
         {tab === 'templates' && isDoctor && (
           <TemplateDashboard onUseTemplateInEMR={() => setTab('doctor')} />
         )}

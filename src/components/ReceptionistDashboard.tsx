@@ -120,7 +120,7 @@ export default function ReceptionistDashboard() {
 
       {/* ── Main View Area ── */}
       {view === 'opd-register' ? (
-        <DailyPatientRegister />
+        <DailyPatientRegister isDoctor={false} />
       ) : (
         <>
           {view === 'queue' ? (
