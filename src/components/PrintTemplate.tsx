@@ -390,19 +390,19 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
           /* PRE-PRINTED STATIONERY MODE: Absolute positioning on top of preprinted slots */
           <div style={{ position: "relative", width: "100%", height: "100%", fontWeight: 700, color: "#111" }}>
             {/* Name slot (x = 4.0 cm = 40mm from left edge -> inside pad container: left 20mm) */}
-            <div style={{ position: "absolute", top: "0.0mm", left: "20mm", fontSize: "13px" }}>
+            <div style={{ position: "absolute", top: "1.0mm", left: "20mm", fontSize: "13px" }}>
               {patient.name}
             </div>
             {/* Date slot */}
-            <div style={{ position: "absolute", top: "0.0mm", left: "138.5mm", fontSize: "12.5px" }}>
+            <div style={{ position: "absolute", top: "1.0mm", left: "138.5mm", fontSize: "12.5px" }}>
               {formatDate(casePaper.date)}
             </div>
             {/* Village slot */}
-            <div style={{ position: "absolute", top: "6.0mm", left: "20mm", fontSize: "12.5px" }}>
+            <div style={{ position: "absolute", top: "7.0mm", left: "20mm", fontSize: "12.5px" }}>
               {patient.village || ""}
             </div>
             {/* Age/Sex slot */}
-            <div style={{ position: "absolute", top: "6.2mm", left: "133mm", fontSize: "12.5px" }}>
+            <div style={{ position: "absolute", top: "7.2mm", left: "133mm", fontSize: "12.5px" }}>
               {patient.age} Yrs / {patient.gender === "M" ? "Male" : "Female"}
             </div>
           </div>
@@ -760,7 +760,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                     borderCollapse: 'collapse',
                     border: '1.5px solid #444',
                     fontSize: '12px',
-                    lineHeight: 1.25,
+                    lineHeight: 1.35,
                   }}
                 >
                   <thead>
@@ -784,14 +784,14 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                         const displayName = getPrintMedicineName(med);
                         const count = calculateMedicineCount(med);
                         return (
-                          <tr key={index} style={{ borderBottom: '1px solid #666', minHeight: '26px' }}>
-                            <td style={{ border: '1px solid #666', padding: '3.5px 1px', textAlign: 'center', fontFamily: 'monospace', fontSize: '11px', color: '#333' }}>{index + 1}</td>
-                            <td style={{ border: '1px solid #666', padding: '3.5px 5px', fontWeight: 700, color: '#111', fontSize: '12px' }}>{displayName}</td>
-                            <td style={{ border: '1px solid #666', padding: '3.5px 5px', fontWeight: 600, color: '#222', fontSize: '12px' }}>
+                          <tr key={index} style={{ borderBottom: '1px solid #666', minHeight: '30px', height: '30px' }}>
+                            <td style={{ border: '1px solid #666', padding: '5px 1px', textAlign: 'center', fontFamily: 'monospace', fontSize: '11px', color: '#333' }}>{index + 1}</td>
+                            <td style={{ border: '1px solid #666', padding: '5px 5px', fontWeight: 700, color: '#111', fontSize: '12px' }}>{displayName}</td>
+                            <td style={{ border: '1px solid #666', padding: '5px 5px', fontWeight: 600, color: '#222', fontSize: '12px' }}>
                               {renderFrequencyCell(med.frequency, med.name, language, med.instructions || med.notes)}
                             </td>
-                            <td style={{ border: '1px solid #666', padding: '3.5px 4px', color: '#333', fontSize: '12px' }}>{translateDuration(med.duration, language)}</td>
-                            <td style={{ border: '1px solid #666', padding: '3.5px 2px', textAlign: 'center', fontWeight: 700, color: '#047857', fontSize: '12px' }}>{count}</td>
+                            <td style={{ border: '1px solid #666', padding: '5px 4px', color: '#333', fontSize: '12px' }}>{translateDuration(med.duration, language)}</td>
+                            <td style={{ border: '1px solid #666', padding: '5px 2px', textAlign: 'center', fontWeight: 700, color: '#047857', fontSize: '12px' }}>{count}</td>
                           </tr>
                         );
                       })
