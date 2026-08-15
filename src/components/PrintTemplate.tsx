@@ -185,19 +185,25 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
       showSignature: true,
     },
   } = clinicSettings;
-  const doc1 = (doctors && doctors[0] && doctors[0].name.includes('प्रमोद')) ? doctors[0] : (doctors && doctors[1] && doctors[1].name.includes('प्रमोद')) ? doctors[1] : {
-    name: 'डॉ. प्रमोद सुरेश शिनगारे',
-    title: 'MD (Ayu) - D.Dermatology (Ay.)',
-    subTitle: '(MUHS)',
-    regNo: 'Reg. No. I-87218-A',
-    specialty: 'त्वचारोग व सौंदर्य विशेष तज्ज्ञ',
+  const priyankaDoc = doctors?.find(d => d.name.includes('प्रियांका') || d.name.toLowerCase().includes('priyanka'));
+  const pramodDoc = doctors?.find(d => (d.name.includes('सुरेश') || d.name.includes('प्रमोद सुरेश') || d.name.startsWith('डॉ. प्रमोद')) && !d.name.includes('प्रियांका'));
+
+  const doc1Raw = priyankaDoc || (pramodDoc ? doctors?.find(d => d !== pramodDoc) : doctors?.[0]);
+  const doc1 = {
+    name: doc1Raw?.name || 'डॉ. प्रियांका प्रमोद शिनगारे',
+    title: (doc1Raw?.title && doc1Raw.title.includes('CCHC')) ? doc1Raw.title : 'BHMS, FCHD, CCHC, CCMP (MUHS)',
+    subTitle: (doc1Raw?.subTitle && doc1Raw.subTitle.includes('Cosmetologist')) ? doc1Raw.subTitle : '(Consultant Homeopathy Dermatologist & Cosmetologist)',
+    regNo: doc1Raw?.regNo || 'Reg. No. 73338',
+    specialty: doc1Raw?.specialty || 'त्वचारोग तज्ञ',
   };
-  const doc2 = (doctors && doctors[0] && doctors[0].name.includes('प्रियांका')) ? doctors[0] : (doctors && doctors[1] && doctors[1].name.includes('प्रियांका')) ? doctors[1] : {
-    name: 'डॉ. प्रियांका प्रमोद शिनगारे',
-    title: 'BHMS, FCHD (MUHS)',
-    subTitle: '(Consultant Homeopathy Dermatologist)',
-    regNo: 'Reg. No. 73338',
-    specialty: 'त्वचारोग तज्ज्ञ',
+
+  const doc2Raw = pramodDoc || (priyankaDoc ? doctors?.find(d => d !== priyankaDoc) : doctors?.[1]);
+  const doc2 = {
+    name: doc2Raw?.name || 'डॉ. प्रमोद सुरेश शिनगारे',
+    title: doc2Raw?.title || 'MD (Ayu) - D.Dermatology (Ay.)',
+    subTitle: doc2Raw?.subTitle || '(MUHS)',
+    regNo: doc2Raw?.regNo || 'Reg. No. I-87218-A',
+    specialty: doc2Raw?.specialty || 'त्वचारोग व सौंदर्य विशेष तज्ञ',
   };
   const isGeneralPad = templateVariant === 'general';
   return (
@@ -316,7 +322,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
             {doc1.title && <div style={{ fontSize: '9px', fontWeight: 700, color: '#222' }}>{doc1.title}</div>}
             {doc1.subTitle && <div style={{ fontSize: '9px', fontWeight: 700, color: '#222' }}>{doc1.subTitle}</div>}
             {doc1.regNo && <div style={{ fontSize: '9px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{doc1.regNo}</div>}
-            {doc1.specialty && <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '10.5px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{(doc1.specialty || '').replace('विशेषज्ञ', 'विशेष तज्ज्ञ')}</div>}
+            {doc1.specialty && <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '10.5px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{(doc1.specialty || '').replace('तज्ज्ञ', 'तज्ञ').replace('तज्ज्ञ', 'तज्ञ').replace('विशेषज्ञ', 'विशेष तज्ञ')}</div>}
           </div>
           {/* Timings (Center) */}
           <div
@@ -345,7 +351,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
             {doc2.title && <div style={{ fontSize: '9px', fontWeight: 700, color: '#222' }}>{doc2.title}</div>}
             {doc2.subTitle && <div style={{ fontSize: '9px', fontWeight: 700, color: '#222' }}>{doc2.subTitle}</div>}
             {doc2.regNo && <div style={{ fontSize: '9px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{doc2.regNo}</div>}
-            {doc2.specialty && <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '10.5px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{(doc2.specialty || '').replace('विशेषज्ञ', 'विशेष तज्ज्ञ')}</div>}
+            {doc2.specialty && <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '10.5px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{(doc2.specialty || '').replace('तज्ज्ञ', 'तज्ञ').replace('तज्ज्ञ', 'तज्ञ').replace('विशेषज्ञ', 'विशेष तज्ञ')}</div>}
           </div>
         </div>
         {/* Address Green Strip */}
@@ -747,7 +753,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                 )}
               </div>
               {/* Prescription Medicine Table with Headers & Borders (Always visible) */}
-              <div style={{ marginTop: printOnStationery ? '10mm' : '4px' }}>
+              <div style={{ marginTop: printOnStationery ? '5mm' : '-1px' }}>
                 <table
                   style={{
                     width: '100%',
