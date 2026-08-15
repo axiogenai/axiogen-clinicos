@@ -69,43 +69,41 @@ export default function QueueList({
   const renderPaymentControl = (item: QueueItem) => {
     const isPaid = item.paymentStatus !== 'unpaid';
     const mode = item.paymentMode || 'cash';
-
-    if (isPaid) {
-      return (
-        <div className="inline-flex items-center gap-1">
-          <button
-            type="button"
-            title="Click to toggle Payment Mode (Cash/Online)"
-            onClick={() => updateQueuePayment(item.queueId, 'paid', mode === 'cash' ? 'online' : 'cash')}
-            className={`text-[11px] font-bold px-2 py-0.5 rounded-full border cursor-pointer transition-all ${
-              mode === 'online'
-                ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
-                : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-            }`}
-          >
-            {mode === 'online' ? '📱 Paid (Online)' : '💵 Paid (Cash)'}
-          </button>
-          <button
-            type="button"
-            title="Mark as Unpaid"
-            onClick={() => updateQueuePayment(item.queueId, 'unpaid')}
-            className="text-[10px] text-gray-400 hover:text-amber-600 px-1"
-          >
-            ✕
-          </button>
-        </div>
-      );
-    }
+    const currentValue = isPaid ? mode : 'unpaid';
 
     return (
-      <button
-        type="button"
-        title="Click to mark as Paid (Cash)"
-        onClick={() => updateQueuePayment(item.queueId, 'paid', 'cash')}
-        className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-300 hover:bg-amber-100 cursor-pointer transition-all"
-      >
-        ⚠️ Unpaid (Pay)
-      </button>
+      <div className="inline-block relative">
+        <select
+          value={currentValue}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === 'unpaid') {
+              updateQueuePayment(item.queueId, 'unpaid');
+            } else if (val === 'cash') {
+              updateQueuePayment(item.queueId, 'paid', 'cash');
+            } else if (val === 'online') {
+              updateQueuePayment(item.queueId, 'paid', 'online');
+            }
+          }}
+          className={`text-[11px] font-bold pl-2.5 pr-6 py-1 rounded-full border cursor-pointer appearance-none transition-all focus:outline-none shadow-sm ${
+            currentValue === 'cash'
+              ? 'bg-[#ecfdf5] text-[#047857] border-[#a7f3d0] hover:bg-[#d1fae5]'
+              : currentValue === 'online'
+              ? 'bg-[#eff6ff] text-[#1d4ed8] border-[#bfdbfe] hover:bg-[#dbeafe]'
+              : 'bg-[#fffbeb] text-[#b45309] border-[#fde68a] hover:bg-[#fef3c7]'
+          }`}
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'right 6px center',
+            backgroundSize: '12px 12px',
+          }}
+        >
+          <option value="cash">💵 Paid (Cash)</option>
+          <option value="online">📱 Paid (Online)</option>
+          <option value="unpaid">⏳ Unpaid</option>
+        </select>
+      </div>
     );
   };
 
