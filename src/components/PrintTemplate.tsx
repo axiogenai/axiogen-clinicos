@@ -446,79 +446,70 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
       {/* ══════════════════════════════════════════════════════MAIN BODY AREA (y: 70mm to 245mm = 175mm H)            */}
       {/* ══════════════════════════════════════════════════════ */}
       {isGeneralPad ? (
-        /* OPTION A: TEMPLATE 2 - GENERAL MEDICINE PAD LAYOUT */
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, height: '172mm', overflow: 'hidden' }}>
+        /* OPTION A: TEMPLATE 2 - GENERAL MEDICINE A5 PAD (PURE TEXT, NO TABLE, NO HEADERS, NO BORDERS) */
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, height: '172mm', overflow: 'hidden', boxSizing: 'border-box' }}>
           <div
             style={{
               display: 'flex',
               flexDirection: 'column',
               flex: 1,
-              borderTop: printOnStationery ? 'none' : '3px double #a53b3b',
-              padding: '12px 20px',
+              padding: '6px 20mm 12px 20mm',
               boxSizing: 'border-box',
               position: 'relative',
               overflow: 'hidden',
             }}
           >
-            {!printOnStationery && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                  <svg width="45" height="45" viewBox="0 0 100 110" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="47.5" y="14" width="5" height="88" rx="2.5" fill="#2d773f" />
-                    <circle cx="50" cy="12" r="5" fill="#2d773f" />
-                    <path d="M 46 22 C 32 10, 15 15, 8 21 C 22 26, 36 27, 46 30 Z" fill="#2d773f" />
-                    <path d="M 45 27 C 32 20, 20 22, 12 27 C 24 30, 36 30, 45 32 Z" fill="#2d773f" />
-                    <path d="M 54 22 C 68 10, 85 15, 92 21 C 78 26, 64 27, 54 30 Z" fill="#2d773f" />
-                    <path d="M 55 27 C 68 20, 80 22, 88 27 C 76 30, 64 30, 55 32 Z" fill="#2d773f" />
-                    <ellipse cx="50" cy="38" rx="18" ry="7.5" stroke="#2d773f" strokeWidth="4.5" fill="none" />
-                    <ellipse cx="50" cy="54" rx="15" ry="7" stroke="#2d773f" strokeWidth="4.5" fill="none" />
-                    <ellipse cx="50" cy="69" rx="12" ry="6" stroke="#2d773f" strokeWidth="4" fill="none" />
-                    <ellipse cx="50" cy="82" rx="9" ry="5" stroke="#2d773f" strokeWidth="3.5" fill="none" />
-                    <ellipse cx="50" cy="93" rx="6" ry="3.5" stroke="#2d773f" strokeWidth="3" fill="none" />
-                  </svg>
-                </div>
-                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#333', marginTop: '10px' }}>
-                  Date : {formatDate(casePaper.date)}
-                </div>
-              </div>
-            )}
-            <div style={{ marginTop: '10px', flex: 1 }}>
+            {/* Date line on top right */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontWeight: 700, fontSize: '13px', color: '#111' }}>
+                {labels.date} {formatDate(casePaper.date)}
+              </span>
+            </div>
+
+            {/* Pure Text Medicine List (No table, no borders, no Sr No header) */}
+            <div style={{ marginTop: '6px', flex: 1 }}>
               {casePaper.medicines && casePaper.medicines.length > 0 ? (
-                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #333', fontSize: '12px' }}>
-                  <thead>
-                    <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #333', fontWeight: 700 }}>
-                      <th style={{ border: '1px solid #333', padding: '4px 4px', textAlign: 'center', width: '45px' }}>{headers.srNo || 'Sr. No.'}</th>
-                      <th style={{ border: '1px solid #333', padding: '4px 10px', textAlign: 'left' }}>{headers.medName}</th>
-                      <th style={{ border: '1px solid #333', padding: '4px 10px', textAlign: 'left', width: '180px' }}>{headers.freq}</th>
-                      <th style={{ border: '1px solid #333', padding: '4px 10px', textAlign: 'left', width: '80px' }}>{headers.duration}</th>
-                      <th style={{ border: '1px solid #333', padding: '4px 6px', textAlign: 'center', width: '65px', color: '#93231f' }}>{headers.count}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {casePaper.medicines.map((med, index) => {
-                      const displayName = getPrintMedicineName(med);
-                      return (
-                        <tr key={index} style={{ borderBottom: '1px solid #333', height: '26px' }}>
-                          <td style={{ border: '1px solid #333', padding: '4px 6px', textAlign: 'center', fontFamily: 'monospace', fontSize: '11.5px' }}>{index + 1}</td>
-                          <td style={{ border: '1px solid #333', padding: '4px 10px', fontWeight: 700, color: '#111' }}>{displayName}</td>
-                          <td style={{ border: '1px solid #333', padding: '4px 10px', fontWeight: 600, color: '#222' }}>{renderFrequencyCell(med.frequency, med.name, language, med.instructions || med.notes)}</td>
-                          <td style={{ border: '1px solid #333', padding: '4px 10px', color: '#333' }}>{translateDuration(med.duration, language)}</td>
-                          <td style={{ border: '1px solid #333', padding: '4px 6px', textAlign: 'center', fontWeight: 700, color: '#047857' }}>{calculateMedicineCount(med)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {casePaper.medicines.map((med, index) => {
+                    const displayName = getPrintMedicineName(med);
+                    const count = calculateMedicineCount(med);
+                    return (
+                      <div
+                        key={index}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '26px minmax(140px, 1fr) minmax(160px, auto) 80px 45px',
+                          alignItems: 'baseline',
+                          gap: '8px',
+                          fontSize: '13px',
+                          lineHeight: 1.35,
+                          padding: '3px 0',
+                          borderBottom: '1px dotted #e2e8f0',
+                        }}
+                      >
+                        <span style={{ fontWeight: 700, color: '#333' }}>{index + 1}.</span>
+                        <span style={{ fontWeight: 700, color: '#111' }}>{displayName}</span>
+                        <span style={{ fontWeight: 600, color: '#222' }}>
+                          {renderFrequencyCell(med.frequency, med.name, language, med.instructions || med.notes)}
+                        </span>
+                        <span style={{ color: '#444', fontSize: '12px' }}>{translateDuration(med.duration, language)}</span>
+                        <span style={{ fontWeight: 700, color: '#047857', textAlign: 'right', fontSize: '12.5px' }}>{count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               ) : (
-                <div style={{ flex: 1, minHeight: '200px' }} />
+                <div style={{ flex: 1, minHeight: '180px' }} />
               )}
+
               {casePaper.counsellingDone && casePaper.counsellingDone.length > 0 && (
-                <div style={{ marginTop: '10px', fontSize: '11px', fontWeight: 600 }}>
-                  <div style={{ fontWeight: 700, marginBottom: '2px' }}>Special Advice / Instructions:</div>
-                  <div>{casePaper.counsellingDone.join(' • ')}</div>
+                <div style={{ marginTop: '14px', fontSize: '12px', fontWeight: 600, borderTop: '1px dashed #cbd5e1', paddingTop: '8px' }}>
+                  <div style={{ fontWeight: 700, marginBottom: '3px', color: '#111' }}>Special Advice / Instructions:</div>
+                  <div style={{ color: '#333' }}>{casePaper.counsellingDone.join(' • ')}</div>
                 </div>
               )}
             </div>
+
             {/* Signature & Follow-up Line */}
             <div
               style={{
@@ -526,17 +517,17 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 fontWeight: 600,
-                fontSize: '11.5px',
+                fontSize: '12px',
                 color: '#222',
                 marginTop: 'auto',
-                paddingTop: '4px',
+                paddingTop: '6px',
                 paddingBottom: '2px',
-                borderTop: printOnStationery ? 'none' : '1px dashed #999',
+                borderTop: '1px dashed #999',
               }}
             >
-              <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
-              <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: printOnStationery ? 'translate(-12mm, 9.7mm)' : 'none' }}>
-                <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Follow up - </span>
+              <span>Patient Signature - </span>
+              <span style={{ fontWeight: 700, color: '#111' }}>
+                <span>Follow up - </span>
                 <span>{formatDate(casePaper.followUpDate)}</span>
               </span>
             </div>
