@@ -387,7 +387,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               {patient.name}
             </div>
             {/* Date slot */}
-            <div style={{ position: "absolute", top: "5.0mm", left: "138.5mm", fontSize: "12.5px" }}>
+            <div style={{ position: "absolute", top: "3.0mm", left: "138.5mm", fontSize: "12.5px" }}>
               {formatDate(casePaper.date)}
             </div>
             {/* Village slot */}
@@ -395,7 +395,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               {patient.village || ""}
             </div>
             {/* Age/Sex slot */}
-            <div style={{ position: "absolute", top: "11.2mm", left: "133mm", fontSize: "12.5px" }}>
+            <div style={{ position: "absolute", top: "9.2mm", left: "133mm", fontSize: "12.5px" }}>
               {patient.age} Yrs / {patient.gender === "M" ? "Male" : "Female"}
             </div>
           </div>
@@ -804,7 +804,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               }}
             >
               <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
-              <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: printOnStationery ? 'translate(-12mm, 9.7mm)' : 'none' }}>
+              <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: printOnStationery ? 'translate(-12mm, 14.7mm)' : 'none' }}>
                 <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Follow up - </span>
                 <span>{formatDate(casePaper.followUpDate)}</span>
               </span>
