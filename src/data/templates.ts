@@ -4,6 +4,8 @@ export interface TemplateMedicine {
   dosage: string;
   frequency: string;
   duration: string;
+  count?: string | number;
+  isManualCount?: boolean;
 }
 
 export interface CaseTemplate {

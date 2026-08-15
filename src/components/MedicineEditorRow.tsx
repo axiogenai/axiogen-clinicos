@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Trash2, Languages, Loader2 } from 'lucide-react';
 import type { TemplateMedicine } from '../data/templates';
 import { translateFrequencyToMarathi } from '../utils/marathiTranslator';
+import { calculateMedicineCount } from '../utils/countCalculator';
 import { useClinic } from '../context/ClinicContext';
 
 interface MedicineEditorRowProps {
@@ -212,7 +213,18 @@ export default function MedicineEditorRow({ item, index, onUpdate, onRemove }: M
               }
             }}
             placeholder="Duration (7 Days)"
-            className="w-28 sm:w-32 px-2.5 py-1.5 text-xs sm:text-sm font-semibold border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+            className="w-24 sm:w-28 px-2.5 py-1.5 text-xs sm:text-sm font-semibold border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+          />
+        </div>
+
+        <div className="relative shrink-0">
+          <input
+            type="text"
+            value={item.count !== undefined && item.count !== null ? item.count : calculateMedicineCount({ name: item.medicineName || '', frequency: item.frequency, duration: item.duration })}
+            onChange={(e) => onUpdate(index, 'count', e.target.value)}
+            placeholder="Count"
+            title="Total Medicine Count (Editable)"
+            className="w-14 sm:w-16 px-1.5 py-1.5 text-xs sm:text-sm font-bold text-center text-emerald-700 bg-emerald-50 border border-emerald-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
           />
         </div>
       </div>

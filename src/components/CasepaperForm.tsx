@@ -496,12 +496,18 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
 
     const newMedicines = template.medicines.map(tm => {
       const med = filteredMedicines.find(m => m.id === tm.medicineId) || dbMedicines.find(m => m.id === tm.medicineId);
+      const name = tm.medicineName || (tm as any).name || (med ? med.name : 'Unknown Medicine');
+      const frequency = tm.frequency || (med ? med.defaultFrequency || '' : '');
+      const duration = tm.duration || (med ? med.defaultDuration || '7 Days' : '7 Days');
+      const count = tm.count !== undefined && tm.count !== null && tm.count !== '' ? tm.count : calculateMedicineCount({ name, frequency, duration });
       return {
         medicineId: tm.medicineId,
-        name: tm.medicineName || (tm as any).name || (med ? med.name : 'Unknown Medicine'),
+        name,
         dosage: tm.dosage || (med ? `${med.strength || ''} (${med.form || 'Tablet'})` : ''),
-        frequency: tm.frequency || (med ? med.defaultFrequency || '' : ''),
-        duration: tm.duration || (med ? med.defaultDuration || '7 Days' : '7 Days'),
+        frequency,
+        duration,
+        count,
+        isManualCount: tm.count !== undefined && tm.count !== null && tm.count !== '',
       };
     });
 
@@ -652,10 +658,11 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
         const nextMed = { ...m, [field]: value };
         if (field === 'count') {
           nextMed.isManualCount = true;
+          nextMed.count = value;
         } else if (field === 'frequency' || field === 'duration') {
-          nextMed.isManualCount = false;
-          delete nextMed.count;
-          nextMed.count = calculateMedicineCount(nextMed);
+          if (!nextMed.isManualCount) {
+            nextMed.count = calculateMedicineCount(nextMed);
+          }
         }
         return nextMed;
       }
@@ -1401,7 +1408,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                       <input
                         type="text"
                         placeholder="Count"
-                        value={calculateMedicineCount(med)}
+                        value={med.count !== undefined && med.count !== null && med.count !== '' ? med.count : calculateMedicineCount(med)}
                         onChange={(e) => updateMedicineField(index, 'count', e.target.value)}
                         className="form-input form-input-sm font-bold text-center text-[#047857] bg-[#ecfdf5] border-[#a7f3d0]"
                       />
@@ -1570,7 +1577,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                         <input
                           type="text"
                           placeholder="Count"
-                          value={calculateMedicineCount(med)}
+                          value={med.count !== undefined && med.count !== null && med.count !== '' ? med.count : calculateMedicineCount(med)}
                           onChange={(e) => updateMedicineField(index, 'count', e.target.value)}
                           className="form-input form-input-sm font-bold text-center text-[#047857] bg-[#ecfdf5] border-[#a7f3d0]"
                         />
