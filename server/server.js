@@ -97,6 +97,23 @@ app.use((req, res, next) => {
 });
 
 
+// Oracle Cloud Auto-Update / Deployment Webhook
+app.all('/api/deploy-pull', (req, res) => {
+  const { exec } = require('child_process');
+  console.log('🔄 [ORACLE DEPLOYMENT] Triggering git pull & server restart...');
+  exec('git pull origin main', { cwd: path.join(__dirname, '..') }, (err, stdout, stderr) => {
+    if (err) {
+      console.error('❌ Git pull failed:', err);
+      return res.status(500).json({ error: err.message, stderr });
+    }
+    console.log('✅ Git pull successful:', stdout);
+    res.json({ message: 'Git pull successful. Restarting server...', stdout });
+    setTimeout(() => {
+      process.exit(0); // PM2 will automatically restart process
+    }, 1000);
+  });
+});
+
 // Healthcheck
 app.get('/api/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date(), app: 'ClinicOS Full-Stack API' });
@@ -112,13 +129,25 @@ async function startServer() {
   try {
     await sequelize.authenticate();
     // Execute safe column migrations
-    if (sequelize.getDialect() === 'postgres') {
+    const dialect = sequelize.getDialect();
+    if (dialect === 'postgres') {
       await sequelize.query(`
         ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "reset_otp" VARCHAR(255);
         ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "reset_otp_expires" TIMESTAMP WITH TIME ZONE;
         ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "reset_o_t_p" VARCHAR(255);
         ALTER TABLE IF EXISTS "users" ADD COLUMN IF NOT EXISTS "reset_o_t_p_expires" TIMESTAMP WITH TIME ZONE;
+        ALTER TABLE IF EXISTS "Queues" ADD COLUMN IF NOT EXISTS "payment_status" VARCHAR(255) DEFAULT 'paid';
+        ALTER TABLE IF EXISTS "Queues" ADD COLUMN IF NOT EXISTS "payment_mode" VARCHAR(255) DEFAULT 'cash';
+        ALTER TABLE IF EXISTS "opd_registers" ADD COLUMN IF NOT EXISTS "payment_status" VARCHAR(255) DEFAULT 'paid';
+        ALTER TABLE IF EXISTS "opd_registers" ADD COLUMN IF NOT EXISTS "payment_mode" VARCHAR(255) DEFAULT 'cash';
+        ALTER TABLE IF EXISTS "queues" ADD COLUMN IF NOT EXISTS "payment_status" VARCHAR(255) DEFAULT 'paid';
+        ALTER TABLE IF EXISTS "queues" ADD COLUMN IF NOT EXISTS "payment_mode" VARCHAR(255) DEFAULT 'cash';
       `).catch(err => console.warn('Database column migration notice:', err.message));
+    } else if (dialect === 'sqlite') {
+      await sequelize.query(`ALTER TABLE Queues ADD COLUMN paymentStatus VARCHAR(255) DEFAULT 'paid';`).catch(() => {});
+      await sequelize.query(`ALTER TABLE Queues ADD COLUMN paymentMode VARCHAR(255) DEFAULT 'cash';`).catch(() => {});
+      await sequelize.query(`ALTER TABLE opd_registers ADD COLUMN payment_status VARCHAR(255) DEFAULT 'paid';`).catch(() => {});
+      await sequelize.query(`ALTER TABLE opd_registers ADD COLUMN payment_mode VARCHAR(255) DEFAULT 'cash';`).catch(() => {});
     }
 
     await sequelize.sync({ alter: false });
