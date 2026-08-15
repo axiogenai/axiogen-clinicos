@@ -68,7 +68,7 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
   const consulting = queue.filter(q => q.status === 'in-consultation').length;
   const completed = queue.filter(q => q.status === 'completed').length;
 
-  // Active (In-Room & Waiting) patients first, latest added at the very top. Completed patients at bottom.
+  // Doctor View: In Room (in-consultation) at top, then Waiting patients in FIFO order, then Completed at bottom
   const displayQueue = useMemo(() => {
     return [...queue].sort((a, b) => {
       const getWeight = (status: string) => {
@@ -80,8 +80,8 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
       const wB = getWeight(b.status);
       if (wA !== wB) return wA - wB;
 
-      // Secondary: Newest created/added first
-      return (b.queueId || '').localeCompare(a.queueId || '');
+      // Secondary: FIFO order (earliest registered patient first)
+      return (a.queueId || '').localeCompare(b.queueId || '');
     });
   }, [queue]);
 

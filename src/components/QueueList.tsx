@@ -76,16 +76,8 @@ export default function QueueList({
   const { updateQueuePayment } = useClinic();
   const getPatient = (id: string) => patients.find(p => p.id === id);
 
-  // Auto-sort: waiting first, in-consultation, completed, cancelled
-  const sortedQueue = [...queue].sort((a, b) => {
-    const statusOrder: Record<string, number> = {
-      'waiting': 1,
-      'in-consultation': 2,
-      'completed': 3,
-      'cancelled': 4,
-    };
-    return (statusOrder[a.status] || 5) - (statusOrder[b.status] || 5);
-  });
+  // Receptionist View: Pure Normal FIFO (First-In, First-Out by arrival order)
+  const sortedQueue = [...queue];
 
   const getStatusBadge = (status: QueueItem['status']) => {
     switch (status) {
