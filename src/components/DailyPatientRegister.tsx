@@ -1,11 +1,8 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useClinic } from '../context/ClinicContext';
 import { api } from '../api/client';
-import { Calendar, CalendarDays, BarChart2, Search, Printer, UserCheck, Clock, CheckCircle2, FileSpreadsheet, Send, MessageSquare, Save, FileText, X, Pill, Edit3, Trash2, ChevronDown, Check } from 'lucide-react';
+import { Calendar, CalendarDays, BarChart2, Search, Printer, UserCheck, Clock, CheckCircle2, FileSpreadsheet, Send, MessageSquare, Save, FileText, X, Pill, Trash2, ChevronDown, Check } from 'lucide-react';
 import PrintPreview from './PrintPreview';
-import CasepaperForm from './CasepaperForm';
-import type { Patient } from '../data/patients';
-import type { CasePaper } from '../types';
 import { calculateMedicineCount } from '../utils/countCalculator';
 import * as XLSX from 'xlsx';
 
@@ -88,7 +85,6 @@ export default function DailyPatientRegister() {
   const [selectedFollowUpIds] = useState<string[]>([]);
   const [showFollowUpList, setShowFollowUpList] = useState(false);
   const [activeEmrModal, setActiveEmrModal] = useState<{ patient: any; casePaper: any } | null>(null);
-  const [editingCasePaper, setEditingCasePaper] = useState<{ patient: Patient; casePaper: CasePaper; queueId?: string } | null>(null);
   const [isPrintPreviewOpen, setIsPrintPreviewOpen] = useState(false);
 
   // Archive & History Register State
@@ -545,73 +541,6 @@ export default function DailyPatientRegister() {
       casePaper: savedCasePaper
     });
     setIsPrintPreviewOpen(false);
-  };
-
-  // Open Full Interactive Casepaper Consultation Form for Live Editing
-  const handleEditEMR = async (item: any) => {
-    let matchingPatient: Patient | undefined = patients.find(p => p.id === item.patientId || p.name?.toLowerCase() === item.name?.toLowerCase());
-    if (!matchingPatient) {
-      matchingPatient = {
-        id: item.patientId || `pat_${Date.now()}`,
-        name: item.name || 'Patient',
-        age: item.age || 0,
-        gender: item.gender || 'M',
-        phone: item.phone || '',
-        village: item.village || '',
-        pastHistory: 'Nil',
-        allergies: 'None',
-        pastVisits: []
-      };
-    }
-
-    let savedCasePaper: CasePaper | null = null;
-    try {
-      const cached = localStorage.getItem(`clinicos_saved_casepaper_${matchingPatient.id}`);
-      if (cached) savedCasePaper = JSON.parse(cached);
-    } catch {}
-
-    if (!savedCasePaper) {
-      try {
-        const list = await api.getCasePapers(matchingPatient.id);
-        if (list && list.length > 0) {
-          const latest = list[0];
-          savedCasePaper = {
-            patientId: matchingPatient.id,
-            date: latest.date || selectedDate,
-            templateId: latest.templateId || '',
-            complaint: latest.complaint || item.complaint,
-            pastHistory: latest.pastHistory || matchingPatient.pastHistory || '',
-            allergies: latest.allergies || matchingPatient.allergies || '',
-            medicines: latest.medicines || [],
-            investigationsAdvised: latest.investigationsAdvised || [],
-            counsellingDone: latest.counsellingDone || [],
-            followUpDate: latest.followUpDate || '',
-          };
-        }
-      } catch {}
-    }
-
-    if (!savedCasePaper) {
-      savedCasePaper = {
-        patientId: matchingPatient.id,
-        date: selectedDate,
-        templateId: '',
-        complaint: item.complaint || 'General Checkup',
-        pastHistory: matchingPatient.pastHistory || 'Nil',
-        allergies: matchingPatient.allergies || 'None',
-        medicines: [],
-        investigationsAdvised: [],
-        counsellingDone: [],
-        followUpDate: '',
-      };
-    }
-
-    setActiveEmrModal(null);
-    setEditingCasePaper({
-      patient: matchingPatient,
-      casePaper: savedCasePaper,
-      queueId: item.queueId || item.opdNo
-    });
   };
 
   // Automated Background WhatsApp Dispatch (No Manual Tabs)
@@ -1263,25 +1192,15 @@ export default function DailyPatientRegister() {
                     {item.status === 'waiting' && <span className="badge badge-waiting"><Clock className="w-3 h-3" />Waiting</span>}
                   </td>
                   <td className="text-center">
-                    <div className="flex items-center justify-center gap-1.5">
+                    <div className="flex items-center justify-center">
                       <button
                         type="button"
                         onClick={() => handleOpenEMR(item)}
-                        className="px-2 py-1 bg-[#ecfdf5] hover:bg-[#dcfce7] text-[#047857] rounded-lg border border-[#a7f3d0] inline-flex items-center gap-1 text-[11px] font-bold transition-all shadow-sm active:scale-95"
+                        className="px-2.5 py-1 bg-[#ecfdf5] hover:bg-[#dcfce7] text-[#047857] rounded-lg border border-[#a7f3d0] inline-flex items-center gap-1 text-[11px] font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
                         title="View EMR Casepaper Preview"
                       >
-                        <FileText className="w-3 h-3 text-[#047857]" />
+                        <FileText className="w-3.5 h-3.5 text-[#047857]" />
                         <span>View</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleEditEMR(item)}
-                        className="px-2 py-1 bg-[#fffbeb] hover:bg-[#fef3c7] text-[#b45309] rounded-lg border border-[#fde68a] inline-flex items-center gap-1 text-[11px] font-bold transition-all shadow-sm active:scale-95"
-                        title="Edit EMR Consultation Form"
-                      >
-                        <Edit3 className="w-3 h-3 text-[#b45309]" />
-                        <span>Edit</span>
                       </button>
                     </div>
                   </td>
@@ -1505,22 +1424,6 @@ export default function DailyPatientRegister() {
                 >
                   Close
                 </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    const current = activeEmrModal;
-                    setActiveEmrModal(null);
-                    setEditingCasePaper({
-                      patient: current.patient,
-                      casePaper: current.casePaper
-                    });
-                  }}
-                  className="px-3 py-1.5 bg-[#fffbeb] hover:bg-[#fef3c7] text-[#b45309] border border-[#fde68a] rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
-                >
-                  <Edit3 className="w-3.5 h-3.5 text-[#b45309]" />
-                  <span>Edit Casepaper</span>
-                </button>
               </div>
 
               <button
@@ -1537,37 +1440,16 @@ export default function DailyPatientRegister() {
       )}
 
       {/* Print Preview Overlay */}
-      {isPrintPreviewOpen && (activeEmrModal || editingCasePaper) && (
+      {isPrintPreviewOpen && activeEmrModal && (
         <PrintPreview
-          patient={activeEmrModal?.patient || editingCasePaper!.patient}
-          casePaper={activeEmrModal?.casePaper || editingCasePaper!.casePaper}
+          patient={activeEmrModal.patient}
+          casePaper={activeEmrModal.casePaper}
           onBack={() => setIsPrintPreviewOpen(false)}
           onReturnToQueue={() => {
             setIsPrintPreviewOpen(false);
             setActiveEmrModal(null);
-            setEditingCasePaper(null);
           }}
         />
-      )}
-      {/* Full Interactive Consultation Form for Live Editing */}
-      {editingCasePaper && (
-        <div className="fixed inset-0 bg-white z-50 overflow-y-auto p-4 sm:p-8 animate-fade-in">
-          <div className="max-w-6xl mx-auto">
-            <CasepaperForm
-              patient={editingCasePaper.patient}
-              queueId={editingCasePaper.queueId || `Q${Date.now()}`}
-              casePaper={editingCasePaper.casePaper}
-              onUpdateCasePaper={(updatedCp) => {
-                try {
-                  localStorage.setItem(`clinicos_saved_casepaper_${editingCasePaper.patient.id}`, JSON.stringify(updatedCp));
-                } catch {}
-                api.createCasePaper({ ...updatedCp, queueId: editingCasePaper.queueId }).catch(() => {});
-                setEditingCasePaper(prev => prev ? { ...prev, casePaper: updatedCp } : null);
-              }}
-              onBack={() => setEditingCasePaper(null)}
-            />
-          </div>
-        </div>
       )}
     </div>
   );
