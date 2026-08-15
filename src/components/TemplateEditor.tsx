@@ -4,6 +4,7 @@ import type { CaseTemplate, TemplateMedicine } from '../data/templates';
 import MedicineEditorRow from './MedicineEditorRow';
 import MedicineSearchModal from './MedicineSearchModal';
 import { parseSentenceWithGroqAI } from '../utils/sentenceParser';
+import { useClinic } from '../context/ClinicContext';
 
 interface TemplateEditorProps {
   template: CaseTemplate;
@@ -19,6 +20,7 @@ const COMMON_INVESTIGATIONS = [
 ];
 
 export default function TemplateEditor({ template, onSave, onCancel, onPreview }: TemplateEditorProps) {
+  const { addCustomFrequency } = useClinic();
   const [formData, setFormData] = useState<CaseTemplate>(() => ({
     id: template?.id || `tpl_${Date.now()}`,
     name: template?.name || '',
@@ -51,6 +53,10 @@ export default function TemplateEditor({ template, onSave, onCancel, onPreview }
       const medicineName = parsed?.formattedMedicineName || raw;
       const frequency = parsed?.frequency || '';
       const duration = parsed?.duration || '7 Days';
+
+      if (frequency) {
+        addCustomFrequency(frequency);
+      }
 
       const newMed: TemplateMedicine & { medicineName: string } = {
         medicineId: `ai_${Date.now()}`,
@@ -92,6 +98,9 @@ export default function TemplateEditor({ template, onSave, onCancel, onPreview }
   };
 
   const handleUpdateMedicine = (index: number, field: keyof TemplateMedicine, value: string) => {
+    if (field === 'frequency' && value && value.trim().length > 1) {
+      addCustomFrequency(value.trim());
+    }
     const updated = [...formData.medicines];
     updated[index] = { ...updated[index], [field]: value };
     setFormData((prev: CaseTemplate) => ({ ...prev, medicines: updated }));
