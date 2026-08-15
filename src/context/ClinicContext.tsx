@@ -36,8 +36,9 @@ interface ClinicContextType {
   deletePatient: (patientId: string) => void;
   addToQueue: (queueItem: QueueItem) => void;
   updateQueueStatus: (queueId: string, status: QueueItem['status']) => void;
+  updateQueuePayment: (queueId: string, paymentStatus: 'paid' | 'unpaid', paymentMode?: 'cash' | 'online') => void;
   removeFromQueue: (queueId: string) => void;
-  registerAndEnqueue: (patientData: Partial<Patient> & { complaint: string; notes?: string }, existingPatient?: Patient) => Promise<{ patient: Patient; queueItem: QueueItem } | null>;
+  registerAndEnqueue: (patientData: Partial<Patient> & { complaint: string; notes?: string; paymentStatus?: 'paid' | 'unpaid'; paymentMode?: 'cash' | 'online' }, existingPatient?: Patient) => Promise<{ patient: Patient; queueItem: QueueItem } | null>;
   addTemplate: (template: CaseTemplate) => void;
   updateTemplate: (template: CaseTemplate) => void;
   deleteTemplate: (templateId: string) => void;
@@ -314,13 +315,29 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
     api.updateQueueStatus(queueId, status).catch(() => {});
   }, []);
 
+  const updateQueuePayment = useCallback((queueId: string, paymentStatus: 'paid' | 'unpaid', paymentMode?: 'cash' | 'online') => {
+    setQueue((prev) =>
+      prev.map((item) => {
+        if (item.queueId === queueId) {
+          return { ...item, paymentStatus, paymentMode: paymentMode || item.paymentMode || 'cash' };
+        }
+        return item;
+      })
+    );
+    api.updateQueueItem(queueId, { paymentStatus, paymentMode }).catch(() => {});
+    setToast({
+      type: 'success',
+      message: `Payment updated: ${paymentStatus === 'paid' ? `Paid (${paymentMode || 'cash'})` : 'Unpaid'}`
+    });
+  }, [setToast]);
+
   const removeFromQueue = useCallback((queueId: string) => {
     setQueue((prev) => prev.filter((item) => item.queueId !== queueId));
     api.removeFromQueue(queueId).catch(() => {});
   }, []);
 
   const registerAndEnqueue = useCallback(async (
-    patientData: Partial<Patient> & { complaint: string; notes?: string },
+    patientData: Partial<Patient> & { complaint: string; notes?: string; paymentStatus?: 'paid' | 'unpaid'; paymentMode?: 'cash' | 'online' },
     existingPatient?: Patient
   ) => {
     let patient = existingPatient;
@@ -369,6 +386,8 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
       complaint: patientData.complaint || '',
       status: 'waiting',
       notes: patientData.notes || '',
+      paymentStatus: patientData.paymentStatus || 'paid',
+      paymentMode: patientData.paymentMode || 'cash',
     };
 
     try {
@@ -578,6 +597,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
         deletePatient,
         addToQueue,
         updateQueueStatus,
+        updateQueuePayment,
         removeFromQueue,
         registerAndEnqueue,
         addTemplate,

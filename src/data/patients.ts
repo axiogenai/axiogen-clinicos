@@ -28,6 +28,9 @@ export interface QueueItem {
   gender?: 'M' | 'F';
   phone?: string;
   village?: string;
+  paymentStatus?: 'paid' | 'unpaid';
+  paymentMode?: 'cash' | 'online';
+  paymentAmount?: number | string;
 }
 
 export const patients: Patient[] = [

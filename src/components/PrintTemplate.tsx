@@ -476,23 +476,26 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                       <div
                         key={index}
                         style={{
-                          display: 'grid',
-                          gridTemplateColumns: '26px minmax(140px, 1fr) minmax(160px, auto) 80px 45px',
+                          display: 'flex',
                           alignItems: 'baseline',
-                          gap: '8px',
+                          justifyContent: 'space-between',
                           fontSize: '13px',
                           lineHeight: 1.35,
                           padding: '3px 0',
                           borderBottom: '1px dotted #e2e8f0',
                         }}
                       >
-                        <span style={{ fontWeight: 700, color: '#333' }}>{index + 1}.</span>
-                        <span style={{ fontWeight: 700, color: '#111' }}>{displayName}</span>
-                        <span style={{ fontWeight: 600, color: '#222' }}>
-                          {renderFrequencyCell(med.frequency, med.name, language, med.instructions || med.notes)}
-                        </span>
-                        <span style={{ color: '#444', fontSize: '12px' }}>{translateDuration(med.duration, language)}</span>
-                        <span style={{ fontWeight: 700, color: '#047857', textAlign: 'right', fontSize: '12.5px' }}>{count}</span>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flex: 1, marginRight: '10px' }}>
+                          <span style={{ fontWeight: 700, color: '#333', minWidth: '20px' }}>{index + 1}.</span>
+                          <span style={{ fontWeight: 700, color: '#111', whiteSpace: 'nowrap' }}>{displayName}</span>
+                          <span style={{ fontWeight: 600, color: '#222', marginLeft: '10mm' }}>
+                            {renderFrequencyCell(med.frequency, med.name, language, med.instructions || med.notes)}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '14px', flexShrink: 0 }}>
+                          <span style={{ color: '#444', fontSize: '12px', whiteSpace: 'nowrap' }}>{translateDuration(med.duration, language)}</span>
+                          <span style={{ fontWeight: 700, color: '#047857', textAlign: 'right', fontSize: '12.5px', minWidth: '28px' }}>{count}</span>
+                        </div>
                       </div>
                     );
                   })}
@@ -756,23 +759,26 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                         <div
                           key={index}
                           style={{
-                            display: 'grid',
-                            gridTemplateColumns: '22px minmax(110px, 1fr) minmax(130px, auto) 55px 35px',
+                            display: 'flex',
                             alignItems: 'baseline',
-                            gap: '6px',
+                            justifyContent: 'space-between',
                             fontSize: '11.5px',
                             lineHeight: 1.3,
                             padding: '2.5px 0',
                             borderBottom: printOnStationery ? 'none' : '1px dotted #cbd5e1',
                           }}
                         >
-                          <span style={{ fontWeight: 700, color: '#333', fontFamily: 'monospace', fontSize: '11px' }}>{index + 1}.</span>
-                          <span style={{ fontWeight: 700, color: '#111' }}>{displayName}</span>
-                          <span style={{ fontWeight: 600, color: '#222' }}>
-                            {renderFrequencyCell(med.frequency, med.name, language, med.instructions || med.notes)}
-                          </span>
-                          <span style={{ color: '#333', fontSize: '11px' }}>{translateDuration(med.duration, language)}</span>
-                          <span style={{ fontWeight: 700, color: '#047857', textAlign: 'right', fontSize: '11.5px' }}>{count}</span>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', flex: 1, marginRight: '8px' }}>
+                            <span style={{ fontWeight: 700, color: '#333', fontFamily: 'monospace', fontSize: '11px', minWidth: '18px' }}>{index + 1}.</span>
+                            <span style={{ fontWeight: 700, color: '#111', whiteSpace: 'nowrap' }}>{displayName}</span>
+                            <span style={{ fontWeight: 600, color: '#222', marginLeft: '8mm' }}>
+                              {renderFrequencyCell(med.frequency, med.name, language, med.instructions || med.notes)}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexShrink: 0 }}>
+                            <span style={{ color: '#333', fontSize: '11px', whiteSpace: 'nowrap' }}>{translateDuration(med.duration, language)}</span>
+                            <span style={{ fontWeight: 700, color: '#047857', textAlign: 'right', fontSize: '11.5px', minWidth: '24px' }}>{count}</span>
+                          </div>
                         </div>
                       );
                     })}

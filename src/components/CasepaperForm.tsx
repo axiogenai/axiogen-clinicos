@@ -296,7 +296,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
   const [showPrintOverlay, setShowPrintOverlay] = useState(false);
   const [showEMRModal, setShowEMRModal] = useState(false);
   const [showAddCustomModal, setShowAddCustomModal] = useState(false);
-  const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
+  const [customDaysInput, setCustomDaysInput] = useState('');
   const [freqOpenIndex, setFreqOpenIndex] = useState<number | null>(null);
   const [freqInputDisplay, setFreqInputDisplay] = useState('');
   const [durOpenIndex, setDurOpenIndex] = useState<number | null>(null);
@@ -329,15 +329,50 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
 
   const selectFollowUpDays = (days: number) => {
     if (days === 0) {
+      setCustomDaysInput('');
       onUpdateCasePaper({ ...casePaper, followUpDate: '' });
       return;
     }
+    setCustomDaysInput(`${days} Days`);
     const today = new Date();
     today.setDate(today.getDate() + days);
     const yyyy = today.getFullYear();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     const dd = String(today.getDate()).padStart(2, '0');
     onUpdateCasePaper({ ...casePaper, followUpDate: `${yyyy}-${mm}-${dd}` });
+  };
+
+  const handleDirectDaysInput = (raw: string) => {
+    setCustomDaysInput(raw);
+    const trimmed = raw.trim().toLowerCase();
+    if (!trimmed) {
+      onUpdateCasePaper({ ...casePaper, followUpDate: '' });
+      return;
+    }
+    let days = 0;
+    if (trimmed.includes('week')) {
+      const match = trimmed.match(/\d+/);
+      const num = match ? parseInt(match[0]) : 1;
+      days = num * 7;
+    } else if (trimmed.includes('month') || trimmed.includes('mo')) {
+      const match = trimmed.match(/\d+/);
+      const num = match ? parseInt(match[0]) : 1;
+      days = num * 30;
+    } else {
+      const match = trimmed.match(/\d+/);
+      if (match) {
+        days = parseInt(match[0]);
+      }
+    }
+
+    if (days > 0) {
+      const today = new Date();
+      today.setDate(today.getDate() + days);
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      onUpdateCasePaper({ ...casePaper, followUpDate: `${yyyy}-${mm}-${dd}` });
+    }
   };
 
   const isPresetSelected = (currentDateStr?: string, days?: number) => {
@@ -1667,20 +1702,13 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                       </span>
                     )}
                   </div>
-                  <div className="text-xs text-[#7c766d]">Select direct days or custom date for patient's next visit</div>
+                  <div className="text-xs text-[#7c766d]">Type direct days or click quick presets (calculates date automatically)</div>
                 </div>
               </div>
-
-              <button
-                type="button"
-                onClick={() => setShowCustomDatePicker(!showCustomDatePicker)}
-                className="text-xs text-[#047857] hover:underline font-bold flex items-center gap-1 self-end sm:self-auto"
-              >
-                {showCustomDatePicker ? '← Use Quick Presets' : '📅 Custom Date Picker'}
-              </button>
             </div>
 
             <div className="space-y-3">
+              {/* Quick Preset Days Pills */}
               <div className="flex flex-wrap items-center gap-2">
                 {[
                   { label: '3 Days', days: 3 },
@@ -1707,27 +1735,37 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                 })}
               </div>
 
-              {/* Direct Custom Date Picker */}
-              <div className="flex items-center gap-3 pt-2 border-t border-[#e4e2e1]">
+              {/* Direct Days Text Entry (No Date Picker Required) */}
+              <div className="flex flex-wrap items-center gap-3 pt-2.5 border-t border-[#e4e2e1]">
                 <span className="text-xs font-bold text-[#4b463e] flex items-center gap-1.5 shrink-0">
                   <Calendar className="w-3.5 h-3.5 text-[#047857]" />
-                  Or Custom Follow-up Date:
+                  Direct Days Entry:
                 </span>
-                <input
-                  type="date"
-                  value={casePaper.followUpDate || ''}
-                  onChange={(e) => onUpdateCasePaper({ ...casePaper, followUpDate: e.target.value })}
-                  className="form-input form-input-sm w-auto text-xs font-semibold"
-                />
-                {casePaper.followUpDate && (
-                  <button
-                    type="button"
-                    onClick={() => onUpdateCasePaper({ ...casePaper, followUpDate: '' })}
-                    className="text-xs text-red-600 hover:underline font-semibold"
-                  >
-                    Clear
-                  </button>
-                )}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <input
+                    type="text"
+                    value={customDaysInput}
+                    onChange={(e) => handleDirectDaysInput(e.target.value)}
+                    placeholder="e.g. 10 or 15 days"
+                    className="form-input form-input-sm w-36 text-xs font-bold text-[#047857] bg-white border-[#cdc6ba] focus:border-[#047857]"
+                  />
+                  {casePaper.followUpDate ? (
+                    <div className="flex items-center gap-1.5 bg-[#ecfdf5] border border-[#a7f3d0] px-3 py-1 rounded-lg text-xs font-bold text-[#047857]">
+                      <span>✓ {getFollowUpText(casePaper.followUpDate)}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomDaysInput('');
+                          onUpdateCasePaper({ ...casePaper, followUpDate: '' });
+                        }}
+                        className="text-red-500 hover:text-red-700 font-bold ml-1 text-sm leading-none"
+                        title="Clear follow-up"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
               </div>
             </div>
           </div>

@@ -72,6 +72,7 @@ export const api = {
   getQueueStats: (date?: string) => apiRequest<any>(`/queue/stats${date ? `?date=${date}` : ''}`),
   addToQueue: (queueItem: any) => apiRequest<any>('/queue', { method: 'POST', body: JSON.stringify(queueItem) }),
   updateQueueStatus: (queueId: string, status: string) => apiRequest<any>(`/queue/${queueId}`, { method: 'PUT', body: JSON.stringify({ status }) }),
+  updateQueueItem: (queueId: string, data: any) => apiRequest<any>(`/queue/${queueId}`, { method: 'PUT', body: JSON.stringify(data) }),
   removeFromQueue: (queueId: string) => apiRequest<any>(`/queue/${queueId}`, { method: 'DELETE' }),
   autoBackupQueue: (date: string, items: any[]) => apiRequest<any>('/queue/auto-backup', { method: 'POST', body: JSON.stringify({ date, items }) }),
 

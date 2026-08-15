@@ -1,5 +1,6 @@
 import { Phone, MapPin, Clock, Stethoscope, Check, X, ArrowRight, Eye, Trash2 } from 'lucide-react';
 import type { Patient, QueueItem } from '../data/patients';
+import { useClinic } from '../context/ClinicContext';
 
 interface Props {
   queue: QueueItem[];
@@ -16,6 +17,7 @@ export default function QueueList({
   onRemove,
   onViewDetails,
 }: Props) {
+  const { updateQueuePayment } = useClinic();
   const getPatient = (id: string) => patients.find(p => p.id === id);
 
   // Auto-sort: waiting first, in-consultation, completed, cancelled
@@ -62,6 +64,49 @@ export default function QueueList({
       default:
         return null;
     }
+  };
+
+  const renderPaymentControl = (item: QueueItem) => {
+    const isPaid = item.paymentStatus !== 'unpaid';
+    const mode = item.paymentMode || 'cash';
+
+    if (isPaid) {
+      return (
+        <div className="inline-flex items-center gap-1">
+          <button
+            type="button"
+            title="Click to toggle Payment Mode (Cash/Online)"
+            onClick={() => updateQueuePayment(item.queueId, 'paid', mode === 'cash' ? 'online' : 'cash')}
+            className={`text-[11px] font-bold px-2 py-0.5 rounded-full border cursor-pointer transition-all ${
+              mode === 'online'
+                ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+            }`}
+          >
+            {mode === 'online' ? '📱 Paid (Online)' : '💵 Paid (Cash)'}
+          </button>
+          <button
+            type="button"
+            title="Mark as Unpaid"
+            onClick={() => updateQueuePayment(item.queueId, 'unpaid')}
+            className="text-[10px] text-gray-400 hover:text-amber-600 px-1"
+          >
+            ✕
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        title="Click to mark as Paid (Cash)"
+        onClick={() => updateQueuePayment(item.queueId, 'paid', 'cash')}
+        className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-300 hover:bg-amber-100 cursor-pointer transition-all"
+      >
+        ⚠️ Unpaid (Pay)
+      </button>
+    );
   };
 
   return (
@@ -128,7 +173,10 @@ export default function QueueList({
               </div>
 
               <div className="flex items-center justify-between pt-1">
-                <span className="text-xs text-[#7c766d] font-medium">{item.timeAdded}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-[#7c766d] font-medium">{item.timeAdded}</span>
+                  {renderPaymentControl(item)}
+                </div>
                 <div className="flex items-center gap-1.5">
                   {isWaiting && (
                     <button
@@ -187,15 +235,16 @@ export default function QueueList({
 
       {/* Desktop Table View */}
       <div className="hidden md:block w-full overflow-x-auto">
-        <table className="clinic-table w-full min-w-[850px]">
+        <table className="clinic-table w-full min-w-[920px]">
           <thead>
             <tr>
               <th className="text-center w-12">Sr. No.</th>
-              <th className="text-left w-64">Patient Details</th>
-              <th className="text-left w-56">Contact & Location</th>
+              <th className="text-left w-60">Patient Details</th>
+              <th className="text-left w-52">Contact & Location</th>
               <th className="text-center">Chief Complaint</th>
-              <th className="text-center w-28">Time</th>
-              <th className="text-center w-36">Status</th>
+              <th className="text-center w-24">Time</th>
+              <th className="text-center w-32">Payment</th>
+              <th className="text-center w-32">Status</th>
               <th className="text-right w-44">Actions</th>
             </tr>
           </thead>
@@ -261,6 +310,11 @@ export default function QueueList({
                   {/* Time Added */}
                   <td className="text-center">
                     <span className="text-[#4b463e] font-semibold text-xs whitespace-nowrap">{item.timeAdded}</span>
+                  </td>
+
+                  {/* Payment Control */}
+                  <td className="text-center">
+                    {renderPaymentControl(item)}
                   </td>
 
                   {/* Status Badge */}

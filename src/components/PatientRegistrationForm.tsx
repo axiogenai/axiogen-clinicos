@@ -24,6 +24,8 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
     receptionNotes: '',
     pastMedicalHistory: 'No known allergies',
     allergies: '',
+    paymentStatus: 'paid' as 'paid' | 'unpaid',
+    paymentMode: 'cash' as 'cash' | 'online',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -307,6 +309,74 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
               value={formData.receptionNotes} 
               onChange={e => setFormData({...formData, receptionNotes: e.target.value})} 
             />
+          </div>
+
+          {/* Payment Details */}
+          <div className="bg-[#f8f6f0] p-3.5 rounded-xl border border-[#e4e2e1] space-y-2.5">
+            <label className="form-label text-[#047857] flex items-center justify-between">
+              <span>💳 Consultation Fee Payment</span>
+              <span className="text-[11px] font-normal text-[#7c766d]">Receptionist Desk</span>
+            </label>
+            
+            <div className="grid grid-cols-2 gap-2.5">
+              <div>
+                <label className="text-[11px] font-bold text-[#4b463e] block mb-1">Payment Status</label>
+                <div className="flex rounded-lg bg-white border border-[#cdc6ba] p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, paymentStatus: 'paid' })}
+                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
+                      formData.paymentStatus === 'paid'
+                        ? 'bg-[#047857] text-white shadow-sm'
+                        : 'text-[#4b463e] hover:text-[#1a1c1a]'
+                    }`}
+                  >
+                    ✓ Paid
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, paymentStatus: 'unpaid' })}
+                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
+                      formData.paymentStatus === 'unpaid'
+                        ? 'bg-amber-600 text-white shadow-sm'
+                        : 'text-[#4b463e] hover:text-[#1a1c1a]'
+                    }`}
+                  >
+                    Unpaid
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-[#4b463e] block mb-1">Payment Mode</label>
+                <div className="flex rounded-lg bg-white border border-[#cdc6ba] p-0.5">
+                  <button
+                    type="button"
+                    disabled={formData.paymentStatus === 'unpaid'}
+                    onClick={() => setFormData({ ...formData, paymentMode: 'cash' })}
+                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
+                      formData.paymentMode === 'cash' && formData.paymentStatus === 'paid'
+                        ? 'bg-[#064e3b] text-white shadow-sm'
+                        : 'text-[#4b463e] hover:text-[#1a1c1a] disabled:opacity-40'
+                    }`}
+                  >
+                    💵 Cash
+                  </button>
+                  <button
+                    type="button"
+                    disabled={formData.paymentStatus === 'unpaid'}
+                    onClick={() => setFormData({ ...formData, paymentMode: 'online' })}
+                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
+                      formData.paymentMode === 'online' && formData.paymentStatus === 'paid'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-[#4b463e] hover:text-[#1a1c1a] disabled:opacity-40'
+                    }`}
+                  >
+                    📱 Online
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
