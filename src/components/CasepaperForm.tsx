@@ -1408,7 +1408,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                       <input
                         type="text"
                         placeholder="Count"
-                        value={med.count !== undefined && med.count !== null && med.count !== '' ? med.count : calculateMedicineCount(med)}
+                        value={med.count !== undefined && med.count !== null ? med.count : calculateMedicineCount(med)}
                         onChange={(e) => updateMedicineField(index, 'count', e.target.value)}
                         className="form-input form-input-sm font-bold text-center text-[#047857] bg-[#ecfdf5] border-[#a7f3d0]"
                       />
@@ -1577,7 +1577,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                         <input
                           type="text"
                           placeholder="Count"
-                          value={med.count !== undefined && med.count !== null && med.count !== '' ? med.count : calculateMedicineCount(med)}
+                          value={med.count !== undefined && med.count !== null ? med.count : calculateMedicineCount(med)}
                           onChange={(e) => updateMedicineField(index, 'count', e.target.value)}
                           className="form-input form-input-sm font-bold text-center text-[#047857] bg-[#ecfdf5] border-[#a7f3d0]"
                         />
