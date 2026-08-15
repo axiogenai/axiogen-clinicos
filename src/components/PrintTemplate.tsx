@@ -141,7 +141,6 @@ export const toMarathiDuration = (dur?: string): string => {
 };
 export default function PrintTemplate({ patient, casePaper, clinicSettings, hideHeader = false, language = 'marathi', printOnStationery = false }: PrintTemplateProps) {
   const labels = getPatientLabels(language);
-  const headers = getTableHeaders(language);
   const formatDate = (dateString?: string) => {
     if (!dateString) return '__________';
     try {
@@ -746,49 +745,42 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                   </svg>
                 )}
               </div>
-              {/* Medicines Rx Table */}
-              {(() => {
-                const minRows = 6;
-                const currentCount = casePaper.medicines ? casePaper.medicines.length : 0;
-                const emptyCount = Math.max(0, minRows - currentCount);
-                return (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #333', fontSize: '11.5px', marginTop: printOnStationery ? '10mm' : '0' }}>
-                    <thead>
-                      <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #333', fontWeight: 700 }}>
-                        <th style={{ border: '1px solid #333', padding: '4px 4px', textAlign: 'center', width: '40px' }}>{headers.srNo || 'Sr. No.'}</th>
-                        <th style={{ border: '1px solid #333', padding: '4px 8px', textAlign: 'left' }}>{headers.medName}</th>
-                        <th style={{ border: '1px solid #333', padding: '4px 8px', textAlign: 'left', width: '190px' }}>{headers.freq}</th>
-                        <th style={{ border: '1px solid #333', padding: '4px 8px', textAlign: 'left', width: '70px' }}>{headers.duration}</th>
-                        <th style={{ border: '1px solid #333', padding: '4px 6px', textAlign: 'center', width: '55px', color: '#93231f' }}>{headers.count}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {casePaper.medicines &&
-                        casePaper.medicines.map((med, index) => {
-                          const displayName = getPrintMedicineName(med);
-                          return (
-                            <tr key={index} style={{ borderBottom: '1px solid #333' }}>
-                              <td style={{ border: '1px solid #333', padding: '5px 5px', textAlign: 'center', fontFamily: 'monospace', fontSize: '11px' }}>{index + 1}</td>
-                              <td style={{ border: '1px solid #333', padding: '5px 8px', fontWeight: 700, color: '#111', lineHeight: '1.25' }}>{displayName}</td>
-                              <td style={{ border: '1px solid #333', padding: '5px 8px', fontWeight: 600, color: '#222', lineHeight: '1.25' }}>{renderFrequencyCell(med.frequency, med.name, language, med.instructions || med.notes)}</td>
-                              <td style={{ border: '1px solid #333', padding: '5px 8px', color: '#333', lineHeight: '1.25' }}>{translateDuration(med.duration, language)}</td>
-                              <td style={{ border: '1px solid #333', padding: '5px 5px', textAlign: 'center', fontWeight: 700, color: '#047857', fontSize: '11.5px' }}>{calculateMedicineCount(med)}</td>
-                            </tr>
-                          );
-                        })}
-                      {Array.from({ length: emptyCount }).map((_, i) => (
-                        <tr key={`empty-${i}`} style={{ borderBottom: '1px solid #333', height: '24px' }}>
-                          <td style={{ border: '1px solid #333', padding: '3px 5px', textAlign: 'center', fontFamily: 'monospace', fontSize: '11px', color: '#ccc' }}>{currentCount + i + 1}</td>
-                          <td style={{ border: '1px solid #333', padding: '3px 8px' }}></td>
-                          <td style={{ border: '1px solid #333', padding: '3px 8px' }}></td>
-                          <td style={{ border: '1px solid #333', padding: '3px 8px' }}></td>
-                          <td style={{ border: '1px solid #333', padding: '3px 8px' }}></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                );
-              })()}
+              {/* Pure Text Medicine Prescription List (No table borders, no headers) */}
+              <div style={{ marginTop: printOnStationery ? '10mm' : '4px' }}>
+                {casePaper.medicines && casePaper.medicines.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {casePaper.medicines.map((med, index) => {
+                      const displayName = getPrintMedicineName(med);
+                      const count = calculateMedicineCount(med);
+                      return (
+                        <div
+                          key={index}
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: '22px minmax(110px, 1fr) minmax(130px, auto) 55px 35px',
+                            alignItems: 'baseline',
+                            gap: '6px',
+                            fontSize: '11.5px',
+                            lineHeight: 1.3,
+                            padding: '2.5px 0',
+                            borderBottom: printOnStationery ? 'none' : '1px dotted #cbd5e1',
+                          }}
+                        >
+                          <span style={{ fontWeight: 700, color: '#333', fontFamily: 'monospace', fontSize: '11px' }}>{index + 1}.</span>
+                          <span style={{ fontWeight: 700, color: '#111' }}>{displayName}</span>
+                          <span style={{ fontWeight: 600, color: '#222' }}>
+                            {renderFrequencyCell(med.frequency, med.name, language, med.instructions || med.notes)}
+                          </span>
+                          <span style={{ color: '#333', fontSize: '11px' }}>{translateDuration(med.duration, language)}</span>
+                          <span style={{ fontWeight: 700, color: '#047857', textAlign: 'right', fontSize: '11.5px' }}>{count}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div style={{ minHeight: '120px' }} />
+                )}
+              </div>
               {casePaper.counsellingDone && casePaper.counsellingDone.length > 0 && (
                 <div style={{ marginTop: '8px', fontSize: '10.5px', fontWeight: 600 }}>
                   <div style={{ fontWeight: 700, marginBottom: '2px' }}>Special Advice:</div>
