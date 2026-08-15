@@ -47,8 +47,8 @@ export const defaultClinicSettings: ClinicSettings = {
     {
       id: "doc_2",
       name: "डॉ. प्रियांका प्रमोद शिनगारे",
-      title: "BHMS, FCHD (MUHS)",
-      subTitle: "(Consultant Homeopathy Dermatologist)",
+      title: "BHMS, FCHD, CCHC, CCMP (MUHS)",
+      subTitle: "(Consultant Homeopathy Dermatologist & Cosmetologist)",
       regNo: "Reg. No. 73338",
       specialty: "त्वचारोग तज्ज्ञ",
     },
