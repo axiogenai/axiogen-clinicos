@@ -368,12 +368,12 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
       {/* ══════════════════════════════════════════════════════ */}
       <div
         style={{
-          height: isGeneralPad ? "8mm" : "16mm",
-          minHeight: isGeneralPad ? "8mm" : "16mm",
-          maxHeight: isGeneralPad ? "8mm" : "16mm",
+          height: isGeneralPad ? "8mm" : "19mm",
+          minHeight: isGeneralPad ? "8mm" : "19mm",
+          maxHeight: isGeneralPad ? "8mm" : "19mm",
           position: "relative",
           boxSizing: "border-box",
-          padding: isGeneralPad ? "0 10mm 0 10mm" : "1mm 10mm 1mm 20mm",
+          padding: isGeneralPad ? "0 10mm 0 10mm" : "4mm 10mm 1mm 20mm",
           borderBottom: (printOnStationery || isGeneralPad) ? "none" : "2px solid #a53b3b",
           fontFamily: "'Mukta', sans-serif",
           fontSize: "13px",
@@ -384,19 +384,19 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
           /* PRE-PRINTED STATIONERY MODE: Absolute positioning on top of preprinted slots */
           <div style={{ position: "relative", width: "100%", height: "100%", fontWeight: 700, color: "#111" }}>
             {/* Name slot (x = 4.0 cm = 40mm from left edge -> inside pad container: left 20mm) */}
-            <div style={{ position: "absolute", top: "2.0mm", left: "20mm", fontSize: "13px" }}>
+            <div style={{ position: "absolute", top: "5.0mm", left: "20mm", fontSize: "13px" }}>
               {patient.name}
             </div>
-            {/* Date slot (top: 4.5mm, left: 138.5mm) */}
-            <div style={{ position: "absolute", top: "2.0mm", left: "138.5mm", fontSize: "12.5px" }}>
+            {/* Date slot */}
+            <div style={{ position: "absolute", top: "5.0mm", left: "138.5mm", fontSize: "12.5px" }}>
               {formatDate(casePaper.date)}
             </div>
-            {/* Village slot (top: 11.5mm, left: 20mm) */}
-            <div style={{ position: "absolute", top: "8.0mm", left: "20mm", fontSize: "12.5px" }}>
+            {/* Village slot */}
+            <div style={{ position: "absolute", top: "11.0mm", left: "20mm", fontSize: "12.5px" }}>
               {patient.village || ""}
             </div>
-            {/* Age/Sex slot (top: 9.7mm, left: 135mm) */}
-            <div style={{ position: "absolute", top: "8.2mm", left: "133mm", fontSize: "12.5px" }}>
+            {/* Age/Sex slot */}
+            <div style={{ position: "absolute", top: "11.2mm", left: "133mm", fontSize: "12.5px" }}>
               {patient.age} Yrs / {patient.gender === "M" ? "Male" : "Female"}
             </div>
           </div>
@@ -447,7 +447,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
       {/* ══════════════════════════════════════════════════════ */}
       {isGeneralPad ? (
         /* OPTION A: TEMPLATE 2 - GENERAL MEDICINE PAD LAYOUT */
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, height: '175mm', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, height: '172mm', overflow: 'hidden' }}>
           <div
             style={{
               display: 'flex',
@@ -544,7 +544,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
         </div>
       ) : (
         /* OPTION B: TEMPLATE 1 - DERMATOLOGY / DETAILED PAD LAYOUT */
-        <div style={{ display: 'flex', height: '175mm', width: '220mm', overflow: printOnStationery ? 'visible' : 'hidden', borderTop: printOnStationery ? 'none' : '3px double #a53b3b' }}>
+        <div style={{ display: 'flex', height: '172mm', width: '220mm', overflow: printOnStationery ? 'visible' : 'hidden', borderTop: printOnStationery ? 'none' : '3px double #a53b3b' }}>
           {/* ─── LEFT SIDEBAR (x: 20mm to 73mm = 53mm W, y: 70mm to 245mm = 175mm H) ─── */}
           <aside
             style={{
@@ -552,7 +552,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               minWidth: '53mm',
               maxWidth: '53mm',
               marginLeft: '20mm',
-              height: '175mm',
+              height: '172mm',
               borderRight: printOnStationery ? 'none' : '3px double #a53b3b',
               padding: '3mm 3mm',
               fontFamily: "'Inter', sans-serif",
@@ -724,7 +724,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               width: '145mm',
               minWidth: '145mm',
               maxWidth: '145mm',
-              height: '175mm',
+              height: '172mm',
               padding: '3mm 6mm',
               position: 'relative',
               display: 'flex',
