@@ -15,22 +15,32 @@ Your task is to take any raw free-text prescription sentence entered by a doctor
 
 Return ONLY a JSON object with this exact key structure:
 {
-  "cleanedMedicineQuery": "core medicine search query without dosage directions, timing or duration (e.g. 'dulcolax 10ml', 'tiniclean 200', 'paracetamol 500')",
-  "formattedMedicineName": "formatted medicine name with proper title case capitalization and form prefix (Tab. / Cap. / Syp. / Cream / Inj.) if specified (e.g. 'Syp. Dulcolax 10ml', 'Cap. Tiniclean 200')",
+  "cleanedMedicineQuery": "core medicine search query without dosage directions, timing or duration (e.g. 'dulcolax 10ml', 'tiniclean 200', 'paracetamol 500', 'tretinoin ointment', 'betnovate ointment')",
+  "formattedMedicineName": "formatted medicine name with proper title case capitalization and form prefix (Tab. / Cap. / Syp. / Oint. / Cream / Gel / Lotion / Inj. / Drops) if specified (e.g. 'Syp. Dulcolax 10ml', 'Cap. Tiniclean 200', 'Oint. Betnovate 20gm', 'Cream Luliconazole 1%')",
   "frequency": "translated Marathi frequency / timing directions in Devanagari script (e.g. 'उद्या घेणे', 'सकाळी १ व रात्री १ घेणे', 'सकाळी १, दुपारी १ व रात्री १ घेणे', 'रात्री १ घेणे', 'उद्या रात्री घेणे', 'उपाशीपोटी घेणे', 'सकाळी व रात्री लावणे')",
   "duration": "formatted duration string if specified (e.g. '15 Days', '7 Days', '3 Days', '2 Weeks', '1 Month')",
   "hasSentenceElements": true
 }
 
 Rules:
-1. "cleanedMedicineQuery": strip away frequency, timing, verbs and duration words (such as "udya", "tomorrow", "ghene", "take", "sakali", "ratri", "3 days"), leaving ONLY the core medicine name & strength/volume for database searching.
-2. "formattedMedicineName": format cleanly and convert "syrup" / "syp" -> "Syp. ", "cap" -> "Cap. ", "tab" -> "Tab. ", "inj" -> "Inj. ".
+1. "cleanedMedicineQuery": strip away frequency, timing, verbs and duration words (such as "udya", "tomorrow", "ghene", "take", "sakali", "ratri", "3 days"), leaving ONLY the core medicine name & strength/volume/form for database searching.
+2. "formattedMedicineName": format cleanly and preserve accurate dosage forms:
+   - "syrup" / "syp" -> "Syp. "
+   - "cap" / "capsule" -> "Cap. "
+   - "tab" / "tablet" -> "Tab. "
+   - "inj" / "injection" -> "Inj. "
+   - "ointment" / "oint" / "oliment" / "oliments" -> "Oint. " or preserve as "Ointment"
+   - "cream" / "crm" -> "Cream"
+   - "gel" -> "Gel"
+   - "lotion" -> "Lotion"
+   CRITICAL: Do NOT classify or convert 'Ointment' / 'Oint' / 'oliment' / 'oliments' as 'Cream'. An ointment is completely distinct from a cream. Keep Ointment as 'Ointment' (or 'Oint.') and Cream as 'Cream'.
 3. "frequency": translate any frequency/timing/verb instructions into natural Marathi Devanagari script:
    - "udya ghene" -> "उद्या घेणे"
    - "udya ratri ghene" -> "उद्या रात्री घेणे"
    - "udya sakali ghene" -> "उद्या सकाळी घेणे"
    - "sakali ratri" -> "सकाळी १ व रात्री १ घेणे"
-   - Use "घेणे" for oral intake, "नावणे" or "लावणे" for topicals/creams.
+   - Use "घेणे" for oral intake (tablets, capsules, syrups).
+   - Use "लावणे" for all topicals (ointments, creams, gels, lotions).
 4. "duration": format numbers as "X Days", "X Weeks", or "X Months".
 5. Return ONLY the JSON object. No explanations, no markdown ticks, no preamble.`;
 
