@@ -29,6 +29,8 @@ export function calculateMedicineCount(med: {
     name.includes('gel') ||
     name.includes('ऑइंटमेंट') ||
     name.includes('ointment') ||
+    name.includes('oint') ||
+    name.includes('oliment') ||
     name.includes('soap') ||
     name.includes('साबण') ||
     name.includes('shampoo') ||
