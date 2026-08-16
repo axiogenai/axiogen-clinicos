@@ -627,10 +627,33 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
 
       if (groqParsed) {
         const groqClean = (groqParsed.cleanedMedicineQuery || sentenceToParse).toLowerCase().trim();
-        const matchedMed = dbMedicines.find(m =>
-          m.name.toLowerCase().includes(groqClean) ||
-          (m.brand && m.brand.toLowerCase().includes(groqClean))
-        );
+        const inputLower = sentenceToParse.toLowerCase();
+        const wantsOintment = inputLower.includes('ointment') || inputLower.includes('oint') || inputLower.includes('oliment') || inputLower.includes('oliments');
+        const wantsCream = inputLower.includes('cream') || inputLower.includes('crm');
+        const wantsGel = inputLower.includes('gel');
+        const wantsLotion = inputLower.includes('lotion') || inputLower.includes('lot');
+
+        let matchedMed = dbMedicines.find(m => {
+          const nameLower = m.name.toLowerCase();
+          const brandLower = (m.brand || '').toLowerCase();
+          const queryMatch = nameLower.includes(groqClean) || brandLower.includes(groqClean);
+          if (!queryMatch) return false;
+          if (wantsOintment && (nameLower.includes('cream') && !nameLower.includes('ointment'))) return false;
+          if (wantsCream && (nameLower.includes('ointment') && !nameLower.includes('cream'))) return false;
+          if (wantsGel && (!nameLower.includes('gel') && (nameLower.includes('cream') || nameLower.includes('ointment')))) return false;
+          if (wantsLotion && (!nameLower.includes('lotion') && (nameLower.includes('cream') || nameLower.includes('ointment')))) return false;
+          return true;
+        });
+
+        if (!matchedMed) {
+          matchedMed = dbMedicines.find(m =>
+            m.name.toLowerCase().includes(groqClean) ||
+            (m.brand && m.brand.toLowerCase().includes(groqClean))
+          );
+          if (matchedMed && wantsOintment && matchedMed.name.toLowerCase().includes('cream') && !matchedMed.name.toLowerCase().includes('ointment')) {
+            matchedMed = undefined;
+          }
+        }
 
         let finalName = matchedMed ? matchedMed.name.trim() : (groqParsed.formattedMedicineName || sentenceToParse);
         if (matchedMed && matchedMed.strength && !finalName.toLowerCase().includes(matchedMed.strength.toLowerCase())) {
