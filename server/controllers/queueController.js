@@ -4,23 +4,7 @@ const { broadcastQueueUpdate } = require('../services/sseService');
 const { getISTDateStr, getISTTimeString } = require('../utils/timezone');
 
 const autoPurgeOldQueueItems = async (clinicId = 1) => {
-  try {
-    const cutoffDateStr = getISTDateStr();
-
-    const deleted = await Queue.destroy({
-      where: {
-        clinicId,
-        date: {
-          [Op.lt]: cutoffDateStr
-        }
-      }
-    });
-    if (deleted > 0) {
-      console.log(`🧹 [7-DAY AUTOMATIC PURGE] Deleted ${deleted} OPD queue items older than 7 days.`);
-    }
-  } catch (err) {
-    console.error('❌ Error during 7-day queue auto-purge:', err);
-  }
+  // Retain all queue records so Day View & OPD history are never lost
 };
 
 exports.getQueue = async (req, res, next) => {
