@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Users, Clock, Stethoscope, CheckCircle2, ArrowRight, FileText, Phone, MapPin, Search, X, Trash2, UserPlus } from 'lucide-react';
 import type { Patient, QueueItem } from '../data/patients';
+import { filterAndSortPatients } from './PatientSearch';
 import PatientEMRHistoryModal from './PatientEMRHistoryModal';
 import ConfirmModal from './ConfirmModal';
 import { useClinic } from '../context/ClinicContext';
@@ -85,12 +86,9 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
     });
   }, [queue]);
 
-  const searchedPatients = patientSearchQuery.trim() ? patients.filter(p =>
-    p.name.toLowerCase().includes(patientSearchQuery.toLowerCase()) ||
-    p.phone.includes(patientSearchQuery) ||
-    p.village.toLowerCase().includes(patientSearchQuery.toLowerCase()) ||
-    p.id.toLowerCase().includes(patientSearchQuery.toLowerCase())
-  ) : [];
+  const searchedPatients = useMemo(() => {
+    return filterAndSortPatients(patients, patientSearchQuery);
+  }, [patients, patientSearchQuery]);
 
   return (
     <div className="space-y-5">
