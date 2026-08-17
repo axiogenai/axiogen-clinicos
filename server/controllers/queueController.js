@@ -41,7 +41,7 @@ exports.getQueue = async (req, res, next) => {
         ...plain,
         queueId: plain.queueId || plain.queue_id || plain.id,
         patientId: plain.patientId || plain.patient_id,
-        paymentStatus: plain.paymentStatus || plain.payment_status || 'paid',
+        paymentStatus: plain.paymentStatus || plain.payment_status || 'unpaid',
         paymentMode: plain.paymentMode || plain.payment_mode || 'cash',
         timeAdded: plain.timeAdded || plain.time_added || plain.time
       };
@@ -108,7 +108,7 @@ exports.addToQueue = async (req, res, next) => {
       date: currentDate,
       timeAdded,
       status: 'waiting',
-      paymentStatus: paymentStatus || 'paid',
+      paymentStatus: paymentStatus || 'unpaid',
       paymentMode: paymentMode || 'cash'
     });
 
@@ -133,7 +133,7 @@ exports.addToQueue = async (req, res, next) => {
           complaint: complaint || '',
           timeAdded,
           status: 'waiting',
-          paymentStatus: paymentStatus || 'paid',
+          paymentStatus: paymentStatus || 'unpaid',
           paymentMode: paymentMode || 'cash'
         }
       });
