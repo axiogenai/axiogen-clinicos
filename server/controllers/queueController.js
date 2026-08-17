@@ -35,7 +35,18 @@ exports.getQueue = async (req, res, next) => {
       where: { clinicId, date },
       order: [['created_at', 'ASC']]
     });
-    res.json(queue);
+    const normalized = queue.map(item => {
+      const plain = item.get ? item.get({ plain: true }) : item;
+      return {
+        ...plain,
+        queueId: plain.queueId || plain.queue_id || plain.id,
+        patientId: plain.patientId || plain.patient_id,
+        paymentStatus: plain.paymentStatus || plain.payment_status || 'paid',
+        paymentMode: plain.paymentMode || plain.payment_mode || 'cash',
+        timeAdded: plain.timeAdded || plain.time_added || plain.time
+      };
+    });
+    res.json(normalized);
   } catch (err) {
     next(err);
   }
@@ -153,6 +164,13 @@ exports.updateQueueStatus = async (req, res, next) => {
     if (updateData.age) updateData.age = parseInt(updateData.age, 10);
     const id = req.params.id;
 
+    if (updateData.paymentStatus !== undefined) {
+      updateData.payment_status = updateData.paymentStatus;
+    }
+    if (updateData.paymentMode !== undefined) {
+      updateData.payment_mode = updateData.paymentMode;
+    }
+
     const [updatedCount] = await Queue.update(
       updateData,
       {
@@ -164,7 +182,27 @@ exports.updateQueueStatus = async (req, res, next) => {
           ]
         }
       }
-    );
+    ).catch(() => [0]);
+
+    if (updateData.paymentStatus !== undefined || updateData.paymentMode !== undefined) {
+      const pStatus = updateData.paymentStatus || 'paid';
+      const pMode = updateData.paymentMode || 'cash';
+      try {
+        const { sequelize } = require('../models');
+        await sequelize.query(
+          `UPDATE "Queues" SET "paymentStatus" = :pStatus, "paymentMode" = :pMode WHERE "queueId" = :id OR "patientId" = :id`,
+          { replacements: { pStatus, pMode, id } }
+        ).catch(() => {});
+        await sequelize.query(
+          `UPDATE "Queues" SET "payment_status" = :pStatus, "payment_mode" = :pMode WHERE "queue_id" = :id OR "patient_id" = :id`,
+          { replacements: { pStatus, pMode, id } }
+        ).catch(() => {});
+        await sequelize.query(
+          `UPDATE "opd_registers" SET "payment_status" = :pStatus, "payment_mode" = :pMode WHERE "queue_id" = :id OR "patient_id" = :id`,
+          { replacements: { pStatus, pMode, id } }
+        ).catch(() => {});
+      } catch (e) {}
+    }
 
     // If patientId is present and patient details were provided, update Patient record too
     const pId = req.body.patientId || id;
