@@ -52,7 +52,7 @@ const Queue = sequelize.define('Queue', {
   },
   paymentStatus: {
     type: DataTypes.STRING,
-    defaultValue: 'paid'
+    defaultValue: 'unpaid'
   },
   paymentMode: {
     type: DataTypes.STRING,
