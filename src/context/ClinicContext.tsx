@@ -233,7 +233,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
         const normalized = dbQueue.map((item: any) => ({
           ...item,
           queueId: item.queueId || item.queue_id || item.id,
-          paymentStatus: (item.paymentStatus || item.payment_status || 'paid') as 'paid' | 'unpaid',
+          paymentStatus: (item.paymentStatus || item.payment_status || 'unpaid') as 'paid' | 'unpaid',
           paymentMode: (item.paymentMode || item.payment_mode || 'cash') as 'cash' | 'online',
         }));
         setQueue(normalized);
@@ -399,7 +399,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
       complaint: patientData.complaint || (patientData as any).chiefComplaint || '',
       status: 'waiting',
       notes: patientData.notes || (patientData as any).receptionNotes || '',
-      paymentStatus: patientData.paymentStatus || 'paid',
+      paymentStatus: patientData.paymentStatus || 'unpaid',
       paymentMode: patientData.paymentMode || 'cash',
     };
 
