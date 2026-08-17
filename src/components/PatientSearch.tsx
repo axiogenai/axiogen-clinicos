@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, UserPlus, X, Trash2 } from 'lucide-react';
 import type { Patient } from '../data/patients';
 import { useClinic } from '../context/ClinicContext';
@@ -9,6 +9,64 @@ interface Props {
   onNewPatient: () => void;
 }
 
+/**
+ * Strict Prefix-First Search Indexer with Alphabetical Sorting:
+ * - "a" -> "Aadi", "Aakash", "Abhi", "Abhijeet", "Abhishek", "Aditya"...
+ * - "ab" -> "Abhi", "Abhijeet", "Abhishek"...
+ */
+export function filterAndSortPatients(patients: Patient[], rawQuery: string): Patient[] {
+  const query = rawQuery.trim().toLowerCase();
+  if (!query) return [];
+
+  const isNumeric = /^\d+$/.test(query);
+
+  if (isNumeric) {
+    const prefixPhone = patients.filter(p => (p.phone || '').startsWith(query));
+    const containsPhone = patients.filter(p => !(p.phone || '').startsWith(query) && (p.phone || '').includes(query));
+    const idMatches = patients.filter(p => (p.id || '').toLowerCase().includes(query));
+    return [...prefixPhone, ...containsPhone, ...idMatches];
+  }
+
+  const nameStartsWith: Patient[] = [];
+  const wordStartsWith: Patient[] = [];
+  const villageStartsWith: Patient[] = [];
+  const substringMatches: Patient[] = [];
+
+  for (const p of patients) {
+    const nameLower = (p.name || '').trim().toLowerCase();
+    const villageLower = (p.village || '').trim().toLowerCase();
+    const phone = p.phone || '';
+
+    if (nameLower.startsWith(query)) {
+      nameStartsWith.push(p);
+    } else {
+      const words = nameLower.split(/[\s\.\-]+/).filter(Boolean);
+      if (words.some(w => w.startsWith(query))) {
+        wordStartsWith.push(p);
+      } else if (villageLower.startsWith(query)) {
+        villageStartsWith.push(p);
+      } else if (query.length >= 3 && (nameLower.includes(query) || villageLower.includes(query) || phone.includes(query))) {
+        substringMatches.push(p);
+      }
+    }
+  }
+
+  // Strict Alphabetical Sort within each priority tier
+  const sortAlpha = (a: Patient, b: Patient) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
+
+  nameStartsWith.sort(sortAlpha);
+  wordStartsWith.sort(sortAlpha);
+  villageStartsWith.sort(sortAlpha);
+  substringMatches.sort(sortAlpha);
+
+  // When user types 1 or 2 letters (e.g. "a", "ab"), ONLY show starting prefix matches!
+  if (query.length <= 2) {
+    return [...nameStartsWith, ...wordStartsWith];
+  }
+
+  return [...nameStartsWith, ...wordStartsWith, ...villageStartsWith, ...substringMatches];
+}
+
 export default function PatientSearch({ patients, onSelectPatient, onNewPatient }: Props) {
   const { deletePatient } = useClinic();
   const [query, setQuery] = useState('');
@@ -16,11 +74,7 @@ export default function PatientSearch({ patients, onSelectPatient, onNewPatient 
   const [activeIndex, setActiveIndex] = useState(-1);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const filtered = query.trim() ? patients.filter(p => 
-    p.name.toLowerCase().includes(query.toLowerCase()) ||
-    p.phone.includes(query) ||
-    p.village.toLowerCase().includes(query.toLowerCase())
-  ) : [];
+  const filtered = useMemo(() => filterAndSortPatients(patients, query), [patients, query]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
