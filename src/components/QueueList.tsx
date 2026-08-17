@@ -20,7 +20,8 @@ function PaymentPill({
   const isPaid = item.paymentStatus !== 'unpaid';
   const mode = item.paymentMode || 'cash';
 
-  const handleCyclePayment = () => {
+  const handleCyclePayment = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!isPaid) {
       // Unpaid -> Paid (Cash)
       onUpdate(item.queueId, 'paid', 'cash');
@@ -29,7 +30,7 @@ function PaymentPill({
       onUpdate(item.queueId, 'paid', 'online');
     } else {
       // Paid (Online) -> Unpaid
-      onUpdate(item.queueId, 'unpaid');
+      onUpdate(item.queueId, 'unpaid', 'cash');
     }
   };
 
@@ -37,7 +38,7 @@ function PaymentPill({
     <button
       type="button"
       onClick={handleCyclePayment}
-      title="Click to toggle: Cash → Online → Unpaid"
+      title="Click to cycle payment: Cash → Online → Unpaid"
       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border transition-all shadow-sm active:scale-95 cursor-pointer whitespace-nowrap select-none ${
         !isPaid
           ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
