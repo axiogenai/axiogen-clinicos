@@ -167,20 +167,14 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
     }
   }, [selectedDate]);
 
-  // Combine queue with patient data:
-  // If searching: search ALL records across all days, months, years without date bounds!
-  // If not searching: filter strictly by selectedDate
+  // Combine queue with patient data strictly for OPD records
   const registerItems = useMemo(() => {
     const rawQueue = fetchedQueue.length > 0 ? fetchedQueue : queue;
-    const isSearching = searchQuery.trim().length > 0;
 
-    let targetQueue = rawQueue;
-    if (!isSearching) {
-      targetQueue = rawQueue.filter(item => {
-        const itemDate = (item as any).date || (item as any).createdAt?.split('T')[0] || new Date().toISOString().split('T')[0];
-        return itemDate === selectedDate;
-      });
-    }
+    const targetQueue = rawQueue.filter(item => {
+      const itemDate = (item as any).date || (item as any).createdAt?.split('T')[0] || new Date().toISOString().split('T')[0];
+      return itemDate === selectedDate;
+    });
 
     const items = targetQueue.map((item, index) => {
       const patientName = item.name || 'Unknown Patient';
@@ -203,41 +197,8 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
       };
     });
 
-    if (isSearching) {
-      const q = searchQuery.toLowerCase().trim();
-      const existingPatientIds = new Set(targetQueue.map(i => i.patientId));
-      patients.forEach((pat) => {
-        if (!existingPatientIds.has(pat.id)) {
-          const matches = 
-            (pat.name || '').toLowerCase().includes(q) ||
-            (pat.phone || '').includes(q) ||
-            (pat.village || '').toLowerCase().includes(q) ||
-            (pat.id || '').toLowerCase().includes(q);
-          
-          if (matches) {
-            const lastVisit = pat.pastVisits && pat.pastVisits.length > 0 ? pat.pastVisits[0] : null;
-            items.push({
-              srNo: items.length + 1,
-              opdNo: pat.id,
-              casePaperNo: pat.id,
-              time: 'All-Time',
-              date: lastVisit?.date || 'Past Visit',
-              name: pat.name,
-              age: pat.age || '-',
-              gender: pat.gender || 'M',
-              phone: pat.phone || '-',
-              village: pat.village || '-',
-              complaint: lastVisit?.diagnosis || pat.pastHistory || 'Patient History Record',
-              doctor: clinicSettings.doctors.find(d => d.name.includes('प्रमोद'))?.name || clinicSettings.doctors[0]?.name || 'डॉ. प्रमोद सुरेश शिनगारे',
-              status: 'completed'
-            });
-          }
-        }
-      });
-    }
-
     return items;
-  }, [queue, fetchedQueue, patients, clinicSettings, selectedDate, searchQuery]);
+  }, [queue, fetchedQueue, patients, clinicSettings, selectedDate]);
 
   // Filtered Register Data
   const filteredItems = useMemo(() => {
