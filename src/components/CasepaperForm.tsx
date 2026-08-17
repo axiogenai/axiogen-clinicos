@@ -485,14 +485,20 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     const getCoreName = (fullName: string) =>
       (fullName || '').replace(/^(Tab\.|Cap\.|Syp\.|Inj\.|Cream|Gel \/ Ointment|Lotion|Ointment|Soap|Drops|Powder)\s*/i, '').toLowerCase().trim();
 
-    // 1. INSTANT LOCAL FILTER (0ms response time - Zero keypress delay!)
+    // 1. INSTANT LOCAL FILTER (0ms response time - Pure Prefix & Alphabetical Indexing!)
     const localPrefixMatches = dbMedicines.filter(m =>
       getCoreName(m.name).startsWith(q) || (m.brand || '').toLowerCase().startsWith(q) || (m.name || '').toLowerCase().startsWith(q)
     );
 
-    const instantResults = localPrefixMatches.length > 0 ? localPrefixMatches : dbMedicines.filter(m =>
-      (m.name || '').toLowerCase().includes(q) || (m.brand || '').toLowerCase().includes(q)
-    );
+    localPrefixMatches.sort((a, b) => getCoreName(a.name).localeCompare(getCoreName(b.name)));
+
+    let instantResults = localPrefixMatches;
+    if (instantResults.length === 0 && q.length >= 3) {
+      instantResults = dbMedicines.filter(m =>
+        (m.name || '').toLowerCase().includes(q) || (m.brand || '').toLowerCase().includes(q)
+      );
+      instantResults.sort((a, b) => getCoreName(a.name).localeCompare(getCoreName(b.name)));
+    }
     setFilteredMedicines(instantResults);
 
     // 2. FAST SERVER FETCH (50ms debounce for 42,000+ Supabase database records)
