@@ -10,61 +10,66 @@ interface Props {
 }
 
 /**
- * Strict Prefix-First Search Indexer with Alphabetical Sorting:
- * - "a" -> "Aadi", "Aakash", "Abhi", "Abhijeet", "Abhishek", "Aditya"...
- * - "ab" -> "Abhi", "Abhijeet", "Abhishek"...
+ * 100% Strict Starting-Letter Indexing & Deduplication:
+ * - "a" -> Only names starting with "a" (Aadi, Aakash, Aarav, Abhi, Abhishek, Aditya, etc.)
+ * - "am" -> Only names starting with "am" (Amrapali, Amit, Aman, etc.) - NO "Pramod" or "Ram"!
  */
 export function filterAndSortPatients(patients: Patient[], rawQuery: string): Patient[] {
   const query = rawQuery.trim().toLowerCase();
   if (!query) return [];
 
+  // Deduplicate incoming patient list by phone or id/name
+  const seen = new Set<string>();
+  const uniquePatients: Patient[] = [];
+  for (const p of patients) {
+    const key = (p.phone && p.phone.replace(/\D/g, '').length === 10) 
+      ? `phone_${p.phone.replace(/\D/g, '')}` 
+      : `name_${(p.name || '').trim().toLowerCase()}_${p.village || ''}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      uniquePatients.push(p);
+    }
+  }
+
   const isNumeric = /^\d+$/.test(query);
 
   if (isNumeric) {
-    const prefixPhone = patients.filter(p => (p.phone || '').startsWith(query));
-    const containsPhone = patients.filter(p => !(p.phone || '').startsWith(query) && (p.phone || '').includes(query));
-    const idMatches = patients.filter(p => (p.id || '').toLowerCase().includes(query));
+    const prefixPhone = uniquePatients.filter(p => (p.phone || '').replace(/\D/g, '').startsWith(query));
+    const containsPhone = uniquePatients.filter(p => !(p.phone || '').replace(/\D/g, '').startsWith(query) && (p.phone || '').includes(query));
+    const idMatches = uniquePatients.filter(p => (p.id || '').toLowerCase().includes(query));
     return [...prefixPhone, ...containsPhone, ...idMatches];
   }
 
   const nameStartsWith: Patient[] = [];
   const wordStartsWith: Patient[] = [];
   const villageStartsWith: Patient[] = [];
-  const substringMatches: Patient[] = [];
 
-  for (const p of patients) {
+  for (const p of uniquePatients) {
     const nameLower = (p.name || '').trim().toLowerCase();
     const villageLower = (p.village || '').trim().toLowerCase();
-    const phone = p.phone || '';
 
+    // 1. Full name starts with query (e.g. "Amrapali Shinde" for "am")
     if (nameLower.startsWith(query)) {
       nameStartsWith.push(p);
     } else {
+      // 2. A specific word in the name starts with query (e.g. "Pramod Amit" for "am")
       const words = nameLower.split(/[\s\.\-]+/).filter(Boolean);
       if (words.some(w => w.startsWith(query))) {
         wordStartsWith.push(p);
       } else if (villageLower.startsWith(query)) {
         villageStartsWith.push(p);
-      } else if (query.length >= 3 && (nameLower.includes(query) || villageLower.includes(query) || phone.includes(query))) {
-        substringMatches.push(p);
       }
     }
   }
 
-  // Strict Alphabetical Sort within each priority tier
+  // Strict alphabetical sort
   const sortAlpha = (a: Patient, b: Patient) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
 
   nameStartsWith.sort(sortAlpha);
   wordStartsWith.sort(sortAlpha);
   villageStartsWith.sort(sortAlpha);
-  substringMatches.sort(sortAlpha);
 
-  // When user types 1 or 2 letters (e.g. "a", "ab"), ONLY show starting prefix matches!
-  if (query.length <= 2) {
-    return [...nameStartsWith, ...wordStartsWith];
-  }
-
-  return [...nameStartsWith, ...wordStartsWith, ...villageStartsWith, ...substringMatches];
+  return [...nameStartsWith, ...wordStartsWith, ...villageStartsWith];
 }
 
 export default function PatientSearch({ patients, onSelectPatient, onNewPatient }: Props) {
