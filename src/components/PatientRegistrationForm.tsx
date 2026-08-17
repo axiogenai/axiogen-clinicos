@@ -24,7 +24,7 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
     receptionNotes: '',
     pastMedicalHistory: 'No known allergies',
     allergies: '',
-    paymentStatus: 'paid' as 'paid' | 'unpaid',
+    paymentStatus: 'unpaid' as 'paid' | 'unpaid',
     paymentMode: 'cash' as 'cash' | 'online',
   });
 
