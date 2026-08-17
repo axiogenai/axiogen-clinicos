@@ -117,18 +117,39 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
     }
   }, [viewMode, selectedMonth, selectedYear]);
 
-  // Fetch queue items for selectedDate from DB
+  // Fetch register & queue items for selectedDate from DB
   useEffect(() => {
     let active = true;
-    api.getQueue(selectedDate)
-      .then((data) => {
-        if (active && Array.isArray(data)) {
-          setFetchedQueue(data);
-        }
-      })
-      .catch(() => {
-        if (active) setFetchedQueue([]);
-      });
+    Promise.allSettled([
+      api.getDailyRegister(selectedDate),
+      api.getQueue(selectedDate)
+    ]).then(([regRes, queueRes]) => {
+      if (!active) return;
+      const regItems = regRes.status === 'fulfilled' && Array.isArray(regRes.value) ? regRes.value : [];
+      const qItems = queueRes.status === 'fulfilled' && Array.isArray(queueRes.value) ? queueRes.value : [];
+      
+      // Convert OpdRegister records to queue format if queue is empty for past days
+      const convertedReg = regItems.map(r => ({
+        queueId: r.opdNo || r.queueId,
+        patientId: r.patientId,
+        name: r.patientName,
+        age: r.age,
+        gender: r.gender,
+        phone: r.phone,
+        village: r.village,
+        complaint: r.complaint,
+        timeAdded: r.timeAdded || '09:00 AM',
+        date: r.date,
+        status: r.status || 'completed',
+        casePaperId: r.opdNo
+      }));
+
+      // Merge: prefer live queue items, fallback to saved OpdRegister
+      const merged = qItems.length > 0 ? qItems : convertedReg;
+      setFetchedQueue(merged);
+    }).catch(() => {
+      if (active) setFetchedQueue([]);
+    });
     return () => { active = false; };
   }, [selectedDate]);
 
