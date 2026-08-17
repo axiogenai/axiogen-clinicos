@@ -229,7 +229,15 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
     }
     try {
       const dbQueue = await api.getQueue();
-      setQueue(dbQueue);
+      if (Array.isArray(dbQueue)) {
+        const normalized = dbQueue.map((item: any) => ({
+          ...item,
+          queueId: item.queueId || item.queue_id || item.id,
+          paymentStatus: (item.paymentStatus || item.payment_status || 'paid') as 'paid' | 'unpaid',
+          paymentMode: (item.paymentMode || item.payment_mode || 'cash') as 'cash' | 'online',
+        }));
+        setQueue(normalized);
+      }
     } catch {}
   }, []);
 
@@ -315,19 +323,24 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
     api.updateQueueStatus(queueId, status).catch(() => {});
   }, []);
 
-  const updateQueuePayment = useCallback((queueId: string, paymentStatus: 'paid' | 'unpaid', paymentMode?: 'cash' | 'online') => {
+  const updateQueuePayment = useCallback(async (queueId: string, paymentStatus: 'paid' | 'unpaid', paymentMode?: 'cash' | 'online') => {
+    const finalMode = paymentMode || 'cash';
     setQueue((prev) =>
       prev.map((item) => {
         if (item.queueId === queueId) {
-          return { ...item, paymentStatus, paymentMode: paymentMode || item.paymentMode || 'cash' };
+          return { ...item, paymentStatus, paymentMode: finalMode };
         }
         return item;
       })
     );
-    api.updateQueueItem(queueId, { paymentStatus, paymentMode }).catch(() => {});
+    try {
+      await api.updateQueueItem(queueId, { paymentStatus, paymentMode: finalMode });
+    } catch (err) {
+      console.warn('Queue payment update warning:', err);
+    }
     setToast({
       type: 'success',
-      message: `Payment updated: ${paymentStatus === 'paid' ? `Paid (${paymentMode || 'cash'})` : 'Unpaid'}`
+      message: `Payment updated: ${paymentStatus === 'paid' ? `Paid (${finalMode === 'online' ? 'Online' : 'Cash'})` : 'Unpaid'}`
     });
   }, [setToast]);
 
@@ -383,9 +396,9 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
       phone: targetPatient.phone,
       village: targetPatient.village,
       timeAdded: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
-      complaint: patientData.complaint || '',
+      complaint: patientData.complaint || (patientData as any).chiefComplaint || '',
       status: 'waiting',
-      notes: patientData.notes || '',
+      notes: patientData.notes || (patientData as any).receptionNotes || '',
       paymentStatus: patientData.paymentStatus || 'paid',
       paymentMode: patientData.paymentMode || 'cash',
     };
