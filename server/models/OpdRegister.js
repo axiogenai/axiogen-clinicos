@@ -104,7 +104,7 @@ const OpdRegister = sequelize.define('OpdRegister', {
   },
   paymentStatus: {
     type: DataTypes.STRING,
-    defaultValue: 'paid'
+    defaultValue: 'unpaid'
   },
   paymentMode: {
     type: DataTypes.STRING,
