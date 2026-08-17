@@ -26,17 +26,24 @@ exports.searchPatients = async (req, res, next) => {
   try {
     const { q } = req.query;
     const clinicId = req.user?.clinicId || 1;
-    if (!q) return res.json([]);
+    if (!q || !q.trim()) return res.json([]);
+
+    const query = q.trim();
+    const dialect = Patient.sequelize ? Patient.sequelize.getDialect() : 'sqlite';
+    const likeOp = dialect === 'postgres' ? Op.iLike : Op.like;
 
     const patients = await Patient.findAll({
       where: {
         clinicId,
         [Op.or]: [
-          { name: { [Op.like]: `%${q}%` } },
-          { phone: { [Op.like]: `%${q}%` } }
+          { name: { [likeOp]: `${query}%` } },
+          { name: { [likeOp]: `% ${query}%` } },
+          { phone: { [likeOp]: `${query}%` } },
+          { village: { [likeOp]: `${query}%` } }
         ]
       },
-      limit: 10
+      order: [['name', 'ASC']],
+      limit: 50
     });
     res.json(patients);
   } catch (err) {
