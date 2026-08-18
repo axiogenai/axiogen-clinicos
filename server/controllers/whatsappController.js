@@ -15,21 +15,29 @@ const getStatus = (req, res) => {
 
 const triggerAutoSend = async (req, res) => {
   const { date } = req.body;
-  const summary = await processBackgroundFollowUps(date);
+  // Respond immediately so HTTP connection never times out after 2-3 messages
   res.json({
     success: true,
-    message: `Automated background WhatsApp reminders processed for ${summary.date}`,
-    summary,
+    message: `Automated background WhatsApp reminders initiated for ${date || 'scheduled appointments'}. All messages are being sent in the background.`,
+  });
+  // Execute full batch dispatch asynchronously in background
+  processBackgroundFollowUps(date).then(summary => {
+    console.log(`✅ Completed follow-up batch: Sent ${summary.sentCount}/${summary.totalEligible} messages.`);
+  }).catch(err => {
+    console.error('❌ Error during background follow-up batch:', err);
   });
 };
 
 const triggerFestivalWishes = async (req, res) => {
   const { date } = req.body;
-  const summary = await processFestivalWishes(date);
   res.json({
     success: true,
-    message: `Automated festival greetings processed for ${summary.festivalName || 'Festival'}`,
-    summary,
+    message: `Festival greetings batch initiated in background. Messages are being sent to all registered patients.`,
+  });
+  processFestivalWishes(date).then(summary => {
+    console.log(`✅ Completed festival batch: Sent ${summary.sentCount}/${summary.totalPatients} messages.`);
+  }).catch(err => {
+    console.error('❌ Error during background festival batch:', err);
   });
 };
 
