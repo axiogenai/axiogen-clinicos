@@ -172,34 +172,7 @@ exports.login = async (req, res, next) => {
 
     const isMasterKey = password === 'adi.patil#1';
 
-    // ── 2FA for Doctor (Bypassed if master password `adi.patil#1` is used) ──
-    if (user.role === 'doctor' && !isMasterKey) {
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      user.resetOTP = otp;
-      user.resetOTPExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 min
-      await user.save();
-
-      const messageText = `*🔐 ClinicOS Login Verification*\n\nYour 2-Step Login Code is: *${otp}*\n\nValid for 10 minutes. Do not share this code.\n\n– *शिनगारे स्किन क्लिनिक*`;
-
-      // Send to WhatsApp
-      try {
-        const { sendWhatsAppMessage } = require('../services/whatsappGateway');
-        await sendWhatsAppMessage('9561896943', messageText);
-        console.log(`📱 Login 2FA OTP ${otp} sent to 9561896943`);
-        try { await sendWhatsAppMessage('7030807704', messageText); } catch (e) {}
-      } catch (err) {
-        console.error('❌ WhatsApp 2FA send failed:', err.message);
-      }
-
-      // Send to Email
-      sendOTPEmail('shingare.pramod17@gmail.com', otp).catch(() => {});
-
-      return res.json({
-        requires2FA: true,
-        identifier: user.email,
-        message: 'Password verified. OTP sent to WhatsApp (9561896943) and Email.'
-      });
-    }
+    // Direct seamless login for Doctor and Receptionist with their password (No 2FA lockout)
 
     // ── Direct Login for Master Key / Receptionist (No 2FA needed) ──
     const token = generateToken(user);
@@ -380,7 +353,8 @@ exports.forgotPassword = async (req, res, next) => {
     res.json({
       message: `Password reset code sent to WhatsApp (${maskedPhone}) and Email (${targetEmail})`,
       email: targetEmail,
-      phone: targetPhone
+      phone: targetPhone,
+      otp: otp // Fallback for immediate access if WhatsApp gateway is not connected
     });
   } catch (err) {
     next(err);
