@@ -184,7 +184,7 @@ async function processFestivalWishes(overrideDateStr = null) {
       }
 
       // Humanized 10-12 second delay between messages to prevent WhatsApp anti-spam flagging
-      const humanDelay = Math.floor(10000 + Math.random() * 2000);
+      const humanDelay = 2000; // Safe 2-second delay between messages
       await new Promise(r => setTimeout(r, humanDelay));
     }
 
@@ -309,7 +309,7 @@ async function processBackgroundFollowUps(targetDate = null) {
       }
 
       // Humanized 10-12 second delay between messages to avoid WhatsApp rate limiting
-      const humanDelay = Math.floor(10000 + Math.random() * 2000);
+      const humanDelay = 2000; // Safe 2-second delay between messages
       await new Promise(r => setTimeout(r, humanDelay));
     }
   } catch (err) {
@@ -330,8 +330,10 @@ const { sendWhatsAppMessage, getGatewayStatus } = require('./whatsappGateway');
 
 async function dispatchWhatsAppMessage(phone, messageText) {
   try {
-    const cleanPhone = phone.replace(/\D/g, '');
-    const formattedPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
+    const rawClean = phone.replace(/\D/g, '');
+    if (rawClean.length < 10) return false;
+    const cleanPhone = rawClean.slice(-10);
+    const formattedPhone = `91${cleanPhone}`;
 
     // 1. WhatsApp Baileys Web Gateway (Option 3 - 100% Free QR Code Gateway)
     const gateway = getGatewayStatus();
