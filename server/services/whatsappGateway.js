@@ -145,13 +145,13 @@ async function sendWhatsAppMessage(toPhone, messageText) {
     throw new Error('WhatsApp Gateway is not connected. Please scan the QR code first.');
   }
 
-  let cleanNumber = toPhone.replace(/\D/g, '');
-  if (cleanNumber.length === 10) {
-    cleanNumber = `91${cleanNumber}`;
+  const rawClean = toPhone.replace(/\D/g, '');
+  if (rawClean.length < 10) {
+    throw new Error('Invalid phone number: minimum 10 digits required');
   }
-
-  // Use primary Phone Number JID directly
+  const cleanNumber = `91${rawClean.slice(-10)}`;
   const jid = `${cleanNumber}@s.whatsapp.net`;
+
   const result = await sock.sendMessage(jid, { text: messageText });
   return result;
 }
