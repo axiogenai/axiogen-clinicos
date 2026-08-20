@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Phone, MapPin, Clock, Stethoscope, Check, X, ArrowRight, Eye, Trash2, Banknote, QrCode, RefreshCw } from 'lucide-react';
+import { Phone, MapPin, Clock, Stethoscope, Check, X, ArrowRight, Eye, Trash2, Banknote, QrCode, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
 import type { Patient, QueueItem } from '../data/patients';
 import { useClinic } from '../context/ClinicContext';
 import { api } from '../api/client';
@@ -183,6 +183,51 @@ export default function QueueList({
                   <span>{item.complaint || '—'}</span>
                 </div>
                 {item.notes && <div className="text-[11px] italic text-[#7c766d]">{item.notes}</div>}
+                
+                {/* Mobile Validity Display */}
+                {(() => {
+                  const v = patient?.validity;
+                  if (!v) return null;
+                  const expiry = new Date(v);
+                  const today = new Date(); today.setHours(0,0,0,0);
+                  const daysLeft = Math.ceil((expiry.getTime() - today.getTime()) / 86400000);
+                  const fmt = expiry.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                  return (
+                    <div className="flex items-center justify-between pt-1 border-t border-[#e4e2e1]/60">
+                      {daysLeft < 0 ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+                          <AlertCircle className="w-3 h-3 text-red-600 shrink-0" />
+                          <span>Expired on {fmt}</span>
+                        </span>
+                      ) : daysLeft <= 7 ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                          <Clock className="w-3 h-3 text-amber-600 shrink-0" />
+                          <span>{daysLeft}d left ({fmt})</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                          <span>Valid till {fmt}</span>
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        disabled={renewingId === (patient?.id || item.patientId)}
+                        onClick={async () => {
+                          const pid = patient?.id || item.patientId;
+                          setRenewingId(pid);
+                          try { await api.renewPatient(pid, 2); if (typeof refreshPatients === 'function') await refreshPatients(); }
+                          catch (e) { console.error('Renew failed', e); }
+                          finally { setRenewingId(null); }
+                        }}
+                        className="flex items-center gap-1 text-[10px] font-bold py-1 px-2.5 rounded-lg border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 disabled:opacity-50 transition-all cursor-pointer"
+                      >
+                        <RefreshCw className={`w-2.5 h-2.5 ${renewingId === (patient?.id || item.patientId) ? 'animate-spin' : ''}`} />
+                        <span>{renewingId === (patient?.id || item.patientId) ? '…' : 'Renew'}</span>
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="flex items-center justify-between pt-1">
@@ -340,11 +385,22 @@ export default function QueueList({
                       const today = new Date(); today.setHours(0,0,0,0);
                       const daysLeft = Math.ceil((expiry.getTime() - today.getTime()) / 86400000);
                       const fmt = expiry.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-                      const badge = daysLeft < 0
-                        ? <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200 block">⚠️ Expired</span>
-                        : daysLeft <= 7
-                        ? <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 block">⚡ {daysLeft}d left</span>
-                        : <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200 block">✅ {fmt}</span>;
+                      const badge = daysLeft < 0 ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+                          <AlertCircle className="w-3 h-3 text-red-600 shrink-0" />
+                          <span>Expired</span>
+                        </span>
+                      ) : daysLeft <= 7 ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                          <Clock className="w-3 h-3 text-amber-600 shrink-0" />
+                          <span>{daysLeft}d left</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                          <span>{fmt}</span>
+                        </span>
+                      );
                       return (
                         <div className="flex flex-col items-center gap-1">
                           {badge}
@@ -354,11 +410,11 @@ export default function QueueList({
                             onClick={async () => {
                               const pid = patient?.id || item.patientId;
                               setRenewingId(pid);
-                              try { await api.renewPatient(pid, 2); await refreshPatients(); }
+                              try { await api.renewPatient(pid, 2); if (typeof refreshPatients === 'function') await refreshPatients(); }
                               catch (e) { console.error('Renew failed', e); }
                               finally { setRenewingId(null); }
                             }}
-                            className="flex items-center gap-0.5 text-[10px] py-0.5 px-2 rounded-lg border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 disabled:opacity-50 transition-all"
+                            className="flex items-center gap-1 text-[10px] font-bold py-0.5 px-2.5 rounded-lg border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 disabled:opacity-50 transition-all cursor-pointer"
                             title="Renew validity by 2 months"
                           >
                             <RefreshCw className={`w-2.5 h-2.5 ${renewingId === (patient?.id || item.patientId) ? 'animate-spin' : ''}`} />
