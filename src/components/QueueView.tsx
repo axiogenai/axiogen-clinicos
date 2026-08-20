@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Users, Clock, Stethoscope, CheckCircle2, ArrowRight, FileText, Phone, MapPin, Search, X, Trash2, UserPlus, RefreshCw } from 'lucide-react';
+import { Users, Clock, Stethoscope, CheckCircle2, ArrowRight, FileText, Phone, MapPin, Search, X, Trash2, UserPlus, RefreshCw, AlertCircle } from 'lucide-react';
 import type { Patient, QueueItem } from '../data/patients';
 import { filterAndSortPatients } from './PatientSearch';
 import PatientEMRHistoryModal from './PatientEMRHistoryModal';
@@ -208,8 +208,18 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                       <div>
                         <div className="font-bold text-[#1a1c1a] text-sm">{p.name}</div>
-                        <div className="text-xs text-[#7c766d] mt-0.5">
-                          {p.age} Yrs / {p.gender === 'M' ? 'Male' : 'Female'} · 📞 {p.phone} · 📍 {p.village || 'N/A'}
+                        <div className="text-xs text-[#7c766d] mt-0.5 flex flex-wrap items-center gap-2">
+                          <span>{p.age} Yrs / {p.gender === 'M' ? 'Male' : 'Female'}</span>
+                          <span>·</span>
+                          <span className="inline-flex items-center gap-1">
+                            <Phone className="w-3 h-3 text-[#047857]" />
+                            <span>{p.phone || 'N/A'}</span>
+                          </span>
+                          <span>·</span>
+                          <span className="inline-flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-[#7c766d]" />
+                            <span>{p.village || 'N/A'}</span>
+                          </span>
                         </div>
                         {/* Validity Badge */}
                         {(() => {
@@ -220,18 +230,21 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                           const daysLeft = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
                           const fmt = expiry.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
                           if (daysLeft < 0) return (
-                            <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">
-                              ⚠️ Expired on {fmt}
+                            <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+                              <AlertCircle className="w-3 h-3 text-red-600 shrink-0" />
+                              <span>Expired on {fmt}</span>
                             </span>
                           );
                           if (daysLeft <= 7) return (
-                            <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                              ⚡ Expiring in {daysLeft} day{daysLeft !== 1 ? 's' : ''} · {fmt}
+                            <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                              <Clock className="w-3 h-3 text-amber-600 shrink-0" />
+                              <span>Expiring in {daysLeft} day{daysLeft !== 1 ? 's' : ''} ({fmt})</span>
                             </span>
                           );
                           return (
-                            <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
-                              ✅ Valid till {fmt}
+                            <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                              <span>Valid till {fmt}</span>
                             </span>
                           );
                         })()}
