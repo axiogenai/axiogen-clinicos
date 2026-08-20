@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { UserPlus, ArrowLeft, BookOpen, ListOrdered, Users } from 'lucide-react';
+import { UserPlus, ArrowLeft, BookOpen, ListOrdered, Users, ShieldCheck } from 'lucide-react';
 import { useClinic } from '../context/ClinicContext';
 import QueueStatistics from './QueueStatistics';
 import QueueList from './QueueList';
@@ -7,6 +7,7 @@ import PatientSearch from './PatientSearch';
 import PatientRegistrationForm from './PatientRegistrationForm';
 import PatientDetailsModal from './PatientDetailsModal';
 import DailyPatientRegister from './DailyPatientRegister';
+import ValidityCheckerModal from './ValidityCheckerModal';
 import type { Patient, QueueItem } from '../data/patients';
 
 export default function ReceptionistDashboard() {
@@ -15,6 +16,7 @@ export default function ReceptionistDashboard() {
   const [view, setView] = useState<'queue' | 'register' | 'opd-register'>('queue');
   const [selectedPatientForForm, setSelectedPatientForForm] = useState<Patient | null>(null);
   const [activeModalQueueItem, setActiveModalQueueItem] = useState<QueueItem | null>(null);
+  const [showValidityModal, setShowValidityModal] = useState(false);
 
   const handleSelectPatientFromSearch = (patient: Patient) => {
     setSelectedPatientForForm(patient);
@@ -72,6 +74,16 @@ export default function ReceptionistDashboard() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowValidityModal(true)}
+              className="btn-secondary text-xs"
+              title="Search and check patient validity by name, phone or village"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-[#047857]" />
+              <span>Check Validity</span>
+            </button>
+
             {view !== 'opd-register' ? (
               <button
                 onClick={() => setView('opd-register')}
@@ -159,6 +171,13 @@ export default function ReceptionistDashboard() {
           queueItem={activeModalQueueItem}
           patient={modalPatient}
           onClose={() => setActiveModalQueueItem(null)}
+        />
+      )}
+
+      {/* Validity Checker Modal */}
+      {showValidityModal && (
+        <ValidityCheckerModal 
+          onClose={() => setShowValidityModal(false)}
         />
       )}
     </div>
