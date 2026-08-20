@@ -1,7 +1,27 @@
-import { useState, useMemo } from 'react';
-import { UserCheck, UserPlus, Phone, MapPin, AlertCircle, AlertTriangle, ArrowRight, Plus, CreditCard, Banknote, QrCode, Check, Clock } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { 
+  UserPlus, 
+  Phone, 
+  MapPin, 
+  AlertCircle, 
+  AlertTriangle, 
+  ArrowRight, 
+  Plus, 
+  CreditCard, 
+  Banknote, 
+  QrCode, 
+  Check, 
+  Clock, 
+  Search, 
+  X, 
+  CheckCircle2, 
+  RefreshCw,
+  Users
+} from 'lucide-react';
 import type { Patient } from '../data/patients';
 import { useClinic } from '../context/ClinicContext';
+import { api } from '../api/client';
+import { filterAndSortPatients } from './PatientSearch';
 
 interface Props {
   selectedPatient: Patient | null;
@@ -11,15 +31,35 @@ interface Props {
   onSelectExistingPatient?: (patient: Patient) => void;
 }
 
-export default function PatientRegistrationForm({ selectedPatient, onSubmit, onCancel, onClearSelected, onSelectExistingPatient }: Props) {
-  const { patients, queue } = useClinic();
+export default function PatientRegistrationForm({ 
+  selectedPatient, 
+  onSubmit, 
+  onCancel, 
+  onClearSelected, 
+  onSelectExistingPatient 
+}: Props) {
+  const { patients, queue, refreshPatients } = useClinic();
+
+  // Mode: 'existing' = Search & Add Existing Patient, 'new' = Register New Patient
+  const [activeTab, setActiveTab] = useState<'existing' | 'new'>(selectedPatient ? 'existing' : 'existing');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [chosenPatient, setChosenPatient] = useState<Patient | null>(selectedPatient);
+  const [renewingId, setRenewingId] = useState<string | null>(null);
+
+  // Sync when selectedPatient prop changes
+  useEffect(() => {
+    if (selectedPatient) {
+      setChosenPatient(selectedPatient);
+      setActiveTab('existing');
+    }
+  }, [selectedPatient]);
 
   const [formData, setFormData] = useState({
-    name: selectedPatient?.name || '',
-    age: selectedPatient?.age?.toString() || '',
-    gender: selectedPatient?.gender || 'M',
-    phone: selectedPatient?.phone || '',
-    village: selectedPatient?.village || '',
+    name: '',
+    age: '',
+    gender: 'M' as 'M' | 'F' | 'Other',
+    phone: '',
+    village: '',
     chiefComplaint: '',
     receptionNotes: '',
     pastMedicalHistory: 'No known allergies',
@@ -30,20 +70,27 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Real-time Duplicate Mobile Check
+  // Real-time search for existing patients
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim();
+    if (!q || q.length < 2) return [];
+    return filterAndSortPatients(patients, q).slice(0, 15);
+  }, [patients, searchQuery]);
+
+  // Real-time Duplicate Mobile Check for New Patient mode
   const duplicatePatient = useMemo(() => {
-    if (selectedPatient) return null;
+    if (activeTab === 'existing' || chosenPatient) return null;
     const clean = formData.phone.replace(/\D/g, '');
     if (clean.length === 10) {
       return patients.find(p => p.phone === clean);
     }
     return null;
-  }, [formData.phone, patients, selectedPatient]);
+  }, [formData.phone, patients, activeTab, chosenPatient]);
 
-  // Real-time Duplicate Queue Entry Check
+  // Check if chosen patient or target is already in today's active queue
   const isAlreadyInQueue = useMemo(() => {
-    const targetPatientId = selectedPatient?.id || duplicatePatient?.id;
-    const cleanPhone = formData.phone.replace(/\D/g, '');
+    const targetPatientId = chosenPatient?.id || duplicatePatient?.id;
+    const cleanPhone = (activeTab === 'existing' && chosenPatient ? chosenPatient.phone : formData.phone).replace(/\D/g, '');
 
     return queue.some(q => {
       if (q.status === 'completed') return false;
@@ -51,11 +98,26 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
       if (cleanPhone && cleanPhone.length === 10 && q.phone === cleanPhone) return true;
       return false;
     });
-  }, [selectedPatient, duplicatePatient, formData.phone, queue]);
+  }, [chosenPatient, duplicatePatient, formData.phone, queue, activeTab]);
+
+  const handleRenewValidity = async (patientId: string) => {
+    setRenewingId(patientId);
+    try {
+      await api.renewPatient(patientId, 2);
+      if (typeof refreshPatients === 'function') {
+        await refreshPatients();
+      }
+    } catch (e) {
+      console.error('Renew failed', e);
+    } finally {
+      setRenewingId(null);
+    }
+  };
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    if (!selectedPatient) {
+
+    if (activeTab === 'new') {
       const trimmedName = formData.name.trim();
       if (!trimmedName || trimmedName.length < 2) {
         newErrors.name = 'Full name is required (at least 2 characters)';
@@ -85,6 +147,10 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
       if (duplicatePatient) {
         newErrors.phone = `A patient with mobile ${formData.phone} is already registered (${duplicatePatient.name})`;
       }
+    } else {
+      if (!chosenPatient) {
+        newErrors.patient = 'Please search and select an existing patient first, or switch to Register New Patient.';
+      }
     }
 
     if (isAlreadyInQueue) {
@@ -97,107 +163,341 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (validate()) {
-      onSubmit(formData);
+    if (!validate()) return;
+
+    if (activeTab === 'existing' && chosenPatient) {
+      onSubmit({
+        ...chosenPatient,
+        chiefComplaint: formData.chiefComplaint,
+        complaint: formData.chiefComplaint,
+        receptionNotes: formData.receptionNotes,
+        notes: formData.receptionNotes,
+        paymentStatus: formData.paymentStatus,
+        paymentMode: formData.paymentMode,
+      });
+    } else {
+      onSubmit({
+        name: formData.name.trim(),
+        age: formData.age ? parseInt(formData.age, 10) : 0,
+        gender: formData.gender,
+        phone: formData.phone.replace(/\D/g, ''),
+        village: formData.village.trim(),
+        pastHistory: formData.pastMedicalHistory,
+        allergies: formData.allergies,
+        chiefComplaint: formData.chiefComplaint,
+        complaint: formData.chiefComplaint,
+        receptionNotes: formData.receptionNotes,
+        notes: formData.receptionNotes,
+        paymentStatus: formData.paymentStatus,
+        paymentMode: formData.paymentMode,
+      });
     }
   };
 
+  const renderValidityBadge = (validity?: string) => {
+    if (!validity) {
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 border border-stone-200">
+          <AlertCircle className="w-3 h-3 text-stone-500 shrink-0" />
+          <span>No validity date</span>
+        </span>
+      );
+    }
+    const expiry = new Date(validity);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const daysLeft = Math.ceil((expiry.getTime() - today.getTime()) / 86400000);
+    const fmt = expiry.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    if (daysLeft < 0) {
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+          <AlertCircle className="w-3 h-3 text-red-600 shrink-0" />
+          <span>Expired on {fmt}</span>
+        </span>
+      );
+    }
+    if (daysLeft <= 7) {
+      return (
+        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+          <Clock className="w-3 h-3 text-amber-600 shrink-0" />
+          <span>Expiring in {daysLeft}d ({fmt})</span>
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+        <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+        <span>Valid till {fmt}</span>
+      </span>
+    );
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="bg-[#faf9f6] border border-[#e4e2e1] rounded-2xl shadow-sm overflow-hidden">
+    <div className="bg-[#faf9f6] border border-[#e4e2e1] rounded-2xl shadow-sm overflow-hidden">
       
-      {/* Form Header */}
-      <div className="px-6 py-4 bg-[#f8f6f0] border-b border-[#e4e2e1] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <div>
-          <h2 className="text-base font-serif font-bold text-[#1a1c1a] flex items-center gap-2">
-            {selectedPatient ? (
-              <>
-                <UserCheck className="w-4.5 h-4.5 text-[#047857]" />
-                <span>Add Existing Patient to Queue</span>
-              </>
-            ) : (
-              <>
-                <UserPlus className="w-4.5 h-4.5 text-[#047857]" />
-                <span>Register New Patient & Add to Queue</span>
-              </>
-            )}
-          </h2>
-          <p className="text-[11px] text-[#7c766d] mt-0.5">
-            {selectedPatient
-              ? "Review patient demographics and enter today's chief complaint."
-              : 'Enter new patient registration details for clinic records.'}
-          </p>
+      {/* ── 2 Main Options Tabs ── */}
+      <div className="bg-[#f8f6f0] border-b border-[#e4e2e1] p-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex rounded-xl bg-[#f2eee3] p-1 border border-[#cdc6ba] w-full sm:w-auto">
+          {/* Option 1: Existing Patient */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('existing');
+              setErrors({});
+            }}
+            className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              activeTab === 'existing'
+                ? 'bg-white text-[#047857] shadow-sm border border-[#e4e2e1]'
+                : 'text-[#7c766d] hover:text-[#1a1c1a]'
+            }`}
+          >
+            <Users className="w-4 h-4 text-[#047857]" />
+            <span>Option 1: Existing Patient (Add to Queue)</span>
+          </button>
+
+          {/* Option 2: Register New Patient */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('new');
+              setChosenPatient(null);
+              setErrors({});
+            }}
+            className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              activeTab === 'new'
+                ? 'bg-white text-[#047857] shadow-sm border border-[#e4e2e1]'
+                : 'text-[#7c766d] hover:text-[#1a1c1a]'
+            }`}
+          >
+            <UserPlus className="w-4 h-4 text-[#047857]" />
+            <span>Option 2: Register New Patient</span>
+          </button>
         </div>
 
-        {selectedPatient && (
-          <button 
-            type="button" 
-            onClick={onClearSelected} 
-            className="btn-secondary text-xs"
-          >
-            Change Patient
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={onCancel}
+          className="btn-secondary text-xs"
+        >
+          Cancel
+        </button>
       </div>
 
-      <div className="p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="p-6 space-y-6">
 
-        {/* Duplicate Queue Alert Banner */}
+        {/* Duplicate Queue Alert */}
         {isAlreadyInQueue && (
-          <div className="p-3.5 bg-[#fef2f2] border border-[#fecaca] rounded-xl flex items-center gap-2.5 text-xs text-[#991b1b] shadow-sm">
+          <div className="p-3.5 bg-[#fef2f2] border border-[#fecaca] rounded-xl flex items-center gap-2.5 text-xs text-[#991b1b] shadow-xs">
             <AlertCircle className="w-4 h-4 text-[#dc2626] shrink-0" />
-            <span><strong className="font-bold">Duplicate Blocked:</strong> Patient is already in today's active OPD consultation queue!</span>
+            <span><strong className="font-bold">Duplicate Warning:</strong> This patient is already in today's active consultation queue!</span>
           </div>
         )}
 
-        {/* Duplicate Mobile Patient Alert Banner */}
-        {duplicatePatient && (
-          <div className="p-3.5 bg-[#fffbeb] border border-[#fde68a] rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-[#92400e] shadow-sm">
-            <div className="flex items-center gap-2.5">
-              <AlertTriangle className="w-4.5 h-4.5 text-[#b45309] shrink-0" />
-              <div>
-                <span className="font-bold text-[#b45309]">Existing Patient Match:</span> Patient <strong className="text-[#78350f]">{duplicatePatient.name}</strong> ({duplicatePatient.age} YRS · {duplicatePatient.village || 'N/A'}) is already registered with mobile <strong className="text-[#78350f]">{duplicatePatient.phone}</strong>.
+        {/* ═══════════════════════════════════════════════════════ */}
+        {/* OPTION 1: EXISTING PATIENT SEARCH & SELECT             */}
+        {/* ═══════════════════════════════════════════════════════ */}
+        {activeTab === 'existing' && (
+          <div className="space-y-4">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-[#1a1c1a] flex items-center gap-1.5">
+                  <Search className="w-3.5 h-3.5 text-[#047857]" />
+                  <span>Search Existing Patient</span>
+                </label>
+                <span className="text-[11px] text-[#7c766d]">Type name, 10-digit mobile, or village</span>
+              </div>
+
+              <div className="relative">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7c766d]" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => {
+                    setSearchQuery(e.target.value);
+                    if (chosenPatient && e.target.value) {
+                      // If typing again, clear previous selection
+                      setChosenPatient(null);
+                    }
+                  }}
+                  placeholder="e.g. Ramesh, 9876543210, or Peth Vadgaon..."
+                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-[#e4e2e1] bg-white text-sm text-[#1a1c1a] placeholder-[#7c766d] focus:outline-none focus:ring-2 focus:ring-[#047857]/20 focus:border-[#047857] transition-all"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setChosenPatient(null);
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-[#7c766d] hover:text-[#1a1c1a]"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
-            {onSelectExistingPatient && (
-              <button
-                type="button"
-                onClick={() => onSelectExistingPatient(duplicatePatient)}
-                className="px-3.5 py-1.5 bg-[#b45309] hover:bg-[#92400e] text-white font-bold rounded-lg shrink-0 flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer"
-              >
-                <span>Select Existing Patient</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+
+            {/* Search Results Dropdown List */}
+            {searchQuery.trim().length >= 2 && !chosenPatient && (
+              <div className="border border-[#e4e2e1] rounded-xl bg-white shadow-md overflow-hidden max-h-64 overflow-y-auto divide-y divide-[#e4e2e1]">
+                {searchResults.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-[#7c766d]">
+                    <p className="font-semibold text-[#1a1c1a]">No registered patient found for "{searchQuery}"</p>
+                    <p className="mt-1">Is this a first-time visitor?</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('new');
+                        setFormData(prev => ({ ...prev, name: searchQuery }));
+                      }}
+                      className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#047857] text-white text-xs font-bold rounded-lg hover:bg-[#064e3b] transition-colors cursor-pointer"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
+                      <span>Register "{searchQuery}" as New Patient</span>
+                    </button>
+                  </div>
+                ) : (
+                  searchResults.map(p => {
+                    const inQ = queue.some(q => q.status !== 'completed' && q.patientId === p.id);
+                    return (
+                      <div
+                        key={p.id}
+                        onClick={() => {
+                          setChosenPatient(p);
+                          setSearchQuery(p.name);
+                        }}
+                        className="p-3 hover:bg-[#f8f6f0] cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition-colors"
+                      >
+                        <div>
+                          <div className="font-bold text-sm text-[#1a1c1a] flex items-center gap-2">
+                            <span>{p.name}</span>
+                            <span className="text-xs text-[#7c766d] font-normal">({p.age}y · {p.gender === 'M' ? 'Male' : 'Female'})</span>
+                          </div>
+                          <div className="text-xs text-[#7c766d] flex items-center gap-3 mt-0.5">
+                            <span className="flex items-center gap-1"><Phone className="w-3 h-3 text-[#047857]" />{p.phone}</span>
+                            <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{p.village || 'N/A'}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {renderValidityBadge(p.validity)}
+                          {inQ ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                              In Queue
+                            </span>
+                          ) : (
+                            <span className="text-xs font-bold text-[#047857] flex items-center gap-1">
+                              <span>Select</span>
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+
+            {/* Selected Patient Card */}
+            {chosenPatient ? (
+              <div className="p-4 bg-[#ecfdf5] border border-[#a7f3d0] rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#064e3b] to-[#047857] text-[#ecfdf5] font-bold flex items-center justify-center text-sm shadow-xs shrink-0">
+                    {chosenPatient.name.charAt(0)}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-[#1a1c1a] text-sm">{chosenPatient.name}</p>
+                      <span className="text-[11px] text-[#047857] font-semibold">({chosenPatient.age} yrs · {chosenPatient.gender === 'M' ? 'Male' : 'Female'})</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-[#4b463e] mt-1">
+                      <span className="flex items-center gap-1"><Phone className="w-3 h-3 text-[#047857]" />{chosenPatient.phone}</span>
+                      <span className="flex items-center gap-1"><MapPin className="w-3 h-3 text-[#7c766d]" />{chosenPatient.village || 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {renderValidityBadge(chosenPatient.validity)}
+                  <button
+                    type="button"
+                    disabled={renewingId === chosenPatient.id}
+                    onClick={() => handleRenewValidity(chosenPatient.id)}
+                    className="flex items-center gap-1 text-[11px] font-bold py-1 px-2.5 rounded-lg border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 disabled:opacity-50 transition-all cursor-pointer"
+                    title="Renew validity by 2 months"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${renewingId === chosenPatient.id ? 'animate-spin' : ''}`} />
+                    <span>{renewingId === chosenPatient.id ? '…' : 'Renew (+2 Mo)'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setChosenPatient(null);
+                      setSearchQuery('');
+                      onClearSelected();
+                    }}
+                    className="text-xs text-[#7c766d] hover:text-[#1a1c1a] underline ml-2 cursor-pointer"
+                  >
+                    Change
+                  </button>
+                </div>
+              </div>
+            ) : (
+              !searchQuery && (
+                <div className="p-6 bg-[#f8f6f0] border border-dashed border-[#cdc6ba] rounded-xl text-center">
+                  <Search className="w-8 h-8 text-[#7c766d] mx-auto mb-2 opacity-50" />
+                  <p className="text-sm font-bold text-[#1a1c1a]">Search a returning patient above</p>
+                  <p className="text-xs text-[#7c766d] mt-1">Or if this is a first-time visitor, switch to Option 2: Register New Patient</p>
+                </div>
+              )
+            )}
+
+            {errors.patient && (
+              <p className="text-red-500 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.patient}</p>
             )}
           </div>
         )}
 
-        {/* Mode 1: Selected Existing Patient Summary */}
-        {selectedPatient ? (
-          <div className="p-4 bg-[#ecfdf5] border border-[#a7f3d0] rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#064e3b] to-[#047857] text-[#ecfdf5] font-bold flex items-center justify-center text-sm shadow-sm">
-                {selectedPatient.name.charAt(0)}
-              </div>
-              <div>
-                <p className="font-bold text-[#1a1c1a] text-sm">{selectedPatient.name}</p>
-                <p className="text-[11px] text-[#047857] font-semibold">{selectedPatient.age} yrs · {selectedPatient.gender === 'M' ? 'Male' : 'Female'} · ID: {selectedPatient.id}</p>
-              </div>
+        {/* ═══════════════════════════════════════════════════════ */}
+        {/* OPTION 2: REGISTER NEW PATIENT FORM                    */}
+        {/* ═══════════════════════════════════════════════════════ */}
+        {activeTab === 'new' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-[#e4e2e1] pb-2">
+              <p className="form-label text-[#047857] flex items-center gap-1.5">
+                <UserPlus className="w-4 h-4 text-[#047857]" />
+                <span>New Patient Registration Demographics</span>
+              </p>
+              <span className="text-[11px] text-[#7c766d]">* Required fields</span>
             </div>
-            <div className="flex items-center gap-4 text-xs text-[#4b463e]">
-              <div className="flex items-center gap-1.5">
-                <Phone className="w-3.5 h-3.5 text-[#047857]" />
-                <span className="font-semibold text-[#1a1c1a]">{selectedPatient.phone}</span>
+
+            {/* Duplicate Mobile Alert */}
+            {duplicatePatient && (
+              <div className="p-3.5 bg-[#fffbeb] border border-[#fde68a] rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-[#92400e] shadow-xs">
+                <div className="flex items-center gap-2.5">
+                  <AlertTriangle className="w-4.5 h-4.5 text-[#b45309] shrink-0" />
+                  <div>
+                    <span className="font-bold text-[#b45309]">Existing Patient Match:</span> Patient <strong className="text-[#78350f]">{duplicatePatient.name}</strong> ({duplicatePatient.age} YRS · {duplicatePatient.village || 'N/A'}) is already registered with mobile <strong className="text-[#78350f]">{duplicatePatient.phone}</strong>.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setChosenPatient(duplicatePatient);
+                    setActiveTab('existing');
+                    if (onSelectExistingPatient) onSelectExistingPatient(duplicatePatient);
+                  }}
+                  className="px-3.5 py-1.5 bg-[#b45309] hover:bg-[#92400e] text-white font-bold rounded-lg shrink-0 flex items-center gap-1.5 transition-all shadow-xs active:scale-95 cursor-pointer"
+                >
+                  <span>Select & Add to Queue</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
               </div>
-              <div className="flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-[#7c766d]" />
-                <span>{selectedPatient.village}</span>
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* Mode 2: Full Registration Inputs */
-          <div>
-            <p className="form-label mb-3 text-[#047857]">— Patient Demographics —</p>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="form-label">Full Name <span className="text-red-500">*</span></label>
@@ -215,7 +515,7 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
                 <div>
                   <label className="form-label">Age (Optional)</label>
                   <input 
-                     type="number" 
+                    type="number" 
                     className={`form-input ${errors.age ? 'error' : ''}`}
                     placeholder="Years"
                     value={formData.age} 
@@ -286,9 +586,12 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
           </div>
         )}
 
-        {/* Today's Visit Details */}
+        {/* ═══════════════════════════════════════════════════════ */}
+        {/* TODAY'S VISIT & PAYMENT (Common to Both Modes)         */}
+        {/* ═══════════════════════════════════════════════════════ */}
         <div className="space-y-4 pt-4 border-t border-[#e4e2e1]">
-          <p className="form-label text-[#047857]">— Today's Visit —</p>
+          <p className="form-label text-[#047857]">— Today's Visit Details —</p>
+          
           <div>
             <label className="form-label">Chief Complaint (Optional)</label>
             <input 
@@ -311,7 +614,7 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
             />
           </div>
 
-          {/* Payment Details */}
+          {/* Payment Section */}
           <div className="bg-[#f8f6f0] p-3.5 rounded-xl border border-[#e4e2e1] space-y-2.5">
             <label className="form-label text-[#047857] flex items-center justify-between">
               <span className="flex items-center gap-1.5 font-bold">
@@ -328,9 +631,9 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, paymentStatus: 'paid' })}
-                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1 ${
+                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1 cursor-pointer ${
                       formData.paymentStatus === 'paid'
-                        ? 'bg-[#047857] text-white shadow-sm'
+                        ? 'bg-[#047857] text-white shadow-xs'
                         : 'text-[#4b463e] hover:text-[#1a1c1a]'
                     }`}
                   >
@@ -340,9 +643,9 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, paymentStatus: 'unpaid' })}
-                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1 ${
+                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1 cursor-pointer ${
                       formData.paymentStatus === 'unpaid'
-                        ? 'bg-amber-600 text-white shadow-sm'
+                        ? 'bg-amber-600 text-white shadow-xs'
                         : 'text-[#4b463e] hover:text-[#1a1c1a]'
                     }`}
                   >
@@ -361,7 +664,7 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
                     onClick={() => setFormData({ ...formData, paymentMode: 'cash' })}
                     className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1 ${
                       formData.paymentMode === 'cash' && formData.paymentStatus === 'paid'
-                        ? 'bg-[#064e3b] text-white shadow-sm'
+                        ? 'bg-[#064e3b] text-white shadow-xs'
                         : 'text-[#4b463e] hover:text-[#1a1c1a] disabled:opacity-40'
                     }`}
                   >
@@ -374,7 +677,7 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
                     onClick={() => setFormData({ ...formData, paymentMode: 'online' })}
                     className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1 ${
                       formData.paymentMode === 'online' && formData.paymentStatus === 'paid'
-                        ? 'bg-blue-600 text-white shadow-sm'
+                        ? 'bg-blue-600 text-white shadow-xs'
                         : 'text-[#4b463e] hover:text-[#1a1c1a] disabled:opacity-40'
                     }`}
                   >
@@ -387,8 +690,8 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
           </div>
         </div>
 
-        {/* Buttons */}
-        <div className="flex justify-end gap-3 pt-2">
+        {/* Footer Actions */}
+        <div className="flex justify-end gap-3 pt-2 border-t border-[#e4e2e1]">
           <button 
             type="button" 
             onClick={onCancel} 
@@ -398,14 +701,16 @@ export default function PatientRegistrationForm({ selectedPatient, onSubmit, onC
           </button>
           <button 
             type="submit" 
-            className="btn-primary"
+            className="btn-primary flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
-            <span>Add to Queue</span>
+            <span>
+              {activeTab === 'existing' ? "Add to Today's Queue" : "Register & Add to Queue"}
+            </span>
           </button>
         </div>
 
-      </div>
-    </form>
+      </form>
+    </div>
   );
 }
