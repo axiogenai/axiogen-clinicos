@@ -50,7 +50,7 @@ export default function PatientRegistrationForm({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const ageInputRef = useRef<HTMLInputElement>(null);
-  const genderSelectRef = useRef<HTMLSelectElement>(null);
+  const genderSelectRef = useRef<HTMLButtonElement>(null);
   const phoneInputRef = useRef<HTMLInputElement>(null);
   const villageInputRef = useRef<HTMLInputElement>(null);
   const historyInputRef = useRef<HTMLTextAreaElement>(null);
@@ -574,16 +574,41 @@ export default function PatientRegistrationForm({
 
                 <div>
                   <label className="form-label">Gender <span className="text-red-500">*</span></label>
-                  <select 
-                    ref={genderSelectRef}
-                    className="form-input"
-                    value={formData.gender} 
-                    onChange={e => setFormData({...formData, gender: e.target.value as 'M' | 'F'})}
-                    onKeyDown={e => handleKeyDown(e, phoneInputRef)}
-                  >
-                    <option value="M">Male</option>
-                    <option value="F">Female</option>
-                  </select>
+                  <div className="flex gap-2">
+                    {[
+                      { val: 'M' as const, label: 'Male' },
+                      { val: 'F' as const, label: 'Female' },
+                      { val: 'Other' as const, label: 'Other' }
+                    ].map(g => (
+                      <button
+                        key={g.val}
+                        type="button"
+                        ref={g.val === formData.gender ? genderSelectRef : undefined}
+                        onClick={() => setFormData({ ...formData, gender: g.val })}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            phoneInputRef.current?.focus();
+                          } else if (e.key === 'ArrowRight') {
+                            e.preventDefault();
+                            const next = g.val === 'M' ? 'F' : g.val === 'F' ? 'Other' : 'M';
+                            setFormData({ ...formData, gender: next });
+                          } else if (e.key === 'ArrowLeft') {
+                            e.preventDefault();
+                            const prev = g.val === 'Other' ? 'F' : g.val === 'F' ? 'M' : 'Other';
+                            setFormData({ ...formData, gender: prev });
+                          }
+                        }}
+                        className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                          formData.gender === g.val
+                            ? 'bg-[#047857] text-white border-[#047857] shadow-xs'
+                            : 'bg-white text-[#4b463e] border-[#e4e2e1] hover:bg-[#faf9f6]'
+                        }`}
+                      >
+                        {g.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
