@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   UserPlus, 
   Phone, 
@@ -46,11 +46,34 @@ export default function PatientRegistrationForm({
   const [chosenPatient, setChosenPatient] = useState<Patient | null>(selectedPatient);
   const [renewingId, setRenewingId] = useState<string | null>(null);
 
+  // Field Refs for Auto-Focus Sequence on Enter Key
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const ageInputRef = useRef<HTMLInputElement>(null);
+  const genderSelectRef = useRef<HTMLSelectElement>(null);
+  const phoneInputRef = useRef<HTMLInputElement>(null);
+  const villageInputRef = useRef<HTMLInputElement>(null);
+  const historyInputRef = useRef<HTMLTextAreaElement>(null);
+  const allergiesInputRef = useRef<HTMLTextAreaElement>(null);
+  const complaintInputRef = useRef<HTMLInputElement>(null);
+  const notesInputRef = useRef<HTMLTextAreaElement>(null);
+  const submitButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Auto-focus on tab switch
+  useEffect(() => {
+    if (activeTab === 'existing') {
+      setTimeout(() => searchInputRef.current?.focus(), 50);
+    } else {
+      setTimeout(() => nameInputRef.current?.focus(), 50);
+    }
+  }, [activeTab]);
+
   // Sync when selectedPatient prop changes
   useEffect(() => {
     if (selectedPatient) {
       setChosenPatient(selectedPatient);
       setActiveTab('existing');
+      setTimeout(() => complaintInputRef.current?.focus(), 50);
     }
   }, [selectedPatient]);
 
@@ -111,6 +134,16 @@ export default function PatientRegistrationForm({
       console.error('Renew failed', e);
     } finally {
       setRenewingId(null);
+    }
+  };
+
+  // Helper for Enter key progression
+  const handleKeyDown = (e: React.KeyboardEvent, nextRef?: React.RefObject<any>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (nextRef && nextRef.current) {
+        nextRef.current.focus();
+      }
     }
   };
 
@@ -305,19 +338,29 @@ export default function PatientRegistrationForm({
                   <Search className="w-3.5 h-3.5 text-[#047857]" />
                   <span>Search Existing Patient</span>
                 </label>
-                <span className="text-[11px] text-[#7c766d]">Type name, 10-digit mobile, or village</span>
+                <span className="text-[11px] text-[#7c766d]">Type name, 10-digit mobile, or village (Press Enter to navigate)</span>
               </div>
 
               <div className="relative">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7c766d]" />
                 <input
+                  ref={searchInputRef}
                   type="text"
                   value={searchQuery}
                   onChange={e => {
                     setSearchQuery(e.target.value);
                     if (chosenPatient && e.target.value) {
-                      // If typing again, clear previous selection
                       setChosenPatient(null);
+                    }
+                  }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (searchResults.length > 0) {
+                        setChosenPatient(searchResults[0]);
+                        setSearchQuery(searchResults[0].name);
+                        setTimeout(() => complaintInputRef.current?.focus(), 50);
+                      }
                     }
                   }}
                   placeholder="e.g. Ramesh, 9876543210, or Peth Vadgaon..."
@@ -366,6 +409,7 @@ export default function PatientRegistrationForm({
                         onClick={() => {
                           setChosenPatient(p);
                           setSearchQuery(p.name);
+                          setTimeout(() => complaintInputRef.current?.focus(), 50);
                         }}
                         className="p-3 hover:bg-[#f8f6f0] cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition-colors"
                       >
@@ -471,7 +515,7 @@ export default function PatientRegistrationForm({
                 <UserPlus className="w-4 h-4 text-[#047857]" />
                 <span>New Patient Registration Demographics</span>
               </p>
-              <span className="text-[11px] text-[#7c766d]">* Required fields</span>
+              <span className="text-[11px] text-[#7c766d]">Press <strong>Enter</strong> to jump to next field</span>
             </div>
 
             {/* Duplicate Mobile Alert */}
@@ -502,11 +546,13 @@ export default function PatientRegistrationForm({
               <div>
                 <label className="form-label">Full Name <span className="text-red-500">*</span></label>
                 <input 
+                  ref={nameInputRef}
                   type="text" 
                   className={`form-input ${errors.name ? 'error' : ''}`}
                   placeholder="e.g. Ramesh Kulkarni"
                   value={formData.name} 
                   onChange={e => setFormData({...formData, name: e.target.value})} 
+                  onKeyDown={e => handleKeyDown(e, ageInputRef)}
                 />
                 {errors.name && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.name}</p>}
               </div>
@@ -515,11 +561,13 @@ export default function PatientRegistrationForm({
                 <div>
                   <label className="form-label">Age (Optional)</label>
                   <input 
+                    ref={ageInputRef}
                     type="number" 
                     className={`form-input ${errors.age ? 'error' : ''}`}
                     placeholder="Years"
                     value={formData.age} 
                     onChange={e => setFormData({...formData, age: e.target.value})} 
+                    onKeyDown={e => handleKeyDown(e, genderSelectRef)}
                   />
                   {errors.age && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.age}</p>}
                 </div>
@@ -527,9 +575,11 @@ export default function PatientRegistrationForm({
                 <div>
                   <label className="form-label">Gender <span className="text-red-500">*</span></label>
                   <select 
+                    ref={genderSelectRef}
                     className="form-input"
                     value={formData.gender} 
                     onChange={e => setFormData({...formData, gender: e.target.value as 'M' | 'F'})}
+                    onKeyDown={e => handleKeyDown(e, phoneInputRef)}
                   >
                     <option value="M">Male</option>
                     <option value="F">Female</option>
@@ -540,11 +590,13 @@ export default function PatientRegistrationForm({
               <div>
                 <label className="form-label">Phone Number <span className="text-red-500">*</span> (10 Digits)</label>
                 <input 
+                  ref={phoneInputRef}
                   type="tel" 
                   className={`form-input ${errors.phone ? 'error' : ''}`}
                   placeholder="e.g. 9876543210"
                   value={formData.phone} 
                   onChange={e => setFormData({...formData, phone: e.target.value})} 
+                  onKeyDown={e => handleKeyDown(e, villageInputRef)}
                 />
                 {errors.phone && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.phone}</p>}
               </div>
@@ -552,11 +604,13 @@ export default function PatientRegistrationForm({
               <div>
                 <label className="form-label">Village / Town <span className="text-red-500">*</span></label>
                 <input 
+                  ref={villageInputRef}
                   type="text" 
                   className={`form-input ${errors.village ? 'error' : ''}`}
                   placeholder="e.g. Shirur, Pune"
                   value={formData.village} 
                   onChange={e => setFormData({...formData, village: e.target.value})} 
+                  onKeyDown={e => handleKeyDown(e, complaintInputRef)}
                 />
                 {errors.village && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.village}</p>}
               </div>
@@ -564,22 +618,36 @@ export default function PatientRegistrationForm({
               <div>
                 <label className="form-label">Past Medical History</label>
                 <textarea 
+                  ref={historyInputRef}
                   className="form-input"
                   rows={2}
                   placeholder="Known conditions (e.g. Hypertension, Diabetes)..."
                   value={formData.pastMedicalHistory} 
                   onChange={e => setFormData({...formData, pastMedicalHistory: e.target.value})} 
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      allergiesInputRef.current?.focus();
+                    }
+                  }}
                 />
               </div>
 
               <div>
                 <label className="form-label">Known Allergies</label>
                 <textarea 
+                  ref={allergiesInputRef}
                   className="form-input"
                   rows={2}
                   placeholder="Known drug/food allergies (e.g. Sulfa, Penicillin)..."
                   value={formData.allergies} 
                   onChange={e => setFormData({...formData, allergies: e.target.value})} 
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      complaintInputRef.current?.focus();
+                    }
+                  }}
                 />
               </div>
             </div>
@@ -595,22 +663,31 @@ export default function PatientRegistrationForm({
           <div>
             <label className="form-label">Chief Complaint (Optional)</label>
             <input 
+              ref={complaintInputRef}
               type="text" 
               className="form-input"
               placeholder="e.g. Itching and rash on arms for 5 days" 
               value={formData.chiefComplaint} 
               onChange={e => setFormData({...formData, chiefComplaint: e.target.value})} 
+              onKeyDown={e => handleKeyDown(e, notesInputRef)}
             />
           </div>
 
           <div>
             <label className="form-label">Receptionist Notes (Optional)</label>
             <textarea 
+              ref={notesInputRef}
               className="form-input"
               rows={2}
               placeholder="Any extra notes before doctor consultation (e.g. Emergency walk-in, VIP)..." 
               value={formData.receptionNotes} 
               onChange={e => setFormData({...formData, receptionNotes: e.target.value})} 
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  submitButtonRef.current?.focus();
+                }
+              }}
             />
           </div>
 
@@ -700,6 +777,7 @@ export default function PatientRegistrationForm({
             Cancel
           </button>
           <button 
+            ref={submitButtonRef}
             type="submit" 
             className="btn-primary flex items-center gap-2"
           >
