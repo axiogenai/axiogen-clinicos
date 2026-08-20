@@ -41,6 +41,11 @@ const Patient = sequelize.define('Patient', {
   notes: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  validity: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+    comment: 'Patient registration validity / expiry date (YYYY-MM-DD)'
   }
 });
 
