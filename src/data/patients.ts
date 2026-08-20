@@ -14,6 +14,7 @@ export interface Patient {
   pastHistory: string;
   allergies: string;
   pastVisits: PastVisit[];
+  validity?: string; // ISO date string YYYY-MM-DD - registration expiry
 }
 
 export interface QueueItem {
@@ -193,13 +194,6 @@ export const todayQueue: QueueItem[] = [
     patientId: 'pat_001',
     timeAdded: '10:00 AM',
     complaint: 'Ringworm infection on thigh',
-    status: 'waiting'
-  },
-  {
-    queueId: 'q_006',
-    patientId: 'pat_003',
-    timeAdded: '10:15 AM',
-    complaint: 'White patches on skin',
     status: 'waiting'
   }
 ];
