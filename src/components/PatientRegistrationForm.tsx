@@ -577,8 +577,7 @@ export default function PatientRegistrationForm({
                   <div className="flex gap-2">
                     {[
                       { val: 'M' as const, label: 'Male' },
-                      { val: 'F' as const, label: 'Female' },
-                      { val: 'Other' as const, label: 'Other' }
+                      { val: 'F' as const, label: 'Female' }
                     ].map(g => (
                       <button
                         key={g.val}
@@ -589,14 +588,9 @@ export default function PatientRegistrationForm({
                           if (e.key === 'Enter') {
                             e.preventDefault();
                             phoneInputRef.current?.focus();
-                          } else if (e.key === 'ArrowRight') {
+                          } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
                             e.preventDefault();
-                            const next = g.val === 'M' ? 'F' : g.val === 'F' ? 'Other' : 'M';
-                            setFormData({ ...formData, gender: next });
-                          } else if (e.key === 'ArrowLeft') {
-                            e.preventDefault();
-                            const prev = g.val === 'Other' ? 'F' : g.val === 'F' ? 'M' : 'Other';
-                            setFormData({ ...formData, gender: prev });
+                            setFormData({ ...formData, gender: g.val === 'M' ? 'F' : 'M' });
                           }
                         }}
                         className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
