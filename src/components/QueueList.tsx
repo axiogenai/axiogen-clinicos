@@ -1,6 +1,8 @@
-import { Phone, MapPin, Clock, Stethoscope, Check, X, ArrowRight, Eye, Trash2, Banknote, QrCode } from 'lucide-react';
+import { useState } from 'react';
+import { Phone, MapPin, Clock, Stethoscope, Check, X, ArrowRight, Eye, Trash2, Banknote, QrCode, RefreshCw } from 'lucide-react';
 import type { Patient, QueueItem } from '../data/patients';
 import { useClinic } from '../context/ClinicContext';
+import { api } from '../api/client';
 
 interface Props {
   queue: QueueItem[];
@@ -74,7 +76,8 @@ export default function QueueList({
   onRemove,
   onViewDetails,
 }: Props) {
-  const { updateQueuePayment } = useClinic();
+  const { updateQueuePayment, refreshPatients } = useClinic();
+  const [renewingId, setRenewingId] = useState<string | null>(null);
   const getPatient = (id: string) => patients.find(p => p.id === id);
 
   // Receptionist View: Pure Normal FIFO (First-In, First-Out by arrival order)
@@ -254,6 +257,7 @@ export default function QueueList({
               <th className="text-center">Chief Complaint</th>
               <th className="text-center w-24">Time</th>
               <th className="text-center w-32">Payment</th>
+              <th className="text-center w-32">Validity</th>
               <th className="text-center w-32">Status</th>
               <th className="text-right w-44">Actions</th>
             </tr>
@@ -325,6 +329,44 @@ export default function QueueList({
                   {/* Payment Control */}
                   <td className="text-center">
                     {renderPaymentControl(item)}
+                  </td>
+
+                  {/* Validity + Renew */}
+                  <td className="text-center">
+                    {(() => {
+                      const v = patient?.validity;
+                      if (!v) return <span className="text-[10px] text-[#7c766d]">—</span>;
+                      const expiry = new Date(v);
+                      const today = new Date(); today.setHours(0,0,0,0);
+                      const daysLeft = Math.ceil((expiry.getTime() - today.getTime()) / 86400000);
+                      const fmt = expiry.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                      const badge = daysLeft < 0
+                        ? <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200 block">⚠️ Expired</span>
+                        : daysLeft <= 7
+                        ? <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 block">⚡ {daysLeft}d left</span>
+                        : <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200 block">✅ {fmt}</span>;
+                      return (
+                        <div className="flex flex-col items-center gap-1">
+                          {badge}
+                          <button
+                            type="button"
+                            disabled={renewingId === (patient?.id || item.patientId)}
+                            onClick={async () => {
+                              const pid = patient?.id || item.patientId;
+                              setRenewingId(pid);
+                              try { await api.renewPatient(pid, 2); await refreshPatients(); }
+                              catch (e) { console.error('Renew failed', e); }
+                              finally { setRenewingId(null); }
+                            }}
+                            className="flex items-center gap-0.5 text-[10px] py-0.5 px-2 rounded-lg border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 disabled:opacity-50 transition-all"
+                            title="Renew validity by 2 months"
+                          >
+                            <RefreshCw className={`w-2.5 h-2.5 ${renewingId === (patient?.id || item.patientId) ? 'animate-spin' : ''}`} />
+                            <span>{renewingId === (patient?.id || item.patientId) ? '…' : 'Renew'}</span>
+                          </button>
+                        </div>
+                      );
+                    })()}
                   </td>
 
                   {/* Status Badge */}
