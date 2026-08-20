@@ -167,14 +167,16 @@ export default function PatientRegistrationForm({
 
       if (formData.age.trim()) {
         const numAge = Number(formData.age);
-        if (isNaN(numAge) || !Number.isInteger(numAge) || numAge < 0 || numAge > 120) {
-          newErrors.age = 'Age must be a valid whole number between 0 and 120';
+        if (isNaN(numAge) || !Number.isInteger(numAge) || numAge < 1 || numAge > 99) {
+          newErrors.age = 'Age must be 2 digits (1 - 99)';
         }
       }
 
       const trimmedVillage = formData.village.trim();
       if (!trimmedVillage || trimmedVillage.length < 2) {
         newErrors.village = 'Village/Town name is required (at least 2 characters)';
+      } else if (!/^[a-zA-Z\s\.\-']+$/.test(trimmedVillage)) {
+        newErrors.village = 'Village/Town should only contain letters and spaces';
       }
 
       if (duplicatePatient) {
@@ -551,7 +553,7 @@ export default function PatientRegistrationForm({
                   className={`form-input ${errors.name ? 'error' : ''}`}
                   placeholder="e.g. Ramesh Kulkarni"
                   value={formData.name} 
-                  onChange={e => setFormData({...formData, name: e.target.value})} 
+                  onChange={e => setFormData({...formData, name: e.target.value.replace(/[^a-zA-Z\s\.\-']/g, '')})} 
                   onKeyDown={e => handleKeyDown(e, ageInputRef)}
                 />
                 {errors.name && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.name}</p>}
@@ -559,14 +561,16 @@ export default function PatientRegistrationForm({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="form-label">Age (Optional)</label>
+                  <label className="form-label">Age (Optional, 2 Digits)</label>
                   <input 
                     ref={ageInputRef}
-                    type="number" 
+                    type="text" 
+                    inputMode="numeric"
+                    maxLength={2}
                     className={`form-input ${errors.age ? 'error' : ''}`}
-                    placeholder="Years"
+                    placeholder="e.g. 28"
                     value={formData.age} 
-                    onChange={e => setFormData({...formData, age: e.target.value})} 
+                    onChange={e => setFormData({...formData, age: e.target.value.replace(/\D/g, '').slice(0, 2)})} 
                     onKeyDown={e => handleKeyDown(e, genderSelectRef)}
                   />
                   {errors.age && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.age}</p>}
@@ -611,10 +615,12 @@ export default function PatientRegistrationForm({
                 <input 
                   ref={phoneInputRef}
                   type="tel" 
+                  inputMode="numeric"
+                  maxLength={10}
                   className={`form-input ${errors.phone ? 'error' : ''}`}
                   placeholder="e.g. 9876543210"
                   value={formData.phone} 
-                  onChange={e => setFormData({...formData, phone: e.target.value})} 
+                  onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})} 
                   onKeyDown={e => handleKeyDown(e, villageInputRef)}
                 />
                 {errors.phone && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.phone}</p>}
@@ -628,7 +634,7 @@ export default function PatientRegistrationForm({
                   className={`form-input ${errors.village ? 'error' : ''}`}
                   placeholder="e.g. Shirur, Pune"
                   value={formData.village} 
-                  onChange={e => setFormData({...formData, village: e.target.value})} 
+                  onChange={e => setFormData({...formData, village: e.target.value.replace(/[^a-zA-Z\s\.\-']/g, '')})} 
                   onKeyDown={e => handleKeyDown(e, complaintInputRef)}
                 />
                 {errors.village && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.village}</p>}
