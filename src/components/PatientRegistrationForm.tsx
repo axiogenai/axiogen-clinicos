@@ -271,9 +271,9 @@ export default function PatientRegistrationForm({
   return (
     <div className="bg-[#faf9f6] border border-[#e4e2e1] rounded-2xl shadow-sm overflow-hidden">
       
-      {/* ── 2 Main Options Tabs ── */}
-      <div className="bg-[#f8f6f0] border-b border-[#e4e2e1] p-3 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex rounded-xl bg-[#f2eee3] p-1 border border-[#cdc6ba] w-full sm:w-auto">
+      {/* ── Slim 2 Main Options Tabs ── */}
+      <div className="bg-[#f8f6f0] border-b border-[#e4e2e1] px-3 py-2 sm:px-4 sm:py-2.5 flex items-center justify-between gap-2">
+        <div className="inline-flex rounded-xl bg-[#f2eee3] p-0.5 sm:p-1 border border-[#cdc6ba] flex-1 sm:flex-initial">
           {/* Option 1: Existing Patient */}
           <button
             type="button"
@@ -281,14 +281,15 @@ export default function PatientRegistrationForm({
               setActiveTab('existing');
               setErrors({});
             }}
-            className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`flex-1 sm:flex-initial px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer ${
               activeTab === 'existing'
-                ? 'bg-white text-[#047857] shadow-sm border border-[#e4e2e1]'
+                ? 'bg-white text-[#047857] shadow-xs border border-[#e4e2e1]'
                 : 'text-[#7c766d] hover:text-[#1a1c1a]'
             }`}
           >
-            <Users className="w-4 h-4 text-[#047857]" />
-            <span>Option 1: Existing Patient (Add to Queue)</span>
+            <Users className="w-3.5 h-3.5 text-[#047857] shrink-0" />
+            <span className="hidden sm:inline">Existing Patient (Search)</span>
+            <span className="sm:hidden">Existing Patient</span>
           </button>
 
           {/* Option 2: Register New Patient */}
@@ -299,27 +300,28 @@ export default function PatientRegistrationForm({
               setChosenPatient(null);
               setErrors({});
             }}
-            className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`flex-1 sm:flex-initial px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer ${
               activeTab === 'new'
-                ? 'bg-white text-[#047857] shadow-sm border border-[#e4e2e1]'
+                ? 'bg-white text-[#047857] shadow-xs border border-[#e4e2e1]'
                 : 'text-[#7c766d] hover:text-[#1a1c1a]'
             }`}
           >
-            <UserPlus className="w-4 h-4 text-[#047857]" />
-            <span>Option 2: Register New Patient</span>
+            <UserPlus className="w-3.5 h-3.5 text-[#047857] shrink-0" />
+            <span className="hidden sm:inline">Register New Patient</span>
+            <span className="sm:hidden">New Patient</span>
           </button>
         </div>
 
         <button
           type="button"
           onClick={onCancel}
-          className="btn-secondary text-xs"
+          className="btn-secondary text-xs py-1.5 px-3 shrink-0"
         >
           Cancel
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5 sm:space-y-6">
 
         {/* Duplicate Queue Alert */}
         {isAlreadyInQueue && (
