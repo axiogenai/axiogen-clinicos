@@ -627,7 +627,7 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                 <input
                   type="text"
                   value={regForm.name}
-                  onChange={e => setRegForm(f => ({ ...f, name: e.target.value }))}
+                  onChange={e => setRegForm(f => ({ ...f, name: e.target.value.replace(/[^a-zA-Z\s\.\-']/g, '') }))}
                   placeholder="Full name"
                   className={`form-input w-full text-sm ${regErrors.name ? 'border-red-400 bg-red-50' : ''}`}
                 />
@@ -638,13 +638,14 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Age Input */}
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Age (Years) *</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Age (2 Digits) *</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={2}
                     value={regForm.age}
-                    onChange={e => setRegForm(f => ({ ...f, age: e.target.value }))}
+                    onChange={e => setRegForm(f => ({ ...f, age: e.target.value.replace(/\D/g, '').slice(0, 2) }))}
                     placeholder="उदा. 28"
-                    min={0} max={120}
                     className={`form-input w-full text-sm font-semibold ${regErrors.age ? 'border-red-400 bg-red-50' : ''}`}
                   />
                   {regErrors.age && <span className="text-xs text-red-500 mt-0.5 block">{regErrors.age}</span>}
@@ -683,7 +684,7 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                   <input
                     type="text"
                     value={regForm.village}
-                    onChange={e => setRegForm(f => ({ ...f, village: e.target.value }))}
+                    onChange={e => setRegForm(f => ({ ...f, village: e.target.value.replace(/[^a-zA-Z\s\.\-']/g, '') }))}
                     placeholder="उदा. पेठ वडगांव"
                     className="form-input w-full text-sm font-medium"
                   />
@@ -691,13 +692,14 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
 
                 {/* Mobile Phone */}
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Mobile Number</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1">Mobile Number (10 Digits)</label>
                   <input
                     type="tel"
-                    value={regForm.phone}
-                    onChange={e => setRegForm(f => ({ ...f, phone: e.target.value }))}
-                    placeholder="10-digit mobile number"
+                    inputMode="numeric"
                     maxLength={10}
+                    value={regForm.phone}
+                    onChange={e => setRegForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
+                    placeholder="10-digit mobile number"
                     className="form-input w-full text-sm font-medium"
                   />
                 </div>
