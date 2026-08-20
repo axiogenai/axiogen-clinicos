@@ -656,8 +656,7 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                   <div className="flex gap-2">
                     {[
                       { val: 'M' as const, label: 'Male' },
-                      { val: 'F' as const, label: 'Female' },
-                      { val: 'Other' as const, label: 'Other' }
+                      { val: 'F' as const, label: 'Female' }
                     ].map(g => (
                       <button
                         key={g.val}
