@@ -3,7 +3,6 @@ import { UserPlus, ArrowLeft, BookOpen, ListOrdered, Users, ShieldCheck } from '
 import { useClinic } from '../context/ClinicContext';
 import QueueStatistics from './QueueStatistics';
 import QueueList from './QueueList';
-import PatientSearch from './PatientSearch';
 import PatientRegistrationForm from './PatientRegistrationForm';
 import PatientDetailsModal from './PatientDetailsModal';
 import DailyPatientRegister from './DailyPatientRegister';
@@ -17,11 +16,6 @@ export default function ReceptionistDashboard() {
   const [selectedPatientForForm, setSelectedPatientForForm] = useState<Patient | null>(null);
   const [activeModalQueueItem, setActiveModalQueueItem] = useState<QueueItem | null>(null);
   const [showValidityModal, setShowValidityModal] = useState(false);
-
-  const handleSelectPatientFromSearch = (patient: Patient) => {
-    setSelectedPatientForForm(patient);
-    setView('register');
-  };
 
   const handleNewPatientClick = () => {
     setSelectedPatientForForm(null);
@@ -144,23 +138,13 @@ export default function ReceptionistDashboard() {
               onViewDetails={(item) => setActiveModalQueueItem(item)}
             />
           ) : (
-            <div className="space-y-5">
-              <div className="section-card">
-                <PatientSearch 
-                  patients={patients}
-                  onSelectPatient={handleSelectPatientFromSearch}
-                  onNewPatient={handleNewPatientClick}
-                />
-              </div>
-
-              <PatientRegistrationForm 
-                selectedPatient={selectedPatientForForm}
-                onSubmit={handleFormSubmit}
-                onCancel={() => { setView('queue'); setSelectedPatientForForm(null); }}
-                onClearSelected={() => setSelectedPatientForForm(null)}
-                onSelectExistingPatient={(patient) => setSelectedPatientForForm(patient)}
-              />
-            </div>
+            <PatientRegistrationForm 
+              selectedPatient={selectedPatientForForm}
+              onSubmit={handleFormSubmit}
+              onCancel={() => { setView('queue'); setSelectedPatientForForm(null); }}
+              onClearSelected={() => setSelectedPatientForForm(null)}
+              onSelectExistingPatient={(patient) => setSelectedPatientForForm(patient)}
+            />
           )}
         </>
       )}
