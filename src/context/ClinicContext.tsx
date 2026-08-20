@@ -61,6 +61,7 @@ interface ClinicContextType {
       allergies?: string;
     }
   ) => Promise<void>;
+  refreshPatients: () => Promise<void>;
 }
 
 const ClinicContext = createContext<ClinicContextType | undefined>(undefined);
@@ -621,6 +622,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
         updateClinicSettings,
         addCustomFrequency,
         updatePatientDetails,
+        refreshPatients: loadFromDatabase,
       }}
     >
       {children}
