@@ -98,7 +98,7 @@ exports.createCasePaper = async (req, res, next) => {
       const reg = await OpdRegister.findOne({
         where: {
           clinicId,
-          date: currentDate,
+          date: casePaperDate,
           [Op.or]: [
             queueId ? { queueId } : null,
             targetPatientId ? { patientId: targetPatientId } : null
@@ -117,14 +117,14 @@ exports.createCasePaper = async (req, res, next) => {
           status: 'completed'
         });
       } else {
-        const [yStr, mStr, dStr] = currentDate.split('-');
+        const [yStr, mStr, dStr] = casePaperDate.split('-');
         await OpdRegister.create({
           clinicId,
-          date: currentDate,
+          date: casePaperDate,
           year: parseInt(yStr, 10),
           month: parseInt(mStr, 10),
           day: parseInt(dStr, 10),
-          queueId: queueId || `OPD-${currentDate.replace(/-/g, '')}-001`,
+          queueId: queueId || `OPD-${casePaperDate.replace(/-/g, '')}-001`,
           patientId: targetPatientId || null,
           patientName: pat?.name || 'Patient',
           age: pat?.age || 0,
