@@ -54,7 +54,7 @@ exports.searchPatients = async (req, res, next) => {
 exports.createPatient = async (req, res, next) => {
   try {
     const clinicId = req.user?.clinicId || 1;
-    const { id, name, age, gender, phone, village, pastHistory, allergies, notes } = req.body;
+    const { id, name, age, gender, phone, village, pastHistory, allergies, notes, validity } = req.body;
 
     const trimmedName = (name || '').trim();
     if (!trimmedName || trimmedName.length < 2) {
@@ -89,6 +89,14 @@ exports.createPatient = async (req, res, next) => {
 
     const patientId = id || `PT${String(Date.now()).slice(-4)}`;
 
+    // Default validity: 1 year from today if not provided
+    let validityDate = validity || null;
+    if (!validityDate) {
+      const d = new Date();
+      d.setFullYear(d.getFullYear() + 1);
+      validityDate = d.toISOString().slice(0, 10);
+    }
+
     const patient = await Patient.create({
       id: patientId,
       clinicId,
@@ -99,7 +107,8 @@ exports.createPatient = async (req, res, next) => {
       village: village ? village.trim() : '',
       pastHistory: pastHistory || '',
       allergies: allergies || '',
-      notes: notes || ''
+      notes: notes || '',
+      validity: validityDate
     });
 
     await AuditLog.create({
@@ -134,6 +143,37 @@ exports.updatePatient = async (req, res, next) => {
 
     await patient.update(req.body);
     res.json(patient);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.renewPatientValidity = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { years = 1 } = req.body; // default: +1 year
+    const patient = await Patient.findByPk(id);
+    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+
+    // Calculate new expiry: extend from current validity or today, whichever is later
+    const base = patient.validity && new Date(patient.validity) > new Date()
+      ? new Date(patient.validity)
+      : new Date();
+    base.setFullYear(base.getFullYear() + Number(years));
+    const newValidity = base.toISOString().slice(0, 10);
+
+    await patient.update({ validity: newValidity });
+
+    await AuditLog.create({
+      clinicId: req.user?.clinicId || 1,
+      userId: req.user?.id || 1,
+      action: 'renew_patient',
+      entityType: 'patient',
+      entityId: patient.id,
+      details: { newValidity }
+    });
+
+    res.json({ message: 'Patient validity renewed successfully', validity: newValidity, patient });
   } catch (err) {
     next(err);
   }
@@ -179,11 +219,7 @@ exports.deletePatient = async (req, res, next) => {
       }
     });
 
-    // ── Dual-Delete: Also purge from local SQLite on Oracle VM ──
-    // When DATABASE_URL is set (Supabase), the local SQLite file is not the
-    // active database but may still hold stale records from before migration.
-    // We delete from it in the background so patients don't resurface if the
-    // server ever falls back to SQLite mode.
+    // -- Dual-Delete: Also purge from local SQLite on Oracle VM --
     if (process.env.DATABASE_URL) {
       try {
         const path = require('path');
@@ -209,8 +245,8 @@ exports.deletePatient = async (req, res, next) => {
           await sqliteDb.close();
         }
       } catch (sqliteErr) {
-        // Non-critical — SQLite cleanup failure should never block the API response
-        console.warn('⚠️ SQLite dual-delete warning (non-critical):', sqliteErr.message);
+        // Non-critical -- SQLite cleanup failure should never block the API response
+        console.warn('Warning: SQLite dual-delete warning (non-critical):', sqliteErr.message);
       }
     }
 
@@ -219,4 +255,3 @@ exports.deletePatient = async (req, res, next) => {
     next(err);
   }
 };
-
