@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
-import { Users, Clock, Stethoscope, CheckCircle2, ArrowRight, FileText, Phone, MapPin, Search, X, Trash2, UserPlus } from 'lucide-react';
+import { Users, Clock, Stethoscope, CheckCircle2, ArrowRight, FileText, Phone, MapPin, Search, X, Trash2, UserPlus, RefreshCw } from 'lucide-react';
 import type { Patient, QueueItem } from '../data/patients';
 import { filterAndSortPatients } from './PatientSearch';
 import PatientEMRHistoryModal from './PatientEMRHistoryModal';
 import ConfirmModal from './ConfirmModal';
 import { useClinic } from '../context/ClinicContext';
+import { api } from '../api/client';
 
 interface QueueViewProps {
   queue: QueueItem[];
@@ -15,13 +16,14 @@ interface QueueViewProps {
 const EMPTY_FORM = { name: '', age: '', gender: 'M' as 'M' | 'F' | 'Other', phone: '', village: '' };
 
 export default function QueueView({ queue, patients, onSelectPatient }: QueueViewProps) {
-  const { deletePatient, registerAndEnqueue, patients: allPatients } = useClinic();
+  const { deletePatient, registerAndEnqueue, patients: allPatients, refreshPatients } = useClinic();
   const [patientSearchQuery, setPatientSearchQuery] = useState('');
   const [selectedEMRPatient, setSelectedEMRPatient] = useState<Patient | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [regForm, setRegForm] = useState(EMPTY_FORM);
   const [regErrors, setRegErrors] = useState<Record<string, string>>({});
   const [regLoading, setRegLoading] = useState(false);
+  const [renewingId, setRenewingId] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   // Duplicate phone check
@@ -201,49 +203,98 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                 };
 
                 return (
-                  <div key={p.id} className="p-3 hover:bg-[#faf9f6] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-colors">
-                    <div>
-                      <div className="font-bold text-[#1a1c1a] text-sm">{p.name}</div>
-                      <div className="text-xs text-[#7c766d] mt-0.5">
-                        {p.age} Yrs / {p.gender === 'M' ? 'Male' : 'Female'} · 📞 {p.phone} · 📍 {p.village || 'N/A'}
+                  <div key={p.id} className="p-3 hover:bg-[#faf9f6] flex flex-col gap-2 transition-colors">
+                    {/* Patient Info Row */}
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                      <div>
+                        <div className="font-bold text-[#1a1c1a] text-sm">{p.name}</div>
+                        <div className="text-xs text-[#7c766d] mt-0.5">
+                          {p.age} Yrs / {p.gender === 'M' ? 'Male' : 'Female'} · 📞 {p.phone} · 📍 {p.village || 'N/A'}
+                        </div>
+                        {/* Validity Badge */}
+                        {(() => {
+                          if (!p.validity) return null;
+                          const expiry = new Date(p.validity);
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          const daysLeft = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                          const fmt = expiry.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                          if (daysLeft < 0) return (
+                            <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">
+                              ⚠️ Expired on {fmt}
+                            </span>
+                          );
+                          if (daysLeft <= 7) return (
+                            <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                              ⚡ Expiring in {daysLeft} day{daysLeft !== 1 ? 's' : ''} · {fmt}
+                            </span>
+                          );
+                          return (
+                            <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
+                              ✅ Valid till {fmt}
+                            </span>
+                          );
+                        })()}
                       </div>
-                    </div>
 
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedEMRPatient(p)}
-                        className="btn-secondary text-xs py-1.5 px-3 flex-1 sm:flex-initial justify-center"
-                      >
-                        <FileText className="w-3.5 h-3.5 text-[#047857]" />
-                        <span>View EMR History</span>
-                      </button>
+                      <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedEMRPatient(p)}
+                          className="btn-secondary text-xs py-1.5 px-3 flex-1 sm:flex-initial justify-center"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-[#047857]" />
+                          <span>View EMR History</span>
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={() => onSelectPatient(qItem, p)}
-                        className="btn-primary text-xs py-1.5 px-3 flex-1 sm:flex-initial justify-center"
-                      >
-                        <Stethoscope className="w-3.5 h-3.5" />
-                        <span>Start Consultation</span>
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => onSelectPatient(qItem, p)}
+                          className="btn-primary text-xs py-1.5 px-3 flex-1 sm:flex-initial justify-center"
+                        >
+                          <Stethoscope className="w-3.5 h-3.5" />
+                          <span>Start Consultation</span>
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setConfirmAction({
-                            title: 'Delete Patient Record',
-                            message: `⚠️ Are you sure you want to permanently delete patient '${p.name}' (ID: ${p.id}) from database registers?`,
-                            onConfirm: () => {
-                              deletePatient(p.id);
+                        {/* Renew Validity Button */}
+                        <button
+                          type="button"
+                          disabled={renewingId === p.id}
+                          onClick={async () => {
+                            setRenewingId(p.id);
+                            try {
+                              await api.renewPatient(p.id, 2);
+                              if (typeof refreshPatients === 'function') await refreshPatients();
+                            } catch (e) {
+                              console.error('Renew failed', e);
+                            } finally {
+                              setRenewingId(null);
                             }
-                          });
-                        }}
-                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all border border-red-200 cursor-pointer"
-                        title="Delete Patient Record from DB"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                          }}
+                          className="flex items-center gap-1 text-xs py-1.5 px-3 rounded-xl border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 disabled:opacity-50 transition-all"
+                          title="Renew validity by 2 months"
+                        >
+                          <RefreshCw className={`w-3.5 h-3.5 ${renewingId === p.id ? 'animate-spin' : ''}`} />
+                          <span>{renewingId === p.id ? 'Renewing…' : 'Renew'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setConfirmAction({
+                              title: 'Delete Patient Record',
+                              message: `⚠️ Are you sure you want to permanently delete patient '${p.name}' (ID: ${p.id}) from database registers?`,
+                              onConfirm: () => {
+                                deletePatient(p.id);
+                              }
+                            });
+                          }}
+                          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all border border-red-200 cursor-pointer"
+                          title="Delete Patient Record from DB"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
