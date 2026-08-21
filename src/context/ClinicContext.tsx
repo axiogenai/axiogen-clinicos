@@ -296,13 +296,18 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
     api.createPatient(patient).catch(() => {});
   }, []);
 
-  const deletePatient = useCallback((identifier: string) => {
+  const deletePatient = useCallback(async (identifier: string) => {
     const cleanPhone = identifier.replace(/\D/g, '');
     setPatients((prev) => prev.filter((p) => p.id !== identifier && (cleanPhone.length < 10 || p.phone !== cleanPhone) && p.name !== identifier));
     setQueue((prev) => prev.filter((q) => q.patientId !== identifier && (cleanPhone.length < 10 || q.phone !== cleanPhone) && q.name !== identifier));
-    api.deletePatient(identifier).catch(() => {});
-    setToast({ type: 'info', message: 'Patient permanently deleted from database registers.' });
-  }, []);
+    try {
+      await api.deletePatient(identifier);
+      setToast({ type: 'success', message: 'Patient permanently deleted from all database registers.' });
+    } catch (err: any) {
+      console.error('Delete patient failed:', err);
+      setToast({ type: 'error', message: err.message || 'Failed to delete patient from database' });
+    }
+  }, [setToast]);
 
   const renewPatient = useCallback(async (identifier: string, months = 2) => {
     try {
