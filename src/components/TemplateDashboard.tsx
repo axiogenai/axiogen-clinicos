@@ -7,7 +7,7 @@ import TemplateEditor from './TemplateEditor';
 import TemplatePreview from './TemplatePreview';
 import PrescriptionTemplateEditor from './PrescriptionTemplateEditor';
 import MedicineImportModal from './MedicineImportModal';
-
+import ConfirmModal from './ConfirmModal';
 
 interface TemplateDashboardProps {
   onUseTemplateInEMR?: (templateId: string) => void;
@@ -20,6 +20,7 @@ export default function TemplateDashboard({ onUseTemplateInEMR }: TemplateDashbo
   const [selectedTemplate, setSelectedTemplate] = useState<CaseTemplate | null>(null);
   const [isFullLayoutEditorOpen, setIsFullLayoutEditorOpen] = useState(false);
   const [isMedicineImportOpen, setIsMedicineImportOpen] = useState(false);
+  const [confirmDeleteTemplate, setConfirmDeleteTemplate] = useState<{ id: string; name: string } | null>(null);
 
   const handleCreateNew = () => {
     const newTpl: CaseTemplate = {
@@ -66,9 +67,10 @@ export default function TemplateDashboard({ onUseTemplateInEMR }: TemplateDashbo
 
   const handleDelete = (id: string) => {
     const tpl = templates.find((t) => t.id === id);
-    if (window.confirm(`Are you sure you want to delete template "${tpl?.name || 'this template'}"?`)) {
-      deleteTemplate(id);
-    }
+    setConfirmDeleteTemplate({
+      id,
+      name: tpl?.name || 'this template'
+    });
   };
 
   return (
@@ -157,6 +159,22 @@ export default function TemplateDashboard({ onUseTemplateInEMR }: TemplateDashbo
       {isMedicineImportOpen && (
         <MedicineImportModal onClose={() => setIsMedicineImportOpen(false)} />
       )}
+
+      {/* Modern In-App Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={Boolean(confirmDeleteTemplate)}
+        title="Delete Protocol Template"
+        message={`Are you sure you want to delete template "${confirmDeleteTemplate?.name}"?`}
+        confirmText="Delete Template"
+        isDestructive={true}
+        onConfirm={() => {
+          if (confirmDeleteTemplate) {
+            deleteTemplate(confirmDeleteTemplate.id);
+            setConfirmDeleteTemplate(null);
+          }
+        }}
+        onCancel={() => setConfirmDeleteTemplate(null)}
+      />
     </div>
   );
 }
