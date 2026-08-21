@@ -7,6 +7,7 @@ import PatientRegistrationForm from './PatientRegistrationForm';
 import PatientDetailsModal from './PatientDetailsModal';
 import DailyPatientRegister from './DailyPatientRegister';
 import ValidityCheckerModal from './ValidityCheckerModal';
+import ConfirmModal from './ConfirmModal';
 import type { Patient, QueueItem } from '../data/patients';
 
 export default function ReceptionistDashboard() {
@@ -16,6 +17,7 @@ export default function ReceptionistDashboard() {
   const [selectedPatientForForm, setSelectedPatientForForm] = useState<Patient | null>(null);
   const [activeModalQueueItem, setActiveModalQueueItem] = useState<QueueItem | null>(null);
   const [showValidityModal, setShowValidityModal] = useState(false);
+  const [confirmDeleteQueueItem, setConfirmDeleteQueueItem] = useState<{ queueId: string; name: string } | null>(null);
 
   const handleNewPatientClick = () => {
     setSelectedPatientForForm(null);
@@ -30,10 +32,10 @@ export default function ReceptionistDashboard() {
 
   const handleRemoveQueueItem = (queueId: string) => {
     const item = queue.find(q => q.queueId === queueId);
-    if (window.confirm(`Remove ${item?.name || 'this patient'} from today's queue?`)) {
-      removeFromQueue(queueId);
-      setToast({ type: 'info', message: 'Patient removed from queue.' });
-    }
+    setConfirmDeleteQueueItem({
+      queueId,
+      name: item?.name || 'this patient'
+    });
   };
 
   const handleStatusChange = (queueId: string, newStatus: QueueItem['status']) => {
@@ -164,6 +166,23 @@ export default function ReceptionistDashboard() {
           onClose={() => setShowValidityModal(false)}
         />
       )}
+
+      {/* Modern Confirm Remove Modal */}
+      <ConfirmModal
+        isOpen={Boolean(confirmDeleteQueueItem)}
+        title="Remove from Queue"
+        message={`Remove '${confirmDeleteQueueItem?.name}' from today's active queue?`}
+        confirmText="Remove Patient"
+        isDestructive={true}
+        onConfirm={() => {
+          if (confirmDeleteQueueItem) {
+            removeFromQueue(confirmDeleteQueueItem.queueId);
+            setToast({ type: 'info', message: 'Patient removed from queue.' });
+            setConfirmDeleteQueueItem(null);
+          }
+        }}
+        onCancel={() => setConfirmDeleteQueueItem(null)}
+      />
     </div>
   );
 }
