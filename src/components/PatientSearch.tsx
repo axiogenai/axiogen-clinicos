@@ -38,7 +38,8 @@ export function filterAndSortPatients(patients: Patient[], rawQuery: string): Pa
     const prefixPhone = uniquePatients.filter(p => (p.phone || '').replace(/\D/g, '').startsWith(query));
     const containsPhone = uniquePatients.filter(p => !(p.phone || '').replace(/\D/g, '').startsWith(query) && (p.phone || '').includes(query));
     const idMatches = uniquePatients.filter(p => (p.id || '').toLowerCase().includes(query));
-    return [...prefixPhone, ...containsPhone, ...idMatches];
+    const casePaperMatches = uniquePatients.filter(p => (p.casePaperNo || '').toLowerCase().includes(query));
+    return Array.from(new Set([...casePaperMatches, ...prefixPhone, ...containsPhone, ...idMatches]));
   }
 
   const nameStartsWith: Patient[] = [];
@@ -48,9 +49,12 @@ export function filterAndSortPatients(patients: Patient[], rawQuery: string): Pa
   for (const p of uniquePatients) {
     const nameLower = (p.name || '').trim().toLowerCase();
     const villageLower = (p.village || '').trim().toLowerCase();
+    const casePaperLower = (p.casePaperNo || '').trim().toLowerCase();
 
-    // 1. Full name starts with query (e.g. "Amrapali Shinde" for "am")
-    if (nameLower.startsWith(query)) {
+    // 1. Casepaper number or full name starts with query (e.g. "CP-102" or "Amrapali")
+    if (casePaperLower.includes(query)) {
+      nameStartsWith.push(p);
+    } else if (nameLower.startsWith(query)) {
       nameStartsWith.push(p);
     } else {
       // 2. A specific word in the name starts with query (e.g. "Pramod Amit" for "am")
@@ -94,10 +98,7 @@ export default function PatientSearch({ patients, onSelectPatient, onNewPatient 
   }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!isOpen) {
-      if (e.key === 'Enter' || e.key === 'ArrowDown') setIsOpen(true);
-      return;
-    }
+    if (!isOpen) return;
     
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -128,7 +129,7 @@ export default function PatientSearch({ patients, onSelectPatient, onNewPatient 
           type="text"
           className="w-full pr-10 py-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm"
           style={{ paddingLeft: '2.5rem' }}
-          placeholder="Search patients by name, phone, or village..."
+          placeholder="Search patients by casepaper no, name, phone, or village..."
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -166,7 +167,15 @@ export default function PatientSearch({ patients, onSelectPatient, onNewPatient 
               >
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="font-medium text-gray-900">{patient.name} <span className="text-gray-500 font-normal text-xs ml-2">{patient.age}y / {patient.gender}</span></p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-gray-900">{patient.name}</p>
+                      <span className="text-gray-500 font-normal text-xs">{patient.age}y / {patient.gender}</span>
+                      {patient.casePaperNo && (
+                        <span className="text-[10px] font-mono font-bold bg-[#fef3c7] text-[#92400e] px-1.5 py-0.5 rounded border border-[#fde68a]">
+                          Book: {patient.casePaperNo}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-500 mt-0.5">{patient.phone} • {patient.village}</p>
                   </div>
                   <div className="flex items-center gap-2">
