@@ -53,7 +53,6 @@ async function translateWithGroq(text, targetLang) {
   }
 
   const apiKey = getApiKey();
-
   if (!apiKey) {
     return fallbackMedicalTranslate(cleanText, lang);
   }
@@ -63,9 +62,14 @@ async function translateWithGroq(text, targetLang) {
 
 Your task is to dynamically translate and transliterate any medical frequency, dosage, or instruction into natural ${script}.
 
-${getGuidelines(lang)}`;
+${getGuidelines(lang)}
 
-  const models = ['groq/compound-mini', 'openai/gpt-oss-20b', 'qwen/qwen3.6-27b'];
+Output ONLY a JSON object with this exact structure:
+{
+  "translatedText": "the translated text in ${script}"
+}`;
+
+  const models = ['openai/gpt-oss-20b', 'groq/compound-mini', 'qwen/qwen3.6-27b'];
 
   for (const model of models) {
     try {
@@ -83,30 +87,36 @@ ${getGuidelines(lang)}`;
             { role: 'user', content: `Translate/transliterate this prescription instruction into natural ${script}: "${cleanText}"` }
           ],
           temperature: 0.0,
-          max_tokens: 200
+          response_format: { type: 'json_object' }
         })
       });
 
       if (!response.ok) {
-        console.warn(`Groq translation model ${model} failed: ${response.status}`);
         continue;
       }
 
       const data = await response.json();
-      let translated = data.choices?.[0]?.message?.content?.trim();
+      let rawContent = data.choices?.[0]?.message?.content?.trim();
+      if (!rawContent) continue;
 
-      if (!translated) continue;
-
-      if (translated.includes('</think>')) {
-        translated = translated.split('</think>').pop().trim();
+      let translated = '';
+      try {
+        const parsed = JSON.parse(rawContent);
+        translated = parsed.translatedText || Object.values(parsed)[0];
+      } catch {
+        translated = rawContent;
       }
 
-      // Strip leading/trailing quote marks and markdown if any
-      translated = translated.replace(/^["'`*]+|["'`*]+$/g, '').trim();
+      if (typeof translated === 'string') {
+        if (translated.includes('</think>')) {
+          translated = translated.split('</think>').pop().trim();
+        }
+        translated = translated.replace(/^["'`*]+|["'`*]+$/g, '').trim();
+      }
 
-      if (translated) {
-        cache.set(cacheKey, translated);
-        return translated;
+      if (translated && typeof translated === 'string' && translated.trim()) {
+        cache.set(cacheKey, translated.trim());
+        return translated.trim();
       }
     } catch (err) {
       console.warn(`Groq translation model ${model} error:`, err.message);
