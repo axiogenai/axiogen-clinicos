@@ -36,6 +36,11 @@ const OpdRegister = sequelize.define('OpdRegister', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  casePaperNo: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'case_paper_no'
+  },
   queueId: {
     type: DataTypes.STRING,
     allowNull: true
