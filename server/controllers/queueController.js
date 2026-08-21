@@ -27,6 +27,7 @@ exports.getQueue = async (req, res, next) => {
         patientId: plain.patientId || plain.patient_id,
         paymentStatus: plain.paymentStatus || plain.payment_status || 'unpaid',
         paymentMode: plain.paymentMode || plain.payment_mode || 'cash',
+        casePaperNo: plain.casePaperNo || plain.case_paper_no || '',
         timeAdded: plain.timeAdded || plain.time_added || plain.time
       };
     });
@@ -39,7 +40,7 @@ exports.getQueue = async (req, res, next) => {
 exports.addToQueue = async (req, res, next) => {
   try {
     const clinicId = req.user?.clinicId || 1;
-    const { queueId, patientId, name, age, phone, village, complaint, notes, date, paymentStatus, paymentMode } = req.body;
+    const { queueId, patientId, name, age, phone, village, complaint, notes, date, paymentStatus, paymentMode, casePaperNo } = req.body;
 
     const currentDate = date || getISTDateStr();
 
@@ -78,6 +79,14 @@ exports.addToQueue = async (req, res, next) => {
     const idToUse = queueId || `Q${Date.now()}`;
     const timeAdded = getISTTimeString();
 
+    // If casePaperNo was not passed, see if patient has one
+    let resolvedCasePaperNo = (casePaperNo || '').trim() || null;
+    if (!resolvedCasePaperNo && patientId) {
+      const pt = await Patient.findByPk(patientId);
+      if (pt && pt.casePaperNo) {
+        resolvedCasePaperNo = pt.casePaperNo;
+      }
+    }
 
     const queueItem = await Queue.create({
       queueId: idToUse,
@@ -93,7 +102,8 @@ exports.addToQueue = async (req, res, next) => {
       timeAdded,
       status: 'waiting',
       paymentStatus: paymentStatus || 'unpaid',
-      paymentMode: paymentMode || 'cash'
+      paymentMode: paymentMode || 'cash',
+      casePaperNo: resolvedCasePaperNo
     });
 
     // Auto-sync into OpdRegister database table
@@ -115,6 +125,7 @@ exports.addToQueue = async (req, res, next) => {
           phone: phone ? phone.replace(/\D/g, '') : '',
           village: village || '',
           complaint: complaint || '',
+          casePaperNo: resolvedCasePaperNo,
           timeAdded,
           status: 'waiting',
           paymentStatus: paymentStatus || 'unpaid',
