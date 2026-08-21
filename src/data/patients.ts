@@ -14,7 +14,8 @@ export interface Patient {
   pastHistory: string;
   allergies: string;
   pastVisits: PastVisit[];
-  validity?: string; // ISO date string YYYY-MM-DD - registration expiry
+  validity?: string; // ISO date YYYY-MM-DD — registration expiry
+  casePaperNo?: string; // Custom physical casepaper / book number
 }
 
 export interface QueueItem {
@@ -32,6 +33,7 @@ export interface QueueItem {
   paymentStatus?: 'paid' | 'unpaid';
   paymentMode?: 'cash' | 'online';
   paymentAmount?: number | string;
+  casePaperNo?: string;
 }
 
 export const patients: Patient[] = [
@@ -194,6 +196,13 @@ export const todayQueue: QueueItem[] = [
     patientId: 'pat_001',
     timeAdded: '10:00 AM',
     complaint: 'Ringworm infection on thigh',
+    status: 'waiting'
+  },
+  {
+    queueId: 'q_006',
+    patientId: 'pat_003',
+    timeAdded: '10:15 AM',
+    complaint: 'White patches on skin',
     status: 'waiting'
   }
 ];
