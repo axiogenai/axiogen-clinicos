@@ -351,10 +351,11 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const registerAndEnqueue = useCallback(async (
-    patientData: Partial<Patient> & { complaint: string; notes?: string; paymentStatus?: 'paid' | 'unpaid'; paymentMode?: 'cash' | 'online' },
+    patientData: Partial<Patient> & { complaint: string; notes?: string; paymentStatus?: 'paid' | 'unpaid'; paymentMode?: 'cash' | 'online'; casePaperNo?: string },
     existingPatient?: Patient
   ) => {
     let patient = existingPatient;
+    const customCasePaperNo = (patientData.casePaperNo || (patientData as any).case_paper_no || '').trim() || undefined;
 
     if (!patient) {
       const cleanPhone = (patientData.phone || '').replace(/\D/g, '');
@@ -368,6 +369,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
         pastHistory: patientData.pastHistory || 'No known allergies',
         allergies: patientData.allergies || '',
         pastVisits: [],
+        casePaperNo: customCasePaperNo,
       };
       
       try {
@@ -402,6 +404,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
       notes: patientData.notes || (patientData as any).receptionNotes || '',
       paymentStatus: patientData.paymentStatus || 'unpaid',
       paymentMode: patientData.paymentMode || 'cash',
+      casePaperNo: customCasePaperNo || targetPatient.casePaperNo,
     };
 
     try {
