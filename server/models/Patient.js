@@ -46,6 +46,12 @@ const Patient = sequelize.define('Patient', {
     type: DataTypes.DATEONLY,
     allowNull: true,
     comment: 'Patient registration validity / expiry date (YYYY-MM-DD)'
+  },
+  casePaperNo: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'case_paper_no',
+    comment: 'Custom physical casepaper or clinic book number'
   }
 });
 
