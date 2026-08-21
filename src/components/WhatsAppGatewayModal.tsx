@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, QrCode, CheckCircle2, RefreshCw, Send, LogOut, ShieldCheck, Zap } from 'lucide-react';
+import { X, QrCode, CheckCircle2, RefreshCw, Send, LogOut, ShieldCheck, Zap, AlertCircle } from 'lucide-react';
 import { api } from '../api/client';
+import ConfirmModal from './ConfirmModal';
 
 interface WhatsAppGatewayModalProps {
   isOpen: boolean;
@@ -9,6 +10,8 @@ interface WhatsAppGatewayModalProps {
 
 export default function WhatsAppGatewayModal({ isOpen, onClose }: WhatsAppGatewayModalProps) {
   const [loading, setLoading] = useState(false);
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
   const [gatewayInfo, setGatewayInfo] = useState<{
     status: string;
     qrCodeDataUrl: string;
@@ -39,26 +42,32 @@ export default function WhatsAppGatewayModal({ isOpen, onClose }: WhatsAppGatewa
 
   if (!isOpen) return null;
 
-  const handleDisconnect = async () => {
-    if (!confirm('Are you sure you want to disconnect this WhatsApp session?')) return;
+  const handleDisconnectConfirm = async () => {
     setLoading(true);
+    setStatusMessage(null);
     try {
       await api.disconnectWhatsApp();
       await fetchStatus();
+      setStatusMessage({ type: 'info', text: 'WhatsApp session disconnected successfully.' });
     } catch (e) {
-      alert('Error disconnecting session');
+      setStatusMessage({ type: 'error', text: 'Error disconnecting session. Please try again.' });
     } finally {
       setLoading(false);
+      setConfirmDisconnect(false);
     }
   };
 
   const handleTriggerAutoReminders = async () => {
     setLoading(true);
+    setStatusMessage(null);
     try {
       const res = await api.triggerAutoWhatsApp();
-      alert(`1-Day Prior Reminders Complete!\nTarget Date: ${res.summary?.date || 'Tomorrow'}\nTotal Due: ${res.summary?.totalEligible || 0}\nSent: ${res.summary?.sentCount || 0}`);
+      setStatusMessage({
+        type: 'success',
+        text: `1-Day Prior Reminders Complete! Target Date: ${res.summary?.date || 'Tomorrow'} · Eligible: ${res.summary?.totalEligible || 0} · Sent: ${res.summary?.sentCount || 0}`
+      });
     } catch (e: any) {
-      alert(`Failed to trigger auto reminders: ${e.message}`);
+      setStatusMessage({ type: 'error', text: `Failed to trigger auto reminders: ${e.message}` });
     } finally {
       setLoading(false);
     }
@@ -66,15 +75,19 @@ export default function WhatsAppGatewayModal({ isOpen, onClose }: WhatsAppGatewa
 
   const handleTriggerFestivalWishes = async () => {
     setLoading(true);
+    setStatusMessage(null);
     try {
       const res = await api.triggerFestivalWhatsApp();
       if (res.summary?.status === 'no_festival') {
-        alert(`No official red holiday festival scheduled for today (${res.summary?.date}).`);
+        setStatusMessage({ type: 'info', text: `No official red holiday festival scheduled for today (${res.summary?.date}).` });
       } else {
-        alert(`Festival Greetings Complete!\nFestival: ${res.summary?.festivalName || 'Festival Greetings'}\nSent to: ${res.summary?.sentCount || 0} Patients`);
+        setStatusMessage({
+          type: 'success',
+          text: `Festival Greetings Complete! Festival: ${res.summary?.festivalName || 'Festival'} · Sent to: ${res.summary?.sentCount || 0} Patients`
+        });
       }
     } catch (e: any) {
-      alert(`Failed to send festival wishes: ${e.message}`);
+      setStatusMessage({ type: 'error', text: `Failed to send festival wishes: ${e.message}` });
     } finally {
       setLoading(false);
     }
@@ -118,6 +131,24 @@ export default function WhatsAppGatewayModal({ isOpen, onClose }: WhatsAppGatewa
         {/* Content Body */}
         <div className="p-6 space-y-5">
 
+          {/* Status Alert Banner */}
+          {statusMessage && (
+            <div className={`p-3 rounded-xl border flex items-start gap-2.5 text-xs ${
+              statusMessage.type === 'success' 
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+                : statusMessage.type === 'error'
+                ? 'bg-red-50 border-red-200 text-red-800'
+                : 'bg-blue-50 border-blue-200 text-blue-800'
+            }`}>
+              {statusMessage.type === 'success' ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+              )}
+              <span className="font-medium">{statusMessage.text}</span>
+            </div>
+          )}
+
           {/* Connection Status Banner */}
           {gatewayInfo.status === 'connected' ? (
             <div className="bg-[#ecfdf5] border border-[#a7f3d0] rounded-xl p-4 flex items-center justify-between">
@@ -133,15 +164,15 @@ export default function WhatsAppGatewayModal({ isOpen, onClose }: WhatsAppGatewa
                   <p className="text-xs text-[#047857]">Phone: +{gatewayInfo.phone || 'Clinic WhatsApp'}</p>
                 </div>
               </div>
-              <button
-                onClick={handleDisconnect}
-                disabled={loading}
-                className="px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-lg border border-red-200 transition-colors flex items-center gap-1"
-              >
-                <LogOut className="w-3.5 h-3.5" /> Disconnect
-              </button>
-            </div>
-          ) : gatewayInfo.status === 'qr_ready' && gatewayInfo.qrCodeDataUrl ? (
+                <button
+                  onClick={() => setConfirmDisconnect(true)}
+                  disabled={loading}
+                  className="px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-lg border border-red-200 transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <LogOut className="w-3.5 h-3.5" /> Disconnect
+                </button>
+              </div>
+            ) : gatewayInfo.status === 'qr_ready' && gatewayInfo.qrCodeDataUrl ? (
             <div className="bg-[#fffbeb] border border-[#fde68a] rounded-xl p-5 text-center space-y-4">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#fef3c7] text-[#92400e] text-xs font-bold">
                 <QrCode className="w-3.5 h-3.5" /> Scan QR Code with Clinic Phone
@@ -209,6 +240,17 @@ export default function WhatsAppGatewayModal({ isOpen, onClose }: WhatsAppGatewa
         </div>
 
       </div>
+
+      {/* Modern Confirm Disconnect Modal */}
+      <ConfirmModal
+        isOpen={confirmDisconnect}
+        title="Disconnect WhatsApp Session"
+        message="Are you sure you want to disconnect this WhatsApp session? You will need to scan the QR code again to reconnect."
+        confirmText="Disconnect"
+        isDestructive={true}
+        onConfirm={handleDisconnectConfirm}
+        onCancel={() => setConfirmDisconnect(false)}
+      />
     </div>
   );
 }
