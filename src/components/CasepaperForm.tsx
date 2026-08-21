@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Pill, FlaskConical, Lightbulb, Calendar, ArrowLeft, Printer, Trash2, CheckCircle2, Search, Plus, X, ChevronDown, FileText, Languages, Loader2, Sparkles } from 'lucide-react';
+import { Pill, FlaskConical, Lightbulb, Calendar, ArrowLeft, Printer, Trash2, CheckCircle2, Search, Plus, X, ChevronDown, FileText, Languages, Loader2 } from 'lucide-react';
 import type { Patient } from '../data/patients';
 import { medicines as initialLocalMedicines } from '../data/medicines';
 import { useClinic } from '../context/ClinicContext';
@@ -1215,7 +1215,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                     >
                       <div className="flex items-center justify-between font-bold text-xs">
                         <span className="flex items-center gap-1.5">
-                          <Sparkles className="w-4 h-4 text-[#047857] shrink-0" />
+                          <Languages className="w-4 h-4 text-[#047857] shrink-0" />
                           <span>Auto-Parsed Sentence: <strong>{parsedSentence.formattedMedicineName}</strong></span>
                         </span>
                         <span className="text-[10px] bg-[#047857] text-white px-2 py-0.5 rounded font-sans font-extrabold uppercase shadow-sm">
