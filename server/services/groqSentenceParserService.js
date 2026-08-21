@@ -84,7 +84,7 @@ Rules:
         apiKey,
         model,
         systemPrompt,
-        `Parse this prescription sentence: "${cleanText}"`,
+        `Parse this prescription sentence into structured JSON: "${cleanText}"`,
         true
       );
       if (parsed && (parsed.cleanedMedicineQuery || parsed.formattedMedicineName || parsed.frequency || parsed.duration)) {
