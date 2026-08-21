@@ -56,6 +56,7 @@ export default function PatientRegistrationForm({
   const historyInputRef = useRef<HTMLTextAreaElement>(null);
   const allergiesInputRef = useRef<HTMLTextAreaElement>(null);
   const complaintInputRef = useRef<HTMLInputElement>(null);
+  const casePaperNoInputRef = useRef<HTMLInputElement>(null);
   const notesInputRef = useRef<HTMLTextAreaElement>(null);
   const submitButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -84,6 +85,7 @@ export default function PatientRegistrationForm({
     phone: '',
     village: '',
     chiefComplaint: '',
+    casePaperNo: '',
     receptionNotes: '',
     pastMedicalHistory: 'No known allergies',
     allergies: '',
@@ -203,6 +205,7 @@ export default function PatientRegistrationForm({
     if (activeTab === 'existing' && chosenPatient) {
       onSubmit({
         ...chosenPatient,
+        casePaperNo: formData.casePaperNo.trim() || chosenPatient.casePaperNo,
         chiefComplaint: formData.chiefComplaint,
         complaint: formData.chiefComplaint,
         receptionNotes: formData.receptionNotes,
@@ -219,6 +222,7 @@ export default function PatientRegistrationForm({
         village: formData.village.trim(),
         pastHistory: formData.pastMedicalHistory,
         allergies: formData.allergies,
+        casePaperNo: formData.casePaperNo.trim() || undefined,
         chiefComplaint: formData.chiefComplaint,
         complaint: formData.chiefComplaint,
         receptionNotes: formData.receptionNotes,
@@ -687,17 +691,35 @@ export default function PatientRegistrationForm({
         <div className="space-y-4 pt-4 border-t border-[#e4e2e1]">
           <p className="form-label text-[#047857]">— Today's Visit Details —</p>
           
-          <div>
-            <label className="form-label">Chief Complaint (Optional)</label>
-            <input 
-              ref={complaintInputRef}
-              type="text" 
-              className="form-input"
-              placeholder="e.g. Itching and rash on arms for 5 days" 
-              value={formData.chiefComplaint} 
-              onChange={e => setFormData({...formData, chiefComplaint: e.target.value})} 
-              onKeyDown={e => handleKeyDown(e, notesInputRef)}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="form-label">Chief Complaint (Optional)</label>
+              <input 
+                ref={complaintInputRef}
+                type="text" 
+                className="form-input"
+                placeholder="e.g. Itching, rash, or general checkup" 
+                value={formData.chiefComplaint} 
+                onChange={e => setFormData({...formData, chiefComplaint: e.target.value})} 
+                onKeyDown={e => handleKeyDown(e, casePaperNoInputRef)}
+              />
+            </div>
+
+            <div>
+              <label className="form-label flex items-center justify-between">
+                <span>Casepaper / Book No.</span>
+                <span className="text-[10px] text-[#7c766d] font-normal">Optional (Auto if empty)</span>
+              </label>
+              <input 
+                ref={casePaperNoInputRef}
+                type="text" 
+                className="form-input font-mono"
+                placeholder="e.g. CP-102 or Book No." 
+                value={formData.casePaperNo} 
+                onChange={e => setFormData({...formData, casePaperNo: e.target.value})} 
+                onKeyDown={e => handleKeyDown(e, notesInputRef)}
+              />
+            </div>
           </div>
 
           <div>
