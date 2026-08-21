@@ -58,48 +58,62 @@ async function translateWithGroq(text, targetLang) {
     return fallbackMedicalTranslate(cleanText, lang);
   }
 
-  try {
-    const script = getScriptForLang(lang);
-    const systemPrompt = `You are an expert Indian Clinical Dermatologist & Medical Translation Engine specializing in ${lang} (${script}) prescription guidance.
+  const script = getScriptForLang(lang);
+  const systemPrompt = `You are an expert Indian Clinical Dermatologist & Medical Translation Engine specializing in ${lang} (${script}) prescription guidance.
 
 Your task is to dynamically translate and transliterate any medical frequency, dosage, or instruction into natural ${script}.
 
 ${getGuidelines(lang)}`;
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Translate/transliterate this prescription instruction into natural ${script}: "${cleanText}"` }
-        ],
-        temperature: 0.0,
-        max_tokens: 150
-      })
-    });
+  const models = ['groq/compound-mini', 'openai/gpt-oss-20b', 'qwen/qwen3.6-27b'];
 
-    if (!response.ok) {
-      return fallbackMedicalTranslate(cleanText, lang);
+  for (const model of models) {
+    try {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'User-Agent': 'ClinicOS-Prescription-Engine/1.0'
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: `Translate/transliterate this prescription instruction into natural ${script}: "${cleanText}"` }
+          ],
+          temperature: 0.0,
+          max_tokens: 200
+        })
+      });
+
+      if (!response.ok) {
+        console.warn(`Groq translation model ${model} failed: ${response.status}`);
+        continue;
+      }
+
+      const data = await response.json();
+      let translated = data.choices?.[0]?.message?.content?.trim();
+
+      if (!translated) continue;
+
+      if (translated.includes('</think>')) {
+        translated = translated.split('</think>').pop().trim();
+      }
+
+      // Strip leading/trailing quote marks and markdown if any
+      translated = translated.replace(/^["'`*]+|["'`*]+$/g, '').trim();
+
+      if (translated) {
+        cache.set(cacheKey, translated);
+        return translated;
+      }
+    } catch (err) {
+      console.warn(`Groq translation model ${model} error:`, err.message);
     }
-
-    const data = await response.json();
-    let translated = data.choices?.[0]?.message?.content?.trim();
-
-    if (!translated) return fallbackMedicalTranslate(cleanText, lang);
-
-    // Strip leading/trailing quote marks if any
-    translated = translated.replace(/^["']|["']$/g, '').trim();
-
-    cache.set(cacheKey, translated);
-    return translated;
-  } catch (err) {
-    return fallbackMedicalTranslate(cleanText, lang);
   }
+
+  return fallbackMedicalTranslate(cleanText, lang);
 }
 
 module.exports = {
