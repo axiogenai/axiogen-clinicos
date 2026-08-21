@@ -149,37 +149,45 @@ exports.updatePatient = async (req, res, next) => {
 exports.deletePatient = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const clinicId = req.user?.clinicId || 1;
+    const cleanPhone = (id || '').replace(/\D/g, '');
 
+    // Search by ID, phone, casePaperNo, or name
     let patient = await Patient.findByPk(id);
     if (!patient) {
-      const cleanPhone = id.replace(/\D/g, '');
       patient = await Patient.findOne({
         where: {
-          clinicId,
           [Op.or]: [
             { id },
-            ...(cleanPhone ? [{ phone: cleanPhone }] : []),
+            ...(cleanPhone && cleanPhone.length >= 4 ? [{ phone: cleanPhone }] : []),
             { name: id }
           ]
         }
       });
     }
 
-    if (!patient) return res.status(404).json({ error: 'Patient record not found in database' });
-
-    const targetPhone = patient.phone;
-    const targetId = patient.id;
-    const targetName = patient.name;
+    const targetPhone = patient ? patient.phone : (cleanPhone.length >= 10 ? cleanPhone : null);
+    const targetId = patient ? patient.id : id;
+    const targetName = patient ? patient.name : id;
 
     // 1. Delete patient record from PostgreSQL
-    await patient.destroy();
+    if (patient) {
+      await patient.destroy();
+    } else {
+      await Patient.destroy({
+        where: {
+          [Op.or]: [
+            { id: targetId },
+            ...(targetPhone ? [{ phone: targetPhone }] : []),
+            { name: targetName }
+          ]
+        }
+      });
+    }
 
     // 2. Cascade delete from Queue (today's active queue)
     const { Queue, OpdRegister, CasePaper } = require('../models');
     await Queue.destroy({
       where: {
-        clinicId,
         [Op.or]: [
           { patientId: targetId },
           ...(targetPhone ? [{ phone: targetPhone }] : []),
@@ -191,7 +199,6 @@ exports.deletePatient = async (req, res, next) => {
     // 3. Cascade delete from OPD Register (daily, monthly, yearly registers)
     await OpdRegister.destroy({
       where: {
-        clinicId,
         [Op.or]: [
           { patientId: targetId },
           ...(targetPhone ? [{ phone: targetPhone }] : []),
@@ -200,11 +207,13 @@ exports.deletePatient = async (req, res, next) => {
       }
     });
 
-    // 4. Cascade delete from CasePapers (all doctor consultations & prescriptions)
+    // 4. Cascade delete from CasePapers
     await CasePaper.destroy({
       where: {
-        clinicId,
-        patientId: targetId
+        [Op.or]: [
+          { patientId: targetId },
+          { patientName: targetName }
+        ]
       }
     });
 
@@ -240,7 +249,10 @@ exports.deletePatient = async (req, res, next) => {
       }
     }
 
-    res.json({ message: 'Patient and all associated records permanently deleted from all registers and database.' });
+    res.json({
+      message: `Patient ${targetName} permanently deleted from all database registers and queues.`,
+      deletedId: targetId
+    });
   } catch (err) {
     next(err);
   }
@@ -249,25 +261,39 @@ exports.deletePatient = async (req, res, next) => {
 exports.renewPatientValidity = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const { casePaperNo, phone, months = 2 } = req.body || {};
+
     let patient = await Patient.findByPk(id);
     if (!patient) {
-      const cleanPhone = id.replace(/\D/g, '');
+      const cleanPhone = (phone || id || '').replace(/\D/g, '');
+      const searchCaseNo = casePaperNo || id;
       patient = await Patient.findOne({
         where: {
           [Op.or]: [
-            { casePaperNo: id },
-            ...(cleanPhone ? [{ phone: cleanPhone }] : []),
+            ...(searchCaseNo ? [{ casePaperNo: searchCaseNo }] : []),
+            ...(cleanPhone && cleanPhone.length >= 4 ? [{ phone: cleanPhone }] : []),
             { name: id }
           ]
         }
       });
     }
-    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+    if (!patient) return res.status(404).json({ error: 'Patient record not found to renew validity.' });
 
-    // Always strictly 2 months from today on renewal
-    const d = new Date();
-    d.setMonth(d.getMonth() + 2);
-    const newValidity = d.toISOString().slice(0, 10);
+    // Calculate base date: if patient has existing validity that is in the future, extend from that date.
+    // If expired or missing, extend strictly from today.
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let baseDate = new Date();
+    if (patient.validity) {
+      const currentExpiry = new Date(patient.validity);
+      if (!isNaN(currentExpiry.getTime()) && currentExpiry.getTime() >= today.getTime()) {
+        baseDate = new Date(currentExpiry);
+      }
+    }
+
+    baseDate.setMonth(baseDate.getMonth() + Number(months || 2));
+    const newValidity = baseDate.toISOString().slice(0, 10);
 
     await patient.update({ validity: newValidity });
 
@@ -277,10 +303,10 @@ exports.renewPatientValidity = async (req, res, next) => {
       action: 'renew_patient',
       entityType: 'patient',
       entityId: patient.id,
-      details: { newValidity, months: 2, casePaperNo: patient.casePaperNo, phone: patient.phone }
+      details: { newValidity, months: Number(months || 2), casePaperNo: patient.casePaperNo, phone: patient.phone }
     });
 
-    res.json({ message: 'Patient validity renewed for 2 months successfully', validity: newValidity, patient });
+    res.json({ message: `Patient validity successfully extended to ${newValidity} (+${months} months)`, validity: newValidity, patient });
   } catch (err) {
     next(err);
   }
