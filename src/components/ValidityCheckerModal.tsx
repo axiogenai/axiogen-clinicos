@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
-import { X, Search, CheckCircle2, AlertCircle, Clock, RefreshCw, ShieldCheck, User, Phone, MapPin, BookOpen, Smartphone } from 'lucide-react';
+import { X, Search, CheckCircle2, AlertCircle, Clock, RefreshCw, ShieldCheck, User, Phone, MapPin, BookOpen, Smartphone, Trash2 } from 'lucide-react';
 import { useClinic } from '../context/ClinicContext';
-import { api } from '../api/client';
+import ConfirmModal from './ConfirmModal';
 
 interface Props {
   onClose: () => void;
@@ -47,9 +47,10 @@ function ValidityBadge({ validity }: { validity?: string }) {
 }
 
 export default function ValidityCheckerModal({ onClose }: Props) {
-  const { patients, refreshPatients } = useClinic();
+  const { patients, renewPatient, deletePatient } = useClinic();
   const [query, setQuery] = useState('');
   const [renewingId, setRenewingId] = useState<string | null>(null);
+  const [confirmDeletePatient, setConfirmDeletePatient] = useState<any | null>(null);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -68,10 +69,7 @@ export default function ValidityCheckerModal({ onClose }: Props) {
   const handleRenew = async (patientId: string) => {
     setRenewingId(patientId);
     try {
-      await api.renewPatient(patientId, 2);
-      if (typeof refreshPatients === 'function') {
-        await refreshPatients();
-      }
+      await renewPatient(patientId, 2);
     } catch (e) {
       console.error('Renew failed', e);
     } finally {
@@ -203,7 +201,7 @@ export default function ValidityCheckerModal({ onClose }: Props) {
                     <ValidityBadge validity={p.validity} />
                   </div>
 
-                  {/* Renew Button */}
+                  {/* Actions (Renew + Delete) */}
                   <div className="shrink-0 flex items-center gap-2">
                     <button
                       type="button"
@@ -219,6 +217,15 @@ export default function ValidityCheckerModal({ onClose }: Props) {
                     >
                       <RefreshCw className={`w-3.5 h-3.5 ${isRenewing ? 'animate-spin' : ''}`} />
                       <span>{isRenewing ? 'Renewing…' : status === 'expired' ? 'Renew (+2 Mo)' : 'Extend (+2 Mo)'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDeletePatient(p)}
+                      className="p-2 text-[#dc2626] hover:text-white hover:bg-[#dc2626] bg-[#fef2f2] border border-[#fecaca] rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
+                      title="Permanently delete patient from database"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
@@ -239,6 +246,22 @@ export default function ValidityCheckerModal({ onClose }: Props) {
           </div>
         )}
       </div>
+
+      {/* Confirm Delete Patient Modal */}
+      <ConfirmModal
+        isOpen={Boolean(confirmDeletePatient)}
+        title="Delete Patient Profile"
+        message={`Permanently delete patient profile '${confirmDeletePatient?.name}' from all database registers, patient search, and queue?`}
+        confirmText="Delete Everywhere"
+        isDestructive={true}
+        onConfirm={() => {
+          if (confirmDeletePatient) {
+            deletePatient(confirmDeletePatient.id);
+            setConfirmDeletePatient(null);
+          }
+        }}
+        onCancel={() => setConfirmDeletePatient(null)}
+      />
     </div>
   );
 }
