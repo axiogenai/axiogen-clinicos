@@ -1058,30 +1058,37 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
                       <td className="p-3 pr-6">
                         <button
                           type="button"
-                          title="Delete this entry"
+                          title="Permanently delete patient and record everywhere"
                           onClick={() => {
                             setConfirmModal({
                               isOpen: true,
-                              title: 'Delete OPD Entry',
-                              message: `Permanently delete OPD entry for ${r.patientName} (${r.date})?`,
-                              confirmText: 'Delete Entry',
+                              title: 'Delete Patient & OPD Record',
+                              message: `Permanently delete '${r.patientName}' from all database registers, patient search, and queue?`,
+                              confirmText: 'Delete Everywhere',
                               isDestructive: true,
                               onConfirm: async () => {
                                 try {
                                   await api.deleteRegisterEntry(r.id);
+                                  if (r.patientId) {
+                                    deletePatient(r.patientId);
+                                  } else if (r.phone) {
+                                    deletePatient(r.phone);
+                                  } else {
+                                    deletePatient(r.patientName);
+                                  }
                                   setMonthlyData((prev: any) => prev ? {
                                     ...prev,
                                     records: prev.records.filter((rec: any) => rec.id !== r.id),
                                     summary: { ...prev.summary, totalPatients: Math.max(0, (prev.summary?.totalPatients || 1) - 1) }
                                   } : prev);
-                                  setToast({ type: 'success', message: `Deleted OPD entry for ${r.patientName}` });
+                                  setToast({ type: 'success', message: `Permanently deleted '${r.patientName}' from everywhere.` });
                                 } catch {
                                   setToast({ type: 'error', message: 'Failed to delete entry.' });
                                 }
                               }
                             });
                           }}
-                          className="opacity-0 group-hover:opacity-100 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          className="opacity-0 group-hover:opacity-100 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
