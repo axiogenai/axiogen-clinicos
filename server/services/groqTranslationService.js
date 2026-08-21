@@ -84,7 +84,7 @@ Output ONLY a JSON object with this exact structure:
           model,
           messages: [
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: `Translate/transliterate this prescription instruction into natural ${script}: "${cleanText}"` }
+            { role: 'user', content: `Translate this prescription instruction into natural ${script} JSON format: "${cleanText}"` }
           ],
           temperature: 0.0,
           response_format: { type: 'json_object' }
