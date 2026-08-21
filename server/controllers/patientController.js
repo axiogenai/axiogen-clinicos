@@ -54,7 +54,7 @@ exports.searchPatients = async (req, res, next) => {
 exports.createPatient = async (req, res, next) => {
   try {
     const clinicId = req.user?.clinicId || 1;
-    const { id, name, age, gender, phone, village, pastHistory, allergies, notes, validity } = req.body;
+    const { id, name, age, gender, phone, village, pastHistory, allergies, notes, validity, casePaperNo } = req.body;
 
     const trimmedName = (name || '').trim();
     if (!trimmedName || trimmedName.length < 2) {
@@ -105,7 +105,8 @@ exports.createPatient = async (req, res, next) => {
       pastHistory: pastHistory || '',
       allergies: allergies || '',
       notes: notes || '',
-      validity: validityDate
+      validity: validityDate,
+      casePaperNo: (casePaperNo || '').trim() || null
     });
 
     await AuditLog.create({
@@ -114,7 +115,7 @@ exports.createPatient = async (req, res, next) => {
       action: 'create_patient',
       entityType: 'patient',
       entityId: patient.id,
-      details: { name: patient.name }
+      details: { name: patient.name, casePaperNo: patient.casePaperNo }
     });
 
     res.status(201).json(patient);
@@ -169,27 +170,45 @@ exports.deletePatient = async (req, res, next) => {
 
     const targetPhone = patient.phone;
     const targetId = patient.id;
+    const targetName = patient.name;
 
-    // Delete patient record from primary DB (Supabase/PostgreSQL)
+    // 1. Delete patient record from PostgreSQL
     await patient.destroy();
 
-    // Also clean up any lingering Queue entries with matching patientId or phone
-    const { Queue } = require('../models');
+    // 2. Cascade delete from Queue (today's active queue)
+    const { Queue, OpdRegister, CasePaper } = require('../models');
     await Queue.destroy({
       where: {
         clinicId,
         [Op.or]: [
           { patientId: targetId },
-          ...(targetPhone ? [{ phone: targetPhone }] : [])
+          ...(targetPhone ? [{ phone: targetPhone }] : []),
+          { name: targetName }
         ]
       }
     });
 
-    // ── Dual-Delete: Also purge from local SQLite on Oracle VM ──
-    // When DATABASE_URL is set (Supabase), the local SQLite file is not the
-    // active database but may still hold stale records from before migration.
-    // We delete from it in the background so patients don't resurface if the
-    // server ever falls back to SQLite mode.
+    // 3. Cascade delete from OPD Register (daily, monthly, yearly registers)
+    await OpdRegister.destroy({
+      where: {
+        clinicId,
+        [Op.or]: [
+          { patientId: targetId },
+          ...(targetPhone ? [{ phone: targetPhone }] : []),
+          { patientName: targetName }
+        ]
+      }
+    });
+
+    // 4. Cascade delete from CasePapers (all doctor consultations & prescriptions)
+    await CasePaper.destroy({
+      where: {
+        clinicId,
+        patientId: targetId
+      }
+    });
+
+    // 5. Dual-Delete: Also purge from local SQLite on Oracle VM if present
     if (process.env.DATABASE_URL) {
       try {
         const path = require('path');
@@ -202,25 +221,26 @@ exports.deletePatient = async (req, res, next) => {
             storage: sqlitePath,
             logging: false,
           });
-          // Delete matching patients from SQLite
           await sqliteDb.query(
             `DELETE FROM patients WHERE id = :id OR phone = :phone OR name = :name`,
-            { replacements: { id: targetId, phone: targetPhone || '', name: patient.name } }
+            { replacements: { id: targetId, phone: targetPhone || '', name: targetName } }
           );
-          // Delete matching queue entries from SQLite
           await sqliteDb.query(
-            `DELETE FROM queues WHERE patient_id = :patientId OR phone = :phone`,
-            { replacements: { patientId: targetId, phone: targetPhone || '' } }
+            `DELETE FROM queues WHERE patient_id = :patientId OR phone = :phone OR name = :name`,
+            { replacements: { patientId: targetId, phone: targetPhone || '', name: targetName } }
+          );
+          await sqliteDb.query(
+            `DELETE FROM opd_registers WHERE patient_id = :patientId OR phone = :phone OR patient_name = :name`,
+            { replacements: { patientId: targetId, phone: targetPhone || '', name: targetName } }
           );
           await sqliteDb.close();
         }
       } catch (sqliteErr) {
-        // Non-critical — SQLite cleanup failure should never block the API response
-        console.warn('⚠️ SQLite dual-delete warning (non-critical):', sqliteErr.message);
+        console.warn('⚠️ SQLite dual-delete warning:', sqliteErr.message);
       }
     }
 
-    res.json({ message: 'Patient and all associated queue records permanently deleted successfully' });
+    res.json({ message: 'Patient and all associated records permanently deleted from all registers and database.' });
   } catch (err) {
     next(err);
   }
@@ -229,7 +249,19 @@ exports.deletePatient = async (req, res, next) => {
 exports.renewPatientValidity = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const patient = await Patient.findByPk(id);
+    let patient = await Patient.findByPk(id);
+    if (!patient) {
+      const cleanPhone = id.replace(/\D/g, '');
+      patient = await Patient.findOne({
+        where: {
+          [Op.or]: [
+            { casePaperNo: id },
+            ...(cleanPhone ? [{ phone: cleanPhone }] : []),
+            { name: id }
+          ]
+        }
+      });
+    }
     if (!patient) return res.status(404).json({ error: 'Patient not found' });
 
     // Always strictly 2 months from today on renewal
@@ -245,7 +277,7 @@ exports.renewPatientValidity = async (req, res, next) => {
       action: 'renew_patient',
       entityType: 'patient',
       entityId: patient.id,
-      details: { newValidity, months: 2 }
+      details: { newValidity, months: 2, casePaperNo: patient.casePaperNo, phone: patient.phone }
     });
 
     res.json({ message: 'Patient validity renewed for 2 months successfully', validity: newValidity, patient });
