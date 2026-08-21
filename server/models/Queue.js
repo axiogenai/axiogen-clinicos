@@ -57,6 +57,11 @@ const Queue = sequelize.define('Queue', {
   paymentMode: {
     type: DataTypes.STRING,
     defaultValue: 'cash'
+  },
+  casePaperNo: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'case_paper_no'
   }
 });
 
