@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, UserPlus, X, Trash2 } from 'lucide-react';
 import type { Patient } from '../data/patients';
 import { useClinic } from '../context/ClinicContext';
+import ConfirmModal from './ConfirmModal';
 
 interface Props {
   patients: Patient[];
@@ -77,6 +78,7 @@ export default function PatientSearch({ patients, onSelectPatient, onNewPatient 
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [confirmDeletePatient, setConfirmDeletePatient] = useState<Patient | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const filtered = useMemo(() => filterAndSortPatients(patients, query), [patients, query]);
@@ -177,11 +179,9 @@ export default function PatientSearch({ patients, onSelectPatient, onNewPatient 
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (window.confirm(`⚠️ Permanently delete patient '${patient.name}' (ID: ${patient.id}) from database registers?`)) {
-                          deletePatient(patient.id);
-                        }
+                        setConfirmDeletePatient(patient);
                       }}
-                      className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                      className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                       title="Permanently delete patient from DB"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -203,6 +203,22 @@ export default function PatientSearch({ patients, onSelectPatient, onNewPatient 
           </ul>
         </div>
       )}
+
+      {/* Modern In-App Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={Boolean(confirmDeletePatient)}
+        title="Delete Patient Profile"
+        message={`Permanently delete patient profile '${confirmDeletePatient?.name}' (ID: ${confirmDeletePatient?.id}) from database registers?`}
+        confirmText="Delete Patient"
+        isDestructive={true}
+        onConfirm={() => {
+          if (confirmDeletePatient) {
+            deletePatient(confirmDeletePatient.id);
+            setConfirmDeletePatient(null);
+          }
+        }}
+        onCancel={() => setConfirmDeletePatient(null)}
+      />
     </div>
   );
 }
