@@ -34,6 +34,7 @@ interface ClinicContextType {
   setToast: (toast: ToastMessage | null) => void;
   addPatient: (patient: Patient) => void;
   deletePatient: (patientId: string) => void;
+  renewPatient: (patientId: string, months?: number) => Promise<string | null>;
   addToQueue: (queueItem: QueueItem) => void;
   updateQueueStatus: (queueId: string, status: QueueItem['status']) => void;
   updateQueuePayment: (queueId: string, paymentStatus: 'paid' | 'unpaid', paymentMode?: 'cash' | 'online') => void;
@@ -302,6 +303,30 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
     api.deletePatient(identifier).catch(() => {});
     setToast({ type: 'info', message: 'Patient permanently deleted from database registers.' });
   }, []);
+
+  const renewPatient = useCallback(async (identifier: string, months = 2) => {
+    try {
+      const res = await api.renewPatient(identifier, months);
+      const newValidity = res?.validity;
+      if (newValidity) {
+        setPatients(prev => prev.map(p => {
+          const clean = identifier.replace(/\D/g, '');
+          if (p.id === identifier || p.casePaperNo === identifier || (clean.length >= 4 && p.phone === clean) || p.name === identifier) {
+            return { ...p, validity: newValidity };
+          }
+          return p;
+        }));
+        setToast({
+          type: 'success',
+          message: `Extended validity to ${new Date(newValidity).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} (+${months} months)`
+        });
+      }
+      return newValidity || null;
+    } catch (err: any) {
+      setToast({ type: 'error', message: err.message || 'Failed to renew patient validity' });
+      return null;
+    }
+  }, [setToast]);
 
   const addToQueue = useCallback((queueItem: QueueItem) => {
     setQueue((prev) => [...prev, queueItem]);
@@ -612,6 +637,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
         setToast,
         addPatient,
         deletePatient,
+        renewPatient,
         addToQueue,
         updateQueueStatus,
         updateQueuePayment,
