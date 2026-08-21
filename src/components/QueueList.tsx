@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Phone, MapPin, Clock, Stethoscope, Check, X, ArrowRight, Eye, Trash2, Banknote, QrCode, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
 import type { Patient, QueueItem } from '../data/patients';
 import { useClinic } from '../context/ClinicContext';
-import { api } from '../api/client';
 
 interface Props {
   queue: QueueItem[];
@@ -76,9 +75,10 @@ export default function QueueList({
   onRemove,
   onViewDetails,
 }: Props) {
-  const { updateQueuePayment, refreshPatients } = useClinic();
+  const { updateQueuePayment, renewPatient } = useClinic();
   const [renewingId, setRenewingId] = useState<string | null>(null);
-  const getPatient = (id: string) => patients.find(p => p.id === id);
+  const getPatient = (id: string, phone?: string, name?: string) => 
+    patients.find(p => p.id === id || (phone && p.phone === phone) || (name && p.name === name));
 
   // Receptionist View: Pure Normal FIFO (First-In, First-Out by arrival order)
   const sortedQueue = [...queue];
@@ -197,7 +197,7 @@ export default function QueueList({
                       {daysLeft < 0 ? (
                         <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
                           <AlertCircle className="w-3 h-3 text-red-600 shrink-0" />
-                          <span>Expired on {fmt}</span>
+                          <span>Expired ({fmt})</span>
                         </span>
                       ) : daysLeft <= 7 ? (
                         <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
@@ -210,21 +210,23 @@ export default function QueueList({
                           <span>Valid till {fmt}</span>
                         </span>
                       )}
-                      <button
-                        type="button"
-                        disabled={renewingId === (patient?.id || item.patientId)}
-                        onClick={async () => {
-                          const pid = patient?.id || item.patientId;
-                          setRenewingId(pid);
-                          try { await api.renewPatient(pid, 2); if (typeof refreshPatients === 'function') await refreshPatients(); }
-                          catch (e) { console.error('Renew failed', e); }
-                          finally { setRenewingId(null); }
-                        }}
-                        className="flex items-center gap-1 text-[10px] font-bold py-1 px-2.5 rounded-lg border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 disabled:opacity-50 transition-all cursor-pointer"
-                      >
-                        <RefreshCw className={`w-2.5 h-2.5 ${renewingId === (patient?.id || item.patientId) ? 'animate-spin' : ''}`} />
-                        <span>{renewingId === (patient?.id || item.patientId) ? '…' : 'Renew'}</span>
-                      </button>
+                      {(daysLeft <= 7) && (
+                        <button
+                          type="button"
+                          disabled={renewingId === (patient?.id || item.patientId)}
+                          onClick={async () => {
+                            const pid = patient?.id || item.patientId || item.name || '';
+                            if (!pid) return;
+                            setRenewingId(pid);
+                            try { await renewPatient(pid, 2); }
+                            finally { setRenewingId(null); }
+                          }}
+                          className="flex items-center gap-1 text-[10px] font-bold py-1 px-2.5 rounded-lg border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 disabled:opacity-50 transition-all cursor-pointer"
+                        >
+                          <RefreshCw className={`w-2.5 h-2.5 ${renewingId === (patient?.id || item.patientId) ? 'animate-spin' : ''}`} />
+                          <span>Renew</span>
+                        </button>
+                      )}
                     </div>
                   );
                 })()}
@@ -376,51 +378,75 @@ export default function QueueList({
                     {renderPaymentControl(item)}
                   </td>
 
-                  {/* Validity + Renew */}
+                  {/* Validity */}
                   <td className="text-center">
                     {(() => {
                       const v = patient?.validity;
-                      if (!v) return <span className="text-[10px] text-[#7c766d]">—</span>;
+                      if (!v) return <span className="text-[11px] text-[#7c766d]">—</span>;
                       const expiry = new Date(v);
                       const today = new Date(); today.setHours(0,0,0,0);
                       const daysLeft = Math.ceil((expiry.getTime() - today.getTime()) / 86400000);
                       const fmt = expiry.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-                      const badge = daysLeft < 0 ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
-                          <AlertCircle className="w-3 h-3 text-red-600 shrink-0" />
-                          <span>Expired</span>
-                        </span>
-                      ) : daysLeft <= 7 ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
-                          <Clock className="w-3 h-3 text-amber-600 shrink-0" />
-                          <span>{daysLeft}d left</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      
+                      if (daysLeft < 0) {
+                        return (
+                          <div className="flex items-center justify-center gap-1.5">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+                              <AlertCircle className="w-3 h-3 text-red-600 shrink-0" />
+                              <span>Expired</span>
+                            </span>
+                            <button
+                              type="button"
+                              disabled={renewingId === (patient?.id || item.patientId)}
+                              onClick={async () => {
+                                const pid = patient?.id || item.patientId || item.name || '';
+                                if (!pid) return;
+                                setRenewingId(pid);
+                                try { await renewPatient(pid, 2); }
+                                finally { setRenewingId(null); }
+                              }}
+                              className="flex items-center gap-1 text-[10px] font-bold py-0.5 px-2 rounded-md border border-red-200 text-red-700 bg-red-50 hover:bg-red-100 transition-all cursor-pointer shadow-2xs"
+                              title="Renew validity (+2 Months from today)"
+                            >
+                              <RefreshCw className={`w-2.5 h-2.5 ${renewingId === (patient?.id || item.patientId) ? 'animate-spin' : ''}`} />
+                              <span>Renew</span>
+                            </button>
+                          </div>
+                        );
+                      }
+
+                      if (daysLeft <= 7) {
+                        return (
+                          <div className="flex items-center justify-center gap-1.5">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                              <Clock className="w-3 h-3 text-amber-600 shrink-0" />
+                              <span>{daysLeft}d left</span>
+                            </span>
+                            <button
+                              type="button"
+                              disabled={renewingId === (patient?.id || item.patientId)}
+                              onClick={async () => {
+                                const pid = patient?.id || item.patientId || item.name || '';
+                                if (!pid) return;
+                                setRenewingId(pid);
+                                try { await renewPatient(pid, 2); }
+                                finally { setRenewingId(null); }
+                              }}
+                              className="flex items-center gap-1 text-[10px] font-bold py-0.5 px-2 rounded-md border border-amber-200 text-amber-800 bg-amber-50 hover:bg-amber-100 transition-all cursor-pointer shadow-2xs"
+                              title="Extend validity (+2 Months)"
+                            >
+                              <RefreshCw className={`w-2.5 h-2.5 ${renewingId === (patient?.id || item.patientId) ? 'animate-spin' : ''}`} />
+                              <span>+2M</span>
+                            </button>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
                           <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
                           <span>{fmt}</span>
                         </span>
-                      );
-                      return (
-                        <div className="flex flex-col items-center gap-1">
-                          {badge}
-                          <button
-                            type="button"
-                            disabled={renewingId === (patient?.id || item.patientId)}
-                            onClick={async () => {
-                              const pid = patient?.id || item.patientId;
-                              setRenewingId(pid);
-                              try { await api.renewPatient(pid, 2); if (typeof refreshPatients === 'function') await refreshPatients(); }
-                              catch (e) { console.error('Renew failed', e); }
-                              finally { setRenewingId(null); }
-                            }}
-                            className="flex items-center gap-1 text-[10px] font-bold py-0.5 px-2.5 rounded-lg border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 disabled:opacity-50 transition-all cursor-pointer"
-                            title="Renew validity by 2 months"
-                          >
-                            <RefreshCw className={`w-2.5 h-2.5 ${renewingId === (patient?.id || item.patientId) ? 'animate-spin' : ''}`} />
-                            <span>{renewingId === (patient?.id || item.patientId) ? '…' : 'Renew'}</span>
-                          </button>
-                        </div>
                       );
                     })()}
                   </td>
