@@ -1430,7 +1430,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                                 }}
                                 className="px-3 py-2 text-xs font-bold text-[#047857] bg-[#ecfdf5] hover:bg-[#d1fae5] border-b border-[#a7f3d0] cursor-pointer flex items-center justify-between"
                               >
-                                <span>📅 {med.duration.trim()} Days</span>
+                                <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-[#047857]" /> {med.duration.trim()} Days</span>
                                 <span className="text-[10px] font-sans font-extrabold uppercase bg-[#047857] text-white px-1.5 py-0.5 rounded">लागू करा</span>
                               </div>
                             )}
@@ -1600,7 +1600,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                                   }}
                                   className="px-3 py-2 text-xs font-bold text-[#047857] bg-[#ecfdf5] hover:bg-[#d1fae5] border-b border-[#a7f3d0] cursor-pointer flex items-center justify-between"
                                 >
-                                  <span>📅 {med.duration.trim()} Days</span>
+                                  <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-[#047857]" /> {med.duration.trim()} Days</span>
                                   <span className="text-[10px] font-sans font-extrabold uppercase bg-[#047857] text-white px-1.5 py-0.5 rounded">लागू करा</span>
                                 </div>
                               )}
