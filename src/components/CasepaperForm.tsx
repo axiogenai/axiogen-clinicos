@@ -562,12 +562,21 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
   };
 
   const addMedicine = (medicineId: string, customRawSentence?: string) => {
-    const sentenceToParse = customRawSentence !== undefined ? customRawSentence : searchQuery;
-    const parsed = parsePrescriptionSentence(sentenceToParse);
+    const sentenceToParse = (customRawSentence !== undefined ? customRawSentence : searchQuery).trim();
+    
+    // If the input has multiple words or contains frequency/verb/duration keywords, run dynamic Groq AI parse
+    const words = sentenceToParse.split(/\s+/);
+    const hasSentenceIndicators = words.length >= 3 || /\b(sakali|ratri|dupari|lavne|ghene|after|before|bbf|pc|ac|od|bd|bid|tds|tid|hs|divas|days|weeks|months|\d+)\b/i.test(sentenceToParse);
+    
+    if (hasSentenceIndicators && words.length >= 2) {
+      addSentenceWithGroqAI(sentenceToParse);
+      return;
+    }
 
+    const parsed = parsePrescriptionSentence(sentenceToParse);
     const med = filteredMedicines.find(m => m.id === medicineId) || dbMedicines.find(m => m.id === medicineId);
 
-    let fullName = med ? med.name.trim() : (parsed.formattedMedicineName || 'Medicine');
+    let fullName = med ? med.name.trim() : (parsed.formattedMedicineName || sentenceToParse || 'Medicine');
     if (med && med.strength && !fullName.toLowerCase().includes(med.strength.toLowerCase())) {
       fullName = `${fullName} ${med.strength}`;
     }
