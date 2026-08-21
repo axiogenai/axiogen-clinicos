@@ -2,6 +2,48 @@ function getApiKey() {
   return process.env.GROQ_API_KEY || ['gsk_H8K4l3cxDszVRZ4t7', 'Rh4WGdyb3FYEGiF82epU7qHpDmLr4rAmnbr'].join('');
 }
 
+async function callGroqChat(apiKey, model, systemPrompt, userMessage, isJson = true) {
+  const body = {
+    model,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage }
+    ],
+    temperature: 0.0,
+    max_tokens: 400
+  };
+  if (isJson) {
+    body.response_format = { type: 'json_object' };
+  }
+
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'User-Agent': 'ClinicOS-Prescription-Engine/1.0'
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!response.ok) {
+    throw new Error(`Groq API returned ${response.status}: ${await response.text()}`);
+  }
+
+  const data = await response.json();
+  let content = data.choices?.[0]?.message?.content?.trim();
+  if (!content) return null;
+
+  if (content.includes('</think>')) {
+    content = content.split('</think>').pop().trim();
+  }
+
+  // Remove markdown json fences if present
+  content = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+
+  return isJson ? JSON.parse(content) : content;
+}
+
 async function parseSentenceWithGroq(sentence) {
   if (!sentence || !sentence.trim()) return null;
   const cleanText = sentence.trim();
@@ -9,69 +51,64 @@ async function parseSentenceWithGroq(sentence) {
   const apiKey = getApiKey();
   if (!apiKey) return null;
 
-  try {
-    const systemPrompt = `You are an expert AI Medical Prescription Sentence Parser powered by Groq AI for ClinicOS.
-Your task is to take any raw free-text prescription sentence entered by a doctor (in English, Marathi, Hinglish, or Romanized Marathi script) and parse it into structured JSON.
+  const systemPrompt = `You are an expert AI Medical Prescription Sentence Parser powered by Groq AI for ClinicOS.
+Your task is to take any raw free-text prescription sentence entered by a doctor (in English, Marathi, Hinglish, or Romanized script) and parse it into structured JSON.
 
 Return ONLY a JSON object with this exact key structure:
 {
-  "cleanedMedicineQuery": "core medicine search query without dosage directions, timing or duration (e.g. 'dulcolax 10ml', 'tiniclean 200', 'paracetamol 500', 'tretinoin ointment', 'betnovate ointment')",
-  "formattedMedicineName": "formatted medicine name with proper title case capitalization and form prefix (Tab. / Cap. / Syp. / Oint. / Cream / Gel / Lotion / Inj. / Drops) if specified (e.g. 'Syp. Dulcolax 10ml', 'Cap. Tiniclean 200', 'Oint. Betnovate 20gm', 'Cream Luliconazole 1%')",
-  "frequency": "translated Marathi frequency / timing directions in Devanagari script (e.g. 'उद्या घेणे', 'सकाळी १ व रात्री १ घेणे', 'सकाळी १, दुपारी १ व रात्री १ घेणे', 'रात्री १ घेणे', 'उद्या रात्री घेणे', 'उपाशीपोटी घेणे', 'सकाळी व रात्री लावणे')",
-  "duration": "formatted duration string if specified (e.g. '15 Days', '7 Days', '3 Days', '2 Weeks', '1 Month')",
+  "cleanedMedicineQuery": "core medicine search query without dosage timing, verbs or duration (e.g. 'Tenovate Ointment (2 Tube)', 'Dulcolax 10ml', 'Tiniclean 200', 'Paracetamol 500')",
+  "formattedMedicineName": "cleanly formatted title-case medicine name with dosage form preserved",
+  "frequency": "translated Marathi frequency / timing directions in Devanagari script (e.g. 'सकाळी व रात्री लावणे', 'सकाळी १ व रात्री १ घेणे', 'उद्या सकाळी घेणे', 'रात्री झोपताना घेणे', 'सकाळी १, दुपारी १ व रात्री १ घेणे')",
+  "duration": "formatted duration string if specified (e.g. '20 Days', '15 Days', '7 Days', '3 Days', '2 Weeks', '1 Month')",
   "hasSentenceElements": true
 }
 
 Rules:
-1. "cleanedMedicineQuery": strip away frequency, timing, verbs and duration words (such as "udya", "tomorrow", "ghene", "take", "sakali", "ratri", "3 days"), leaving ONLY the core medicine name & strength/volume/form for database searching.
-2. "formattedMedicineName": format cleanly and preserve accurate dosage forms:
-   - "syrup" / "syp" -> "Syp. "
-   - "cap" / "capsule" -> "Cap. "
-   - "tab" / "tablet" -> "Tab. "
-   - "inj" / "injection" -> "Inj. "
-   - "ointment" / "oint" / "oliment" / "oliments" -> "Oint. " or preserve as "Ointment"
-   - "cream" / "crm" -> "Cream"
-   - "gel" -> "Gel"
-   - "lotion" -> "Lotion"
-   CRITICAL: Do NOT classify or convert 'Ointment' / 'Oint' / 'oliment' / 'oliments' as 'Cream'. An ointment is completely distinct from a cream. Keep Ointment as 'Ointment' (or 'Oint.') and Cream as 'Cream'.
-3. "frequency": translate any frequency/timing/verb instructions into natural Marathi Devanagari script:
-   - "udya ghene" -> "उद्या घेणे"
-   - "udya ratri ghene" -> "उद्या रात्री घेणे"
+1. "cleanedMedicineQuery": strip away frequency, timing, verbs and duration words (such as "udya", "tomorrow", "ghene", "take", "sakali", "ratri", "divas", "days"), leaving ONLY the core medicine name & strength/form for database searching.
+2. "formattedMedicineName": preserve dosage forms accurately:
+   - "ointment" / "oint" / "oliment" / "oliments" -> Keep as Ointment (do NOT convert to Cream)
+   - "cream" / "crm" -> Cream
+   - "gel" -> Gel
+   - "lotion" -> Lotion
+   - "syrup" / "syp" -> Syp.
+   - "tablet" / "tab" -> Tab.
+   - "capsule" / "cap" -> Cap.
+3. "frequency": translate instructions into natural Marathi Devanagari script:
+   - "sakali ratri lavne" -> "सकाळी व रात्री लावणे"
+   - "sakali 1 ratri 1 ghene" -> "सकाळी १ व रात्री १ घेणे"
    - "udya sakali ghene" -> "उद्या सकाळी घेणे"
-   - "sakali ratri" -> "सकाळी १ व रात्री १ घेणे"
-   - Use "घेणे" for oral intake (tablets, capsules, syrups).
-   - Use "लावणे" for all topicals (ointments, creams, gels, lotions).
+   - "ratri zoptana" -> "रात्री झोपताना"
+   - Use "घेणे" for oral medicines (tablets, capsules, syrups).
+   - Use "लावणे" for topical medicines (ointments, creams, gels, lotions).
 4. "duration": format numbers as "X Days", "X Weeks", or "X Months".
 5. Return ONLY the JSON object. No explanations, no markdown ticks, no preamble.`;
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Parse this prescription sentence: "${cleanText}"` }
-        ],
-        temperature: 0.0,
-        response_format: { type: 'json_object' },
-        max_tokens: 300
-      })
-    });
+  const models = ['groq/compound-mini', 'openai/gpt-oss-20b', 'qwen/qwen3.6-27b'];
 
-    if (!response.ok) return null;
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content?.trim();
-    if (!content) return null;
-
-    return JSON.parse(content);
-  } catch (err) {
-    return null;
+  for (const model of models) {
+    try {
+      const parsed = await callGroqChat(
+        apiKey,
+        model,
+        systemPrompt,
+        `Parse this prescription sentence: "${cleanText}"`,
+        true
+      );
+      if (parsed && (parsed.cleanedMedicineQuery || parsed.formattedMedicineName || parsed.frequency || parsed.duration)) {
+        return {
+          cleanedMedicineQuery: parsed.cleanedMedicineQuery || cleanText,
+          formattedMedicineName: parsed.formattedMedicineName || cleanText,
+          frequency: parsed.frequency || '',
+          duration: parsed.duration || '',
+          hasSentenceElements: Boolean(parsed.frequency || parsed.duration || (parsed.cleanedMedicineQuery && parsed.cleanedMedicineQuery !== cleanText))
+        };
+      }
+    } catch (err) {
+      console.warn(`Groq parseSentence model ${model} failed, trying fallback:`, err.message);
+    }
   }
+
+  return null;
 }
 
 module.exports = {
