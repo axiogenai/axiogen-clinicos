@@ -4,6 +4,7 @@ import { api } from '../api/client';
 import { Calendar, CalendarDays, BarChart2, Search, Printer, UserCheck, Clock, CheckCircle2, FileSpreadsheet, Send, MessageSquare, Save, FileText, X, Pill, Edit3, Trash2, ChevronDown, Check } from 'lucide-react';
 import PrintPreview from './PrintPreview';
 import CasepaperForm from './CasepaperForm';
+import ConfirmModal from './ConfirmModal';
 import type { Patient } from '../data/patients';
 import type { CasePaper } from '../types';
 import { calculateMedicineCount } from '../utils/countCalculator';
@@ -91,6 +92,22 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
   const [activeEmrModal, setActiveEmrModal] = useState<{ patient: any; casePaper: any } | null>(null);
   const [editingCasePaper, setEditingCasePaper] = useState<{ patient: Patient; casePaper: CasePaper; queueId?: string } | null>(null);
   const [isPrintPreviewOpen, setIsPrintPreviewOpen] = useState(false);
+
+  // Custom Confirm Modal State
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    isDestructive?: boolean;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
 
   // Archive & History Register State
   const [viewMode, setViewMode] = useState<'daily' | 'monthly' | 'yearly'>('daily');
@@ -973,15 +990,23 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
               </span>
               <button
                 type="button"
-                onClick={async () => {
-                  if (!window.confirm('⚠️ This will permanently delete ALL OPD register entries and reset numbering to 0. Are you sure?')) return;
-                  try {
-                    await api.clearAllRegister();
-                    setMonthlyData(null);
-                    setToast({ type: 'success', title: 'Register Reset', message: 'All OPD register entries cleared. Numbering will restart from 1 on next sync.' });
-                  } catch {
-                    setToast({ type: 'error', message: 'Failed to clear register.' });
-                  }
+                onClick={() => {
+                  setConfirmModal({
+                    isOpen: true,
+                    title: 'Reset OPD Register',
+                    message: 'This will permanently delete ALL OPD register entries and reset numbering to 0. Are you sure?',
+                    confirmText: 'Reset All',
+                    isDestructive: true,
+                    onConfirm: async () => {
+                      try {
+                        await api.clearAllRegister();
+                        setMonthlyData(null);
+                        setToast({ type: 'success', title: 'Register Reset', message: 'All OPD register entries cleared. Numbering will restart from 1 on next sync.' });
+                      } catch {
+                        setToast({ type: 'error', message: 'Failed to clear register.' });
+                      }
+                    }
+                  });
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-all active:scale-95"
               >
@@ -1034,19 +1059,27 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
                         <button
                           type="button"
                           title="Delete this entry"
-                          onClick={async () => {
-                            if (!window.confirm(`Delete OPD entry for ${r.patientName} (${r.date})?`)) return;
-                            try {
-                              await api.deleteRegisterEntry(r.id);
-                              setMonthlyData((prev: any) => prev ? {
-                                ...prev,
-                                records: prev.records.filter((rec: any) => rec.id !== r.id),
-                                summary: { ...prev.summary, totalPatients: Math.max(0, (prev.summary?.totalPatients || 1) - 1) }
-                              } : prev);
-                              setToast({ type: 'success', message: `Deleted OPD entry for ${r.patientName}` });
-                            } catch {
-                              setToast({ type: 'error', message: 'Failed to delete entry.' });
-                            }
+                          onClick={() => {
+                            setConfirmModal({
+                              isOpen: true,
+                              title: 'Delete OPD Entry',
+                              message: `Permanently delete OPD entry for ${r.patientName} (${r.date})?`,
+                              confirmText: 'Delete Entry',
+                              isDestructive: true,
+                              onConfirm: async () => {
+                                try {
+                                  await api.deleteRegisterEntry(r.id);
+                                  setMonthlyData((prev: any) => prev ? {
+                                    ...prev,
+                                    records: prev.records.filter((rec: any) => rec.id !== r.id),
+                                    summary: { ...prev.summary, totalPatients: Math.max(0, (prev.summary?.totalPatients || 1) - 1) }
+                                  } : prev);
+                                  setToast({ type: 'success', message: `Deleted OPD entry for ${r.patientName}` });
+                                } catch {
+                                  setToast({ type: 'error', message: 'Failed to delete entry.' });
+                                }
+                              }
+                            });
                           }}
                           className="opacity-0 group-hover:opacity-100 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                         >
@@ -1289,18 +1322,34 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
                     <button
                       type="button"
                       onClick={() => {
-                        if (window.confirm(`⚠️ Permanently delete '${item.name}' (OPD No: ${item.opdNo}) from today's OPD Register & Database Queue?`)) {
-                          removeFromQueue(item.opdNo || item.name);
-                          setFetchedQueue(prev => prev.filter(q => q.queueId !== item.opdNo && q.name !== item.name));
-                          
-                          const targetPatient = patients.find(p => p.name === item.name || p.phone === item.phone);
-                          if (targetPatient) {
-                            if (window.confirm(`Do you also want to permanently delete patient profile '${item.name}' (ID: ${targetPatient.id}) from Database Registers?`)) {
-                              deletePatient(targetPatient.id);
+                        setConfirmModal({
+                          isOpen: true,
+                          title: 'Delete OPD Record',
+                          message: `Permanently delete '${item.name}' (OPD No: ${item.opdNo}) from today's OPD Register & Database Queue?`,
+                          confirmText: 'Delete Record',
+                          isDestructive: true,
+                          onConfirm: () => {
+                            removeFromQueue(item.opdNo || item.name);
+                            setFetchedQueue(prev => prev.filter(q => q.queueId !== item.opdNo && q.name !== item.name));
+                            
+                            const targetPatient = patients.find(p => p.name === item.name || p.phone === item.phone);
+                            if (targetPatient) {
+                              setTimeout(() => {
+                                setConfirmModal({
+                                  isOpen: true,
+                                  title: 'Delete Patient Profile',
+                                  message: `Do you also want to permanently delete patient profile '${item.name}' (ID: ${targetPatient.id}) from Database Registers?`,
+                                  confirmText: 'Delete Profile',
+                                  isDestructive: true,
+                                  onConfirm: () => {
+                                    deletePatient(targetPatient.id);
+                                  }
+                                });
+                              }, 300);
                             }
+                            setToast({ type: 'info', message: `Deleted OPD record '${item.name}' from database.` });
                           }
-                          setToast({ type: 'info', message: `Deleted OPD record '${item.name}' from database.` });
-                        }
+                        });
                       }}
                       className="p-1.5 bg-[#fef2f2] hover:bg-[#fee2e2] text-[#dc2626] rounded-lg border border-[#fecaca] transition-all shadow-sm cursor-pointer"
                       title="Permanently Delete Record from DB"
@@ -1557,6 +1606,17 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
           </div>
         </div>
       )}
+      {/* Custom Styled Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        cancelText={confirmModal.cancelText}
+        isDestructive={confirmModal.isDestructive}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }
