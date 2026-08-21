@@ -184,7 +184,7 @@ export default function WhatsAppGatewayModal({ isOpen, onClose }: WhatsAppGatewa
                 <p className="font-bold">Instructions to Link WhatsApp:</p>
                 <ol className="list-decimal list-inside space-y-0.5 text-[11px]">
                   <li>Open <strong>WhatsApp</strong> on the clinic's smartphone.</li>
-                  <li>Tap <strong>Menu (⋮)</strong> or <strong>Settings ⚙️</strong> &rarr; <strong>Linked Devices</strong>.</li>
+                  <li>Tap <strong>Menu (⋮)</strong> or <strong>Settings</strong> &rarr; <strong>Linked Devices</strong>.</li>
                   <li>Tap <strong>Link a Device</strong> and point camera at the QR code above.</li>
                 </ol>
               </div>
@@ -225,7 +225,8 @@ export default function WhatsAppGatewayModal({ isOpen, onClose }: WhatsAppGatewa
                   disabled={loading}
                   className="px-3.5 py-1.5 text-xs font-bold bg-[#b45309] hover:bg-[#92400e] text-white rounded-xl shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
                 >
-                  🎉 Send Festival Wishes to Patients
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Send Festival Wishes to Patients</span>
                 </button>
               </div>
             </div>
