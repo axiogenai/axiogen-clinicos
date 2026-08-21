@@ -142,14 +142,20 @@ async function startServer() {
         ALTER TABLE IF EXISTS "opd_registers" ADD COLUMN IF NOT EXISTS "payment_mode" VARCHAR(255) DEFAULT 'cash';
         ALTER TABLE IF EXISTS "queues" ADD COLUMN IF NOT EXISTS "payment_status" VARCHAR(255) DEFAULT 'paid';
         ALTER TABLE IF EXISTS "queues" ADD COLUMN IF NOT EXISTS "payment_mode" VARCHAR(255) DEFAULT 'cash';
+        ALTER TABLE IF EXISTS "queues" ADD COLUMN IF NOT EXISTS "case_paper_no" VARCHAR(255);
         ALTER TABLE IF EXISTS "patients" ADD COLUMN IF NOT EXISTS "validity" DATE;
+        ALTER TABLE IF EXISTS "patients" ADD COLUMN IF NOT EXISTS "case_paper_no" VARCHAR(255);
+        ALTER TABLE IF EXISTS "opd_registers" ADD COLUMN IF NOT EXISTS "case_paper_no" VARCHAR(255);
       `).catch(err => console.warn('Database column migration notice:', err.message));
     } else if (dialect === 'sqlite') {
       await sequelize.query(`ALTER TABLE Queues ADD COLUMN paymentStatus VARCHAR(255) DEFAULT 'paid';`).catch(() => {});
       await sequelize.query(`ALTER TABLE Queues ADD COLUMN paymentMode VARCHAR(255) DEFAULT 'cash';`).catch(() => {});
+      await sequelize.query(`ALTER TABLE Queues ADD COLUMN case_paper_no VARCHAR(255);`).catch(() => {});
       await sequelize.query(`ALTER TABLE opd_registers ADD COLUMN payment_status VARCHAR(255) DEFAULT 'paid';`).catch(() => {});
       await sequelize.query(`ALTER TABLE opd_registers ADD COLUMN payment_mode VARCHAR(255) DEFAULT 'cash';`).catch(() => {});
+      await sequelize.query(`ALTER TABLE opd_registers ADD COLUMN case_paper_no VARCHAR(255);`).catch(() => {});
       await sequelize.query(`ALTER TABLE patients ADD COLUMN validity DATE;`).catch(() => {});
+      await sequelize.query(`ALTER TABLE patients ADD COLUMN case_paper_no VARCHAR(255);`).catch(() => {});
     }
 
     await sequelize.sync({ alter: false });
