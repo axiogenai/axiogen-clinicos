@@ -1,8 +1,7 @@
 import { useState, useMemo } from 'react';
-import { X, Search, CheckCircle2, AlertCircle, Clock, RefreshCw, ShieldCheck, User, Phone, MapPin } from 'lucide-react';
+import { X, Search, CheckCircle2, AlertCircle, Clock, RefreshCw, ShieldCheck, User, Phone, MapPin, BookOpen, Smartphone } from 'lucide-react';
 import { useClinic } from '../context/ClinicContext';
 import { api } from '../api/client';
-import { filterAndSortPatients } from './PatientSearch';
 
 interface Props {
   onClose: () => void;
@@ -56,16 +55,14 @@ export default function ValidityCheckerModal({ onClose }: Props) {
     const q = query.trim().toLowerCase();
     if (!q || q.length < 2) return [];
     
-    // First try standard search
-    const filtered = filterAndSortPatients(patients, q);
-    if (filtered.length > 0) return filtered.slice(0, 20);
-
-    // Fallback search across village, phone, name
+    // Search across casePaperNo, name, phone, village
     return patients.filter(p => 
-      p.name.toLowerCase().includes(q) ||
+      (p.casePaperNo && p.casePaperNo.toLowerCase().includes(q)) ||
+      (p.name && p.name.toLowerCase().includes(q)) ||
       (p.phone && p.phone.includes(q)) ||
-      (p.village && p.village.toLowerCase().includes(q))
-    ).slice(0, 20);
+      (p.village && p.village.toLowerCase().includes(q)) ||
+      (p.id && p.id.toLowerCase().includes(q))
+    ).slice(0, 25);
   }, [patients, query]);
 
   const handleRenew = async (patientId: string) => {
@@ -180,11 +177,24 @@ export default function ValidityCheckerModal({ onClose }: Props) {
                         {p.age}y · {p.gender === 'M' ? 'Male' : 'Female'}
                       </span>
                     </div>
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-[#7c766d] mb-2">
-                      <span className="flex items-center gap-1">
-                        <Phone className="w-3 h-3 text-[#047857] shrink-0" />
-                        <span>{p.phone || 'N/A'}</span>
-                      </span>
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-[#7c766d] mb-2">
+                      {p.casePaperNo ? (
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-mono font-bold px-2 py-0.5 rounded-md bg-[#fef3c7] text-[#92400e] border border-[#fde68a]">
+                          <BookOpen className="w-3 h-3 text-[#b45309]" />
+                          <span>Case No: {p.casePaperNo}</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-mono font-bold px-2 py-0.5 rounded-md bg-[#ecfdf5] text-[#047857] border border-[#a7f3d0]">
+                          <Smartphone className="w-3 h-3 text-[#047857]" />
+                          <span>Mobile: {p.phone || 'N/A'}</span>
+                        </span>
+                      )}
+                      {p.casePaperNo && (
+                        <span className="flex items-center gap-1">
+                          <Phone className="w-3 h-3 text-[#047857] shrink-0" />
+                          <span>{p.phone || 'N/A'}</span>
+                        </span>
+                      )}
                       <span className="flex items-center gap-1">
                         <MapPin className="w-3 h-3 text-[#7c766d] shrink-0" />
                         <span>{p.village || 'N/A'}</span>
