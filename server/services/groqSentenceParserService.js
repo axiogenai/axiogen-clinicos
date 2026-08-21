@@ -51,39 +51,32 @@ async function parseSentenceWithGroq(sentence) {
   const apiKey = getApiKey();
   if (!apiKey) return null;
 
-  const systemPrompt = `You are an expert AI Medical Prescription Sentence Parser powered by Groq AI for ClinicOS.
-Your task is to take any raw free-text prescription sentence entered by a doctor (in English, Marathi, Hinglish, or Romanized script) and parse it into structured JSON.
+  const systemPrompt = `You are an expert Clinical EMR AI Medical Prescription Sentence Parser for Indian Doctors.
+Your task is to take any raw free-text prescription sentence entered by a doctor (in English, Marathi, Hindi, Hinglish, or Romanized script) and parse it into structured JSON.
 
 Return ONLY a JSON object with this exact key structure:
 {
   "cleanedMedicineQuery": "core medicine search query without dosage timing, verbs or duration (e.g. 'Tenovate Ointment (2 Tube)', 'Dulcolax 10ml', 'Tiniclean 200', 'Paracetamol 500')",
-  "formattedMedicineName": "cleanly formatted title-case medicine name with dosage form preserved",
+  "formattedMedicineName": "cleanly formatted title-case medicine name with dosage form and quantity preserved (e.g. 'Tenovate Ointment (2 Tube)', 'Cap. Tiniclean 200', 'Syp. Dulcolax 10ml')",
   "frequency": "translated Marathi frequency / timing directions in Devanagari script (e.g. 'सकाळी व रात्री लावणे', 'सकाळी १ व रात्री १ घेणे', 'उद्या सकाळी घेणे', 'रात्री झोपताना घेणे', 'सकाळी १, दुपारी १ व रात्री १ घेणे')",
-  "duration": "formatted duration string if specified (e.g. '20 Days', '15 Days', '7 Days', '3 Days', '2 Weeks', '1 Month')",
+  "duration": "formatted duration string if specified (e.g. '25 Days', '20 Days', '15 Days', '7 Days', '3 Days', '2 Weeks', '1 Month')",
   "hasSentenceElements": true
 }
 
 Rules:
-1. "cleanedMedicineQuery": strip away frequency, timing, verbs and duration words (such as "udya", "tomorrow", "ghene", "take", "sakali", "ratri", "divas", "days"), leaving ONLY the core medicine name & strength/form for database searching.
-2. "formattedMedicineName": preserve dosage forms accurately:
-   - "ointment" / "oint" / "oliment" / "oliments" -> Keep as Ointment (do NOT convert to Cream)
-   - "cream" / "crm" -> Cream
-   - "gel" -> Gel
-   - "lotion" -> Lotion
-   - "syrup" / "syp" -> Syp.
-   - "tablet" / "tab" -> Tab.
-   - "capsule" / "cap" -> Cap.
-3. "frequency": translate instructions into natural Marathi Devanagari script:
+1. "cleanedMedicineQuery": strip away frequency, timing, verbs and duration words/numbers at the end (such as "udya", "tomorrow", "ghene", "take", "sakali", "ratri", "lavne", "apply", "25", "20 divas", "3 days"), leaving ONLY the core medicine name & strength/quantity/form.
+2. "formattedMedicineName": preserve core medicine name and form cleanly. Keep (2 Tube) or strength if present.
+3. "frequency": dynamically translate any frequency, timing, or verb instruction into natural Marathi Devanagari script:
    - "sakali ratri lavne" -> "सकाळी व रात्री लावणे"
    - "sakali 1 ratri 1 ghene" -> "सकाळी १ व रात्री १ घेणे"
-   - "udya sakali ghene" -> "उद्या सकाळी घेणे"
+   - "udya sakali 1" -> "उद्या सकाळी १"
    - "ratri zoptana" -> "रात्री झोपताना"
    - Use "घेणे" for oral medicines (tablets, capsules, syrups).
    - Use "लावणे" for topical medicines (ointments, creams, gels, lotions).
-4. "duration": format numbers as "X Days", "X Weeks", or "X Months".
+4. "duration": if any duration number or phrase is mentioned (e.g. "25", "25 divas", "20 days", "1 mahina"), format as "X Days", "X Weeks", or "X Months". If the sentence ends with a bare number like "25" or "20" after timing, that is the duration ("25 Days", "20 Days").
 5. Return ONLY the JSON object. No explanations, no markdown ticks, no preamble.`;
 
-  const models = ['groq/compound-mini', 'openai/gpt-oss-20b', 'qwen/qwen3.6-27b'];
+  const models = ['openai/gpt-oss-20b', 'groq/compound-mini', 'qwen/qwen3.6-27b'];
 
   for (const model of models) {
     try {
