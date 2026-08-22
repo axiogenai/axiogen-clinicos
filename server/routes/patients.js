@@ -10,6 +10,7 @@ router.get('/search', patientController.searchPatients);
 router.post('/', patientController.createPatient);
 router.get('/:id', patientController.getPatient);
 router.put('/:id', patientController.updatePatient);
+router.post('/renew-validity', patientController.renewPatientValidity);
 router.post('/:id/renew', patientController.renewPatientValidity);
 router.delete('/:id', patientController.deletePatient);
 
