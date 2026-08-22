@@ -217,14 +217,14 @@ exports.deletePatient = async (req, res, next) => {
       }
     });
 
-    // 5. Dual-Delete: Also purge from local SQLite on Oracle VM if present
+    // 5. Dual-Delete: Also purge from local SQLite on Oracle VM if present (fail-safe)
     if (process.env.DATABASE_URL) {
       try {
         const path = require('path');
-        const { Sequelize } = require('sequelize');
         const sqlitePath = path.resolve(__dirname, '../database.sqlite');
         const fs = require('fs');
         if (fs.existsSync(sqlitePath)) {
+          const { Sequelize } = require('sequelize');
           const sqliteDb = new Sequelize({
             dialect: 'sqlite',
             storage: sqlitePath,
@@ -233,19 +233,19 @@ exports.deletePatient = async (req, res, next) => {
           await sqliteDb.query(
             `DELETE FROM patients WHERE id = :id OR phone = :phone OR name = :name`,
             { replacements: { id: targetId, phone: targetPhone || '', name: targetName } }
-          );
+          ).catch(() => {});
           await sqliteDb.query(
             `DELETE FROM queues WHERE patient_id = :patientId OR phone = :phone OR name = :name`,
             { replacements: { patientId: targetId, phone: targetPhone || '', name: targetName } }
-          );
+          ).catch(() => {});
           await sqliteDb.query(
             `DELETE FROM opd_registers WHERE patient_id = :patientId OR phone = :phone OR patient_name = :name`,
             { replacements: { patientId: targetId, phone: targetPhone || '', name: targetName } }
-          );
-          await sqliteDb.close();
+          ).catch(() => {});
+          await sqliteDb.close().catch(() => {});
         }
       } catch (sqliteErr) {
-        console.warn('⚠️ SQLite dual-delete warning:', sqliteErr.message);
+        // Safe fallback - primary PostgreSQL delete is already complete
       }
     }
 
