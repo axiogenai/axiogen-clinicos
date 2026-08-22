@@ -260,19 +260,20 @@ exports.deletePatient = async (req, res, next) => {
 
 exports.renewPatientValidity = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const { casePaperNo, phone, months = 2 } = req.body || {};
+    const { id } = req.params || {};
+    const { casePaperNo, phone, months = 2, identifier } = req.body || {};
+    const searchKey = (id || identifier || casePaperNo || phone || '').toString().trim();
 
-    let patient = await Patient.findByPk(id);
-    if (!patient) {
-      const cleanPhone = (phone || id || '').replace(/\D/g, '');
-      const searchCaseNo = casePaperNo || id;
+    let patient = searchKey ? await Patient.findByPk(searchKey) : null;
+    if (!patient && searchKey) {
+      const cleanPhone = (phone || searchKey || '').replace(/\D/g, '');
+      const searchCaseNo = casePaperNo || searchKey;
       patient = await Patient.findOne({
         where: {
           [Op.or]: [
             ...(searchCaseNo ? [{ casePaperNo: searchCaseNo }] : []),
             ...(cleanPhone && cleanPhone.length >= 4 ? [{ phone: cleanPhone }] : []),
-            { name: id }
+            { name: searchKey }
           ]
         }
       });
