@@ -87,7 +87,7 @@ export default function PatientRegistrationForm({
     chiefComplaint: '',
     casePaperNo: '',
     receptionNotes: '',
-    pastMedicalHistory: 'No known allergies',
+    pastMedicalHistory: '',
     allergies: '',
     paymentStatus: 'unpaid' as 'paid' | 'unpaid',
     paymentMode: 'cash' as 'cash' | 'online',
