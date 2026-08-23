@@ -13,7 +13,7 @@ interface QueueViewProps {
   onSelectPatient: (queueItem: QueueItem, patient: Patient) => void;
 }
 
-const EMPTY_FORM = { name: '', age: '', gender: 'M' as 'M' | 'F' | 'Other', phone: '', village: '' };
+const EMPTY_FORM = { name: '', age: '', gender: 'M' as 'M' | 'F' | 'Other', phone: '', village: '', complaint: '' };
 
 export default function QueueView({ queue, patients, onSelectPatient }: QueueViewProps) {
   const { deletePatient, registerAndEnqueue, patients: allPatients, refreshPatients } = useClinic();
@@ -50,7 +50,7 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
         gender: regForm.gender || 'M',
         phone: regForm.phone.replace(/\D/g, ''),
         village: (regForm.village || '').trim(),
-        complaint: 'Walk-in consultation',
+        complaint: (regForm.complaint || '').trim(),
       };
       const result = await registerAndEnqueue(patientData, duplicatePatient || undefined);
       setRegForm(EMPTY_FORM);
@@ -344,7 +344,7 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
               gender: (item.gender || 'M') as 'M' | 'F',
               phone: item.phone || '',
               village: item.village || '',
-              pastHistory: 'No known allergies',
+              pastHistory: '',
               allergies: '',
               pastVisits: []
             };
@@ -463,7 +463,7 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                   gender: (item.gender || 'M') as 'M' | 'F',
                   phone: item.phone || '',
                   village: item.village || '',
-                  pastHistory: 'No known allergies',
+                  pastHistory: '',
                   allergies: '',
                   pastVisits: []
                 };
