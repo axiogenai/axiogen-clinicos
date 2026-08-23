@@ -396,7 +396,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
         gender: patientData.gender || 'M',
         phone: cleanPhone,
         village: (patientData.village || '').trim(),
-        pastHistory: patientData.pastHistory || 'No known allergies',
+        pastHistory: patientData.pastHistory || '',
         allergies: patientData.allergies || '',
         pastVisits: [],
         casePaperNo: customCasePaperNo,
