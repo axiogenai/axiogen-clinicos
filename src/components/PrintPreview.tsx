@@ -45,12 +45,12 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
       .join('\n');
     const html = el.innerHTML;
     const iframe = document.createElement('iframe');
-    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:220mm;height:270mm;border:0;visibility:hidden;';
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:210mm;height:297mm;border:0;visibility:hidden;';
     document.body.appendChild(iframe);
     const doc = iframe.contentDocument || iframe.contentWindow?.document;
     if (!doc) { document.body.removeChild(iframe); window.print(); return; }
     doc.open();
-    doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8">${styles}<style>@page{size:220mm 270mm;margin:0}html,body{margin:0;padding:0;width:220mm;height:270mm;background:#fff;overflow:hidden}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}.rx-paper-root{width:220mm!important;min-width:220mm!important;max-width:220mm!important;height:270mm!important;min-height:270mm!important;max-height:270mm!important;margin:0!important;padding:0!important;overflow:hidden!important;box-sizing:border-box!important}</style></head><body><div class="rx-paper-root print-page" style="width:220mm;height:270mm;overflow:hidden;box-sizing:border-box;margin:0;padding:0;background:#fff">${html}</div></body></html>`);
+    doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8">${styles}<style>@page{size:A4 portrait;margin:0}@page{size:210mm 297mm;margin:0}html,body{margin:0;padding:0;width:210mm;height:297mm;background:#fff;overflow:hidden}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}.rx-paper-root{width:210mm!important;min-width:210mm!important;max-width:210mm!important;height:297mm!important;min-height:297mm!important;max-height:297mm!important;margin:0!important;padding:0!important;overflow:hidden!important;box-sizing:border-box!important}</style></head><body><div class="rx-paper-root print-page" style="width:210mm;height:297mm;overflow:hidden;box-sizing:border-box;margin:0;padding:0;background:#fff">${html}</div></body></html>`);
     doc.close();
     setTimeout(() => {
       try {
