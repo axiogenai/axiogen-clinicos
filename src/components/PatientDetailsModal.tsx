@@ -23,7 +23,7 @@ export default function PatientDetailsModal({ queueItem, patient, onClose }: Pro
     village: queueItem.village || patient?.village || '',
     complaint: queueItem.complaint || '',
     notes: queueItem.notes || '',
-    pastHistory: patient?.pastHistory || 'No known allergies',
+    pastHistory: patient?.pastHistory || '',
     allergies: patient?.allergies || ''
   });
 
@@ -53,7 +53,7 @@ export default function PatientDetailsModal({ queueItem, patient, onClose }: Pro
       village: queueItem.village || patient?.village || '',
       complaint: queueItem.complaint || '',
       notes: queueItem.notes || '',
-      pastHistory: patient?.pastHistory || 'No known allergies',
+      pastHistory: patient?.pastHistory || '',
       allergies: patient?.allergies || ''
     });
     setIsEditing(false);
