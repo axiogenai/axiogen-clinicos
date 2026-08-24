@@ -19,7 +19,7 @@ export interface ClinicSettings {
   headerBgColor: string;
   headerTextColor: string;
   pharmacyInfo: string;
-  templateVariant?: 'dermatology' | 'general';
+  templateVariant?: 'a4' | 'dermatology' | 'general';
   customFrequencies?: string[];
   sections: {
     showPastHistory: boolean;
@@ -58,9 +58,9 @@ export const defaultClinicSettings: ClinicSettings = {
   openingHours: "सकाळी १० ते सायं. ६ पर्यंत",
   closedDay: "दर रविवारी बंद राहिल.",
   headerBgColor: "#7CB342", // Clinic Brand Green
-  headerTextColor: "#FFFFFF",
-  pharmacyInfo: "",
-  templateVariant: "dermatology",
+  headerTextColor: "#ffffff",
+  pharmacyInfo: "वैद्यकीय सल्ल्यानुसार औषधे बदलू नयेत. औषधे बालकांच्या संपर्कापासून दूर ठेवावीत.",
+  templateVariant: "a4",
   customFrequencies: [],
   sections: {
     showPastHistory: true,
