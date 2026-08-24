@@ -65,7 +65,7 @@ export const api = {
   searchPatients: (q: string) => apiRequest<any[]>(`/patients/search?q=${encodeURIComponent(q)}`),
   createPatient: (patient: any) => apiRequest<any>('/patients', { method: 'POST', body: JSON.stringify(patient) }),
   updatePatient: (id: string, patient: any) => apiRequest<any>(`/patients/${id}`, { method: 'PUT', body: JSON.stringify(patient) }),
-  renewPatient: (id: string, years = 1) => apiRequest<any>(`/patients/${id}/renew`, { method: 'POST', body: JSON.stringify({ years }) }),
+  renewPatient: (id: string, months = 2) => apiRequest<any>(`/patients/${id}/renew`, { method: 'POST', body: JSON.stringify({ months }) }),
   deletePatient: (id: string) => apiRequest<any>(`/patients/${id}`, { method: 'DELETE' }),
 
   // Queue

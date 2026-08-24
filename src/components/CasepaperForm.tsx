@@ -965,7 +965,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                   value={casePaper.allergies}
                   onChange={(e) => onUpdateCasePaper({ ...casePaper, allergies: e.target.value })}
                   className="form-input border-red-200 bg-[#fff5f5] focus:border-red-400 text-red-800 font-medium"
-                  placeholder="No known drug allergies (NKDA)"
+                  placeholder="Enter drug allergies or None..."
                   rows={2}
                 />
               </div>

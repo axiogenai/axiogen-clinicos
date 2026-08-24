@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useClinic } from '../context/ClinicContext';
 import { api } from '../api/client';
-import { Calendar, CalendarDays, BarChart2, Search, Printer, UserCheck, Clock, CheckCircle2, FileSpreadsheet, Send, MessageSquare, Save, FileText, X, Pill, Edit3, Trash2, ChevronDown, Check, UserMinus } from 'lucide-react';
+import { Calendar, CalendarDays, BarChart2, Search, Printer, UserCheck, Clock, CheckCircle2, FileSpreadsheet, Send, MessageSquare, Save, FileText, X, Pill, Edit3, Trash2, UserMinus, ChevronDown, Check } from 'lucide-react';
 import PrintPreview from './PrintPreview';
 import CasepaperForm from './CasepaperForm';
 import ConfirmModal from './ConfirmModal';
@@ -9,18 +9,6 @@ import type { Patient } from '../data/patients';
 import type { CasePaper } from '../types';
 import { calculateMedicineCount } from '../utils/countCalculator';
 import * as XLSX from 'xlsx';
-
-const formatOpdNo = (queueId: string | undefined, index: number) => {
-  if (!queueId) return String(index + 1).padStart(11, '0');
-  const digits = queueId.replace(/\D/g, '');
-  if (digits.length >= 12) {
-    return String(index + 1).padStart(11, '0');
-  }
-  if (digits.length > 0 && digits.length <= 11) {
-    return digits.padStart(11, '0');
-  }
-  return String(index + 1).padStart(11, '0');
-};
 
 // Custom Styled Dropdown Component (Replaces ugly native browser select)
 function CustomDropdown<T extends string | number>({
@@ -91,6 +79,12 @@ function CustomDropdown<T extends string | number>({
     </div>
   );
 }
+
+export const formatOpdNo = (num: number | string): string => {
+  const n = parseInt(String(num).replace(/\D/g, ''), 10);
+  if (isNaN(n) || n <= 0) return '00000000001';
+  return String(n).padStart(11, '0');
+};
 
 export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean } = {}) {
   const { user, queue, patients, clinicSettings, setToast, deletePatient, removeFromQueue } = useClinic();
@@ -211,7 +205,8 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
       const itemDate = (item as any).date || (item as any).createdAt?.split('T')[0] || selectedDate;
       return {
         srNo: index + 1,
-        opdNo: formatOpdNo(item.queueId, index),
+        opdNo: String(index + 1).padStart(11, '0'),
+        rawQueueId: item.queueId,
         casePaperNo: (item as any).casePaperId || patient?.id || '-',
         time: item.timeAdded || '09:00 AM',
         date: itemDate,
@@ -330,7 +325,7 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
     const exportData = monthlyData.records.map((item: any, index: number) => ({
       'SR No': index + 1,
       'Date': item.date,
-      'OPD No': item.opdNo || item.queueId || `OPD-${index + 1}`,
+      'OPD No': String(index + 1).padStart(11, '0'),
       'Time': item.timeAdded || '-',
       'Patient Name': item.patientName,
       'Age/Gender': `${item.age || '-'} Y / ${item.gender || 'M'}`,
@@ -1055,7 +1050,7 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
                     <tr key={r.id || idx} className="hover:bg-[#faf9f6] transition-colors group">
                       <td className="p-3 pl-6 font-mono font-bold text-[#656056]">{idx + 1}</td>
                       <td className="p-3 font-mono font-semibold text-[#1a1c1a]">{r.date}</td>
-                      <td className="p-3 font-mono text-[#047857] font-bold">{idx + 1}</td>
+                      <td className="p-3 font-mono text-[#047857] font-bold">{String(idx + 1).padStart(11, "0")}</td>
                       <td className="p-3 font-bold text-[#1a1c1a]">{r.patientName}</td>
                       <td className="p-3 text-[#656056]">{r.age || '-'} / {r.gender || 'M'}</td>
                       <td className="p-3 font-mono text-[#4b463e]">{r.phone || '-'}</td>
@@ -1222,44 +1217,47 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
               </div>
 
               <div className="flex items-center justify-between pt-2 border-t border-[#e4e2e1] gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleOpenEMR(item)}
-                  className="px-2.5 py-1.5 bg-[#ecfdf5] hover:bg-[#dcfce7] text-[#047857] rounded-xl border border-[#a7f3d0] inline-flex items-center gap-1 text-xs font-bold transition-all shadow-sm active:scale-95"
-                >
-                  <FileText className="w-3.5 h-3.5 text-[#047857]" />
-                  <span>EMR</span>
-                </button>
-
                 <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEMR(item)}
+                    className="px-2.5 py-1.5 bg-[#ecfdf5] hover:bg-[#dcfce7] text-[#047857] rounded-xl border border-[#a7f3d0] inline-flex items-center gap-1 text-xs font-bold transition-all shadow-sm active:scale-95"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-[#047857]" />
+                    <span>EMR</span>
+                  </button>
+
                   {item.phone && item.phone.length >= 10 && (
                     <button
                       type="button"
                       onClick={() => handleSendSingleWhatsApp(item.name, item.phone, selectedDate)}
-                      className="p-1.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#1da851] rounded-lg transition-colors border border-[#25D366]/30 inline-flex items-center gap-1 text-xs font-bold"
+                      className="px-2.5 py-1.5 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#1da851] rounded-xl transition-colors border border-[#25D366]/30 inline-flex items-center gap-1 text-xs font-bold"
                     >
                       <Send className="w-3.5 h-3.5" />
+                      <span>WA</span>
                     </button>
                   )}
+                </div>
 
+                <div className="flex items-center gap-1">
                   <button
                     type="button"
                     onClick={() => {
                       setConfirmModal({
                         isOpen: true,
                         title: 'Remove from Queue',
-                        message: `Remove '${item.name}' from today's active OPD queue? (Patient data will remain safe in database)`,
-                        confirmText: 'Remove Queue',
+                        message: `Remove '${item.name}' (OPD No: ${item.opdNo}) from today's queue? (Patient records stay safe in database).`,
+                        confirmText: 'Remove from Queue',
                         isDestructive: false,
                         onConfirm: () => {
-                          removeFromQueue(item.opdNo || item.name);
-                          setFetchedQueue(prev => prev.filter(q => q.queueId !== item.opdNo && q.name !== item.name));
-                          setToast({ type: 'info', message: `Removed '${item.name}' from queue.` });
+                          removeFromQueue((item as any).rawQueueId || item.opdNo || item.name);
+                          setFetchedQueue(prev => prev.filter(q => q.queueId !== (item as any).rawQueueId && q.queueId !== item.opdNo && q.name !== item.name));
+                          setToast({ type: 'success', message: `Removed '${item.name}' from queue.` });
                         }
                       });
                     }}
-                    className="p-1.5 bg-[#fefce8] hover:bg-[#fef9c3] text-[#ca8a04] rounded-lg border border-[#fef08a] transition-all shadow-sm"
-                    title="Remove from Queue Only"
+                    className="p-1.5 bg-[#fffbeb] text-[#b45309] rounded-xl border border-[#fde68a]"
+                    title="Remove from Queue"
                   >
                     <UserMinus className="w-3.5 h-3.5" />
                   </button>
@@ -1270,22 +1268,22 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
                       setConfirmModal({
                         isOpen: true,
                         title: 'Delete from Database',
-                        message: `Permanently delete '${item.name}' and all consultation history from the Database?`,
-                        confirmText: 'Delete Everywhere',
+                        message: `Permanently delete '${item.name}' from database register and queue?`,
+                        confirmText: 'Delete from DB',
                         isDestructive: true,
                         onConfirm: () => {
-                          removeFromQueue(item.opdNo || item.name);
-                          setFetchedQueue(prev => prev.filter(q => q.queueId !== item.opdNo && q.name !== item.name));
+                          removeFromQueue((item as any).rawQueueId || item.opdNo || item.name);
+                          setFetchedQueue(prev => prev.filter(q => q.queueId !== (item as any).rawQueueId && q.queueId !== item.opdNo && q.name !== item.name));
                           const targetPatient = patients.find(p => p.name === item.name || p.phone === item.phone);
                           if (targetPatient) {
                             deletePatient(targetPatient.id);
                           }
-                          setToast({ type: 'info', message: `Permanently deleted '${item.name}' from database.` });
+                          setToast({ type: 'info', message: `Deleted '${item.name}' from database.` });
                         }
                       });
                     }}
-                    className="p-1.5 bg-[#fef2f2] hover:bg-[#fee2e2] text-[#dc2626] rounded-lg border border-[#fecaca] transition-all shadow-sm"
-                    title="Delete from Database and Queue"
+                    className="p-1.5 bg-[#fef2f2] text-[#dc2626] rounded-xl border border-[#fecaca]"
+                    title="Delete from Database"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -1317,7 +1315,7 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
                 <th className="text-center w-28">Status</th>
                 <th className="text-center w-28">EMR Casepaper</th>
                 <th className="text-right w-24">WhatsApp</th>
-                <th className="text-center w-16">Delete</th>
+                <th className="text-center w-24">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -1386,41 +1384,42 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
                   </td>
                   <td className="text-center">
                     <div className="flex items-center justify-center gap-1.5">
+                      {/* 1. Remove from Queue Only */}
                       <button
                         type="button"
                         onClick={() => {
                           setConfirmModal({
                             isOpen: true,
                             title: 'Remove from Queue',
-                            message: `Remove '${item.name}' from today's active OPD queue? (Patient data will remain safe in database)`,
-                            confirmText: 'Remove Queue',
+                            message: `Remove '${item.name}' (OPD No: ${item.opdNo}) from today's consultation queue? (Patient profile and past medical records will remain safely saved in the database).`,
+                            confirmText: 'Remove from Queue',
                             isDestructive: false,
                             onConfirm: () => {
-                              removeFromQueue(item.opdNo || item.name);
-                              setFetchedQueue(prev => prev.filter(q => q.queueId !== item.opdNo && q.name !== item.name));
-                              setToast({ type: 'info', message: `Removed '${item.name}' from queue.` });
+                              removeFromQueue((item as any).rawQueueId || item.opdNo || item.name);
+                              setFetchedQueue(prev => prev.filter(q => q.queueId !== (item as any).rawQueueId && q.queueId !== item.opdNo && q.name !== item.name));
+                              setToast({ type: 'success', message: `Removed '${item.name}' from today's queue.` });
                             }
                           });
                         }}
-                        className="p-1.5 bg-[#fefce8] hover:bg-[#fef9c3] text-[#ca8a04] rounded-lg border border-[#fef08a] transition-all shadow-sm cursor-pointer"
-                        title="Remove from Queue Only (Keep in DB)"
+                        className="p-1.5 bg-[#fffbeb] hover:bg-[#fef3c7] text-[#b45309] rounded-lg border border-[#fde68a] transition-all shadow-sm cursor-pointer"
+                        title="Remove from Today's Queue (Keep in Database)"
                       >
                         <UserMinus className="w-3.5 h-3.5" />
                       </button>
 
+                      {/* 2. Permanently Delete from DB & Queue */}
                       <button
                         type="button"
                         onClick={() => {
                           setConfirmModal({
                             isOpen: true,
                             title: 'Delete from Database',
-                            message: `Permanently delete '${item.name}' (OPD No: ${item.opdNo}) and consultation history from the Database?`,
-                            confirmText: 'Delete Everywhere',
+                            message: `Permanently delete '${item.name}' (OPD No: ${item.opdNo}) from database register and queue?`,
+                            confirmText: 'Delete from DB',
                             isDestructive: true,
                             onConfirm: () => {
-                              removeFromQueue(item.opdNo || item.name);
-                              setFetchedQueue(prev => prev.filter(q => q.queueId !== item.opdNo && q.name !== item.name));
-                              
+                              removeFromQueue((item as any).rawQueueId || item.opdNo || item.name);
+                              setFetchedQueue(prev => prev.filter(q => q.queueId !== (item as any).rawQueueId && q.queueId !== item.opdNo && q.name !== item.name));
                               const targetPatient = patients.find(p => p.name === item.name || p.phone === item.phone);
                               if (targetPatient) {
                                 deletePatient(targetPatient.id);
@@ -1430,7 +1429,7 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
                           });
                         }}
                         className="p-1.5 bg-[#fef2f2] hover:bg-[#fee2e2] text-[#dc2626] rounded-lg border border-[#fecaca] transition-all shadow-sm cursor-pointer"
-                        title="Permanently Delete Record from DB and Queue"
+                        title="Permanently Delete from Database & Queue"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

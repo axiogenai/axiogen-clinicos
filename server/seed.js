@@ -34,7 +34,7 @@ async function seedDatabase() {
       title: 'MD (Ayu) - D.Dermatology (Ay.)',
       subTitle: '(MUHS)',
       regNo: 'Reg. No. I-87218-A',
-      specialty: 'त्वचारोग व सौंदर्य विशेष तज्ज्ञ'
+      specialty: 'त्वचारोग व सौंदर्य विशेष तज्ञ'
     });
 
     const doc2 = await User.create({
@@ -47,7 +47,7 @@ async function seedDatabase() {
       title: 'BHMS, FCHD (MUHS)',
       subTitle: '(Consultant Homeopathy Dermatologist)',
       regNo: 'Reg. No. 73338',
-      specialty: 'त्वचारोग तज्ज्ञ'
+      specialty: 'त्वचारोग तज्ञ'
     });
 
     const doc3 = await User.create({
@@ -60,7 +60,7 @@ async function seedDatabase() {
       title: 'MD (Ayu) - D.Dermatology (Ay.)',
       subTitle: '(MUHS)',
       regNo: 'Reg. No. I-87218-A',
-      specialty: 'त्वचारोग व सौंदर्य विशेष तज्ज्ञ'
+      specialty: 'त्वचारोग व सौंदर्य विशेष तज्ञ'
     });
 
     const receptionist = await User.create({
@@ -97,7 +97,7 @@ async function seedDatabase() {
         phone: '9822012345',
         village: 'Peth Vadgaon',
         pastHistory: 'Hypertension (Controlled on Telmisartan 40mg)',
-        allergies: 'No known drug allergies (NKDA)'
+        allergies: ''
       },
       {
         id: 'PT0002',

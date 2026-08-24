@@ -16,14 +16,42 @@ interface PrintTemplateProps {
 export const getPatientLabels = (lang: PrintLanguage = 'marathi') => {
   switch (lang) {
     case 'english':
-      return { name: 'Patient Name :', date: 'Date :', village: 'Address :', age: 'Age / Sex :' };
+      return { 
+        name: 'Patient Name :', 
+        date: 'Date :', 
+        village: 'Address :', 
+        age: 'Age / Sex :',
+        followUp: 'Follow up - ',
+        patientSignature: 'Patient Signature - ',
+      };
     case 'hindi':
-      return { name: 'मरीज का नाम :', date: 'दिनांक :', village: 'पता / गांव :', age: 'आयु / लिंग :' };
+      return { 
+        name: 'मरीज का नाम :', 
+        date: 'दिनांक :', 
+        village: 'पता / गांव :', 
+        age: 'आयु / लिंग :',
+        followUp: 'पुनर्भेट - ',
+        patientSignature: 'मरीज के हस्ताक्षर - ',
+      };
     case 'kannada':
-      return { name: 'ರೋಗಿಯ ಹೆಸರು :', date: 'ದಿನಾಂಕ :', village: 'ಸ್ಥಳ :', age: 'ವಯಸ್ಸು / ಲಿಂಗ :' };
+      return { 
+        name: 'ರೋಗಿಯ ಹೆಸರು :', 
+        date: 'ದಿನಾಂಕ :', 
+        village: 'ಸ್ಥಳ :', 
+        age: 'ವಯಸ್ಸು / ಲಿಂಗ :',
+        followUp: 'ಮರುಭೇಟಿ - ',
+        patientSignature: 'ರೋಗಿಯ ಸಹಿ - ',
+      };
     case 'marathi':
     default:
-      return { name: 'पेशंटचे नाव :', date: 'दिनांक :', village: 'गाव :', age: 'वय / लिंग :' };
+      return { 
+        name: 'पेशंटचे नाव :', 
+        date: 'दिनांक :', 
+        village: 'गाव :', 
+        age: 'वय / लिंग :',
+        followUp: 'पुढील भेट - ',
+        patientSignature: 'पेशंटची सही - ',
+      };
   }
 };
 export const getTableHeaders = (lang: PrintLanguage = 'marathi') => {
@@ -139,6 +167,22 @@ export const toMarathiDuration = (dur?: string): string => {
     .replace(/continuous|till next visit/gi, 'पुढील भेटीपर्यंत');
   return toDevanagariDigits(translated);
 };
+const cleanClinicalText = (text?: string): string => {
+  if (!text) return '';
+  const trimmed = text.trim();
+  if (
+    /^no known allergies$/i.test(trimmed) ||
+    /^no known drug allergies/i.test(trimmed) ||
+    /^walk-in consultation$/i.test(trimmed) ||
+    /^walk in consultation$/i.test(trimmed) ||
+    /^walk-in$/i.test(trimmed) ||
+    /^walk in$/i.test(trimmed)
+  ) {
+    return '';
+  }
+  return text;
+};
+
 export default function PrintTemplate({ patient, casePaper, clinicSettings, hideHeader = false, language = 'marathi', printOnStationery = false }: PrintTemplateProps) {
   const labels = getPatientLabels(language);
   const headers = getTableHeaders(language);
@@ -157,7 +201,15 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
       const diffTime = dateObj.getTime() - today.getTime();
       const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
       if (diffDays > 0) {
-        return `${diffDays} Days (${formatted})`;
+        if (language === 'marathi') {
+          return `${diffDays} दिवस (${formatted})`;
+        } else if (language === 'hindi') {
+          return `${diffDays} दिन (${formatted})`;
+        } else if (language === 'kannada') {
+          return `${diffDays} ದಿನಗಳು (${formatted})`;
+        } else {
+          return `${diffDays} Days (${formatted})`;
+        }
       }
       return formatted;
     } catch (e) {
@@ -205,524 +257,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
     regNo: doc2Raw?.regNo || 'Reg. No. I-87218-A',
     specialty: doc2Raw?.specialty || 'त्वचारोग व सौंदर्य विशेष तज्ञ',
   };
-  const isA4 = (templateVariant || 'a4') === 'a4';
   const isGeneralPad = templateVariant === 'general';
-
-  // ═══════════════════════════════════════════════════════════════
-  // VARIANT 1: NEW DEDICATED A4 TEMPLATE (DEFAULT)
-  // Perfectly calibrated for 210mm x 297mm ISO A4 paper
-  // ═══════════════════════════════════════════════════════════════
-  if (isA4) {
-    return (
-      <div
-        className="rx-paper-root rx-a4-template"
-        style={{
-          boxSizing: 'border-box',
-          width: '210mm',
-          minWidth: '210mm',
-          maxWidth: '210mm',
-          height: '297mm',
-          minHeight: '297mm',
-          maxHeight: '297mm',
-          backgroundColor: '#ffffff',
-          fontFamily: "'Inter', sans-serif",
-          color: '#333',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'flex-start',
-          fontSize: '11px',
-          lineHeight: 1.15,
-          overflow: 'hidden',
-          margin: 0,
-          padding: 0,
-          pageBreakAfter: 'avoid' as any,
-          pageBreakInside: 'avoid' as any,
-        }}
-      >
-        {/* ─── A4 HEADER (56mm H) ─── */}
-        <div
-          className="clinic-print-header"
-          style={{
-            height: '56mm',
-            minHeight: '56mm',
-            maxHeight: '56mm',
-            paddingTop: '2.5mm',
-            paddingLeft: '10mm',
-            paddingRight: '10mm',
-            boxSizing: 'border-box',
-            visibility: (hideHeader || printOnStationery) ? 'hidden' : 'visible',
-          }}
-        >
-          {/* Clinic Brand & Logo Row */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '3px' }}>
-            {clinicSettings.logoUrl ? (
-              <img
-                src={clinicSettings.logoUrl}
-                alt="Clinic Logo"
-                style={{
-                  height: '54px',
-                  width: 'auto',
-                  objectFit: 'contain',
-                  mixBlendMode: 'multiply',
-                  display: 'block',
-                }}
-              />
-            ) : (
-              <img
-                src="/logo-symbol.png"
-                alt="Clinic Logo"
-                style={{
-                  height: '54px',
-                  width: 'auto',
-                  objectFit: 'contain',
-                  display: 'block',
-                }}
-              />
-            )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span
-                style={{
-                  fontSize: '44px',
-                  fontWeight: 700,
-                  color: '#93231f',
-                  fontFamily: "'DV-TTYogesh', 'Shivaji', 'Amita', 'Karma', serif",
-                  lineHeight: 1,
-                }}
-              >
-                {clinicNameHi || 'शिनगारे'}
-              </span>
-              <span
-                style={{
-                  fontSize: '22px',
-                  fontWeight: 700,
-                  color: '#3b2c63',
-                  fontFamily: "'Mukta', 'Poppins', sans-serif",
-                  lineHeight: 1,
-                  paddingTop: '4px',
-                }}
-              >
-                {(!clinicNameEn || clinicNameEn.toLowerCase().includes('clinic'))
-                  ? 'स्किन & कॉस्मेटीक क्लिनिक'
-                  : clinicNameEn}
-              </span>
-            </div>
-          </div>
-
-          {/* Doctors & Timings Row */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: '0 4px',
-              marginBottom: '3px',
-              fontSize: '11px',
-              lineHeight: 1.15,
-            }}
-          >
-            {/* Doctor 1 (Left) */}
-            <div style={{ textAlign: 'left', width: '33%' }}>
-              <div style={{ color: '#29558c', fontWeight: 700, fontSize: '17px', fontFamily: "'Mukta', sans-serif", marginBottom: '1px' }}>
-                {doc1.name}
-              </div>
-              {doc1.title && <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#222' }}>{doc1.title}</div>}
-              {doc1.subTitle && <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#222', whiteSpace: 'nowrap' }}>{doc1.subTitle}</div>}
-              {doc1.regNo && <div style={{ fontSize: '9.5px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{doc1.regNo}</div>}
-              {doc1.specialty && <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '10.5px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{(doc1.specialty || '').replace('तज्ज्ञ', 'तज्ञ').replace('विशेषज्ञ', 'विशेष तज्ञ')}</div>}
-            </div>
-
-            {/* Timings (Center) */}
-            <div
-              style={{
-                width: '33%',
-                textAlign: 'center',
-                fontFamily: "Arial, 'Helvetica Neue', Helvetica, sans-serif",
-                fontWeight: 500,
-                fontSize: '11px',
-                color: '#222',
-                lineHeight: 1.2,
-              }}
-            >
-              <div style={{ whiteSpace: 'pre-line' }}>
-                {'✤ वेळ : ' + (openingHours || 'सकाळी १० ते सायं. ६ पर्यंत') + '\n✤ ' + (closedDay || 'दर रविवारी बंद राहिल.')}
-              </div>
-              <div style={{ fontWeight: 700, fontFamily: "Arial, 'Helvetica Neue', Helvetica, sans-serif", marginTop: '2px', fontSize: '13px' }}>
-                Mo. {phone || '7249727104 / 9657727104'}
-              </div>
-            </div>
-
-            {/* Doctor 2 (Right) */}
-            <div style={{ textAlign: 'right', width: '33%' }}>
-              <div style={{ color: '#29558c', fontWeight: 700, fontSize: '18px', fontFamily: "'Mukta', sans-serif", marginBottom: '1px' }}>
-                {doc2.name}
-              </div>
-              {doc2.title && <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#222' }}>{doc2.title}</div>}
-              {doc2.subTitle && <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#222', whiteSpace: 'nowrap' }}>{doc2.subTitle}</div>}
-              {doc2.regNo && <div style={{ fontSize: '9.5px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{doc2.regNo}</div>}
-              {doc2.specialty && <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '10.5px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{(doc2.specialty || '').replace('तज्ज्ञ', 'तज्ञ').replace('विशेषज्ञ', 'विशेष तज्ञ')}</div>}
-            </div>
-          </div>
-
-          {/* Green Address Strip */}
-          <div
-            style={{
-              background: headerBgColor || '#89b740',
-              color: '#222',
-              textAlign: 'center',
-              padding: '2.5px 0',
-              fontFamily: "'Mukta', sans-serif",
-              fontSize: '12.5px',
-              fontWeight: 700,
-            }}
-          >
-            {address || 'एस.टी.स्टँड जवळ, राजाराम चित्र मंदिर समोर, कल्याणी बझार वरती गाळा नं. 6, पेठ वडगांव'}
-          </div>
-        </div>
-
-        {/* ─── A4 PATIENT DEMOGRAPHICS (20mm H) ─── */}
-        <div
-          style={{
-            height: '20mm',
-            minHeight: '20mm',
-            maxHeight: '20mm',
-            position: 'relative',
-            boxSizing: 'border-box',
-            padding: '2.5mm 10mm 1.5mm 10mm',
-            borderBottom: printOnStationery ? 'none' : '2px solid #a53b3b',
-            fontFamily: "'Mukta', sans-serif",
-            fontSize: '13.5px',
-            fontWeight: 600,
-          }}
-        >
-          {printOnStationery ? (
-            <div style={{ position: 'relative', width: '100%', height: '100%', fontWeight: 700, color: '#111' }}>
-              <div style={{ position: 'absolute', top: '1.0mm', left: '20mm', fontSize: '13.5px' }}>{patient.name}</div>
-              <div style={{ position: 'absolute', top: '1.0mm', left: '138.5mm', fontSize: '13px' }}>{formatDate(casePaper.date)}</div>
-              <div style={{ position: 'absolute', top: '7.0mm', left: '20mm', fontSize: '13px' }}>{patient.village || ''}</div>
-              <div style={{ position: 'absolute', top: '7.2mm', left: '133mm', fontSize: '13px' }}>{patient.age} Yrs / {patient.gender === 'M' ? 'Male' : 'Female'}</div>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', width: '100%', height: '100%' }}>
-              {/* Row 1: Name & Date */}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', width: '100%' }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flex: '1 1 64%', minWidth: 0 }}>
-                  <span style={{ whiteSpace: 'nowrap', fontSize: '13px', fontWeight: 700 }}>{labels.name}</span>
-                  <span style={{ flex: 1, borderBottom: '1.5px solid #333', paddingLeft: '4px', paddingBottom: '1px', fontWeight: 800, fontSize: '14px', color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {patient.name}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flex: '0 0 34%', minWidth: 0 }}>
-                  <span style={{ whiteSpace: 'nowrap', fontSize: '13px', fontWeight: 700 }}>{labels.date}</span>
-                  <span style={{ flex: 1, borderBottom: '1.5px solid #333', paddingLeft: '4px', paddingBottom: '1px', fontWeight: 800, fontSize: '13.5px', color: '#111', whiteSpace: 'nowrap' }}>
-                    {formatDate(casePaper.date)}
-                  </span>
-                </div>
-              </div>
-              {/* Row 2: Village & Age/Sex */}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', width: '100%' }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flex: '1 1 64%', minWidth: 0 }}>
-                  <span style={{ whiteSpace: 'nowrap', fontSize: '13px', fontWeight: 700 }}>{labels.village}</span>
-                  <span style={{ flex: 1, borderBottom: '1.5px solid #333', paddingLeft: '4px', paddingBottom: '1px', fontWeight: 700, fontSize: '13.5px', color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {patient.village || ''}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flex: '0 0 34%', minWidth: 0 }}>
-                  <span style={{ whiteSpace: 'nowrap', fontSize: '13px', fontWeight: 700 }}>{labels.age}</span>
-                  <span style={{ flex: 1, borderBottom: '1.5px solid #333', paddingLeft: '4px', paddingBottom: '1px', fontWeight: 700, fontSize: '13.5px', color: '#111', whiteSpace: 'nowrap' }}>
-                    {patient.age} Yrs / {patient.gender === 'M' ? 'Male' : 'Female'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* ─── A4 MAIN BODY AREA (197mm H) ─── */}
-        <div style={{ display: 'flex', height: '197mm', width: '210mm', overflow: printOnStationery ? 'visible' : 'hidden', borderTop: printOnStationery ? 'none' : '3px double #a53b3b' }}>
-          {/* ── Left Sidebar (48mm W) ── */}
-          <aside
-            style={{
-              width: '48mm',
-              minWidth: '48mm',
-              maxWidth: '48mm',
-              borderRight: printOnStationery ? 'none' : '2px solid #a53b3b',
-              padding: '3mm 4mm',
-              boxSizing: 'border-box',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              fontFamily: "'Inter', sans-serif",
-              position: 'relative',
-              visibility: printOnStationery ? 'hidden' : 'visible',
-            }}
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {/* Past History */}
-              <div>
-                <div style={{ border: '1px solid #93231f', padding: '1px 3px', fontSize: '9px', fontWeight: 700, color: '#93231f', textAlign: 'center', width: 'fit-content' }}>
-                  Past History
-                </div>
-                <div style={{ fontSize: '8px', color: '#666' }}>(DM/HTN/Thyroid/Autoimmune)</div>
-                {patient.pastHistory && (
-                  <div style={{ fontSize: '9.5px', fontWeight: 600, color: '#111', marginTop: '2px' }}>{patient.pastHistory}</div>
-                )}
-                <div style={{ borderBottom: '1px solid #777', width: '100%', marginTop: '4px' }} />
-              </div>
-
-              {/* Drug History / Allergy History */}
-              <div>
-                <div style={{ border: '1px solid #93231f', padding: '1px 3px', fontSize: '9px', fontWeight: 700, color: '#93231f', textAlign: 'center', width: 'fit-content' }}>
-                  Drug History/Allergy History
-                </div>
-                {patient.allergies && (
-                  <div style={{ fontSize: '9.5px', fontWeight: 600, color: '#111', marginTop: '2px' }}>{patient.allergies}</div>
-                )}
-                <div style={{ borderBottom: '1px solid #777', width: '100%', marginTop: '4px' }} />
-              </div>
-
-              {/* Investigations Advised */}
-              <div>
-                <div style={{ border: '1px solid #93231f', padding: '1px 3px', fontSize: '9px', fontWeight: 700, color: '#93231f', textAlign: 'center', width: 'fit-content' }}>
-                  Investigations Advised
-                </div>
-                <div style={{ fontSize: '9px', color: '#111', fontWeight: 600, marginTop: '2px', lineHeight: 1.2 }}>
-                  <div>▪ CBC ▪ LFT ▪ B&LⓇ</div>
-                  <div>▪ Serum Creatinine</div>
-                </div>
-                {casePaper.investigationsAdvised && casePaper.investigationsAdvised.length > 0 && (
-                  <div style={{ fontSize: '9px', fontWeight: 600, color: '#111', marginTop: '2px' }}>
-                    {casePaper.investigationsAdvised.map((inv, idx) => (
-                      <div key={idx}>▪ {inv}</div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Provisional / Final Diagnosis */}
-              <div>
-                <div style={{ border: '1px solid #93231f', padding: '1px 3px', fontSize: '9px', fontWeight: 700, color: '#93231f', textAlign: 'center', width: 'fit-content' }}>
-                  Provisional/Final Diagnosis
-                </div>
-                {casePaper.complaint && (
-                  <div style={{ fontSize: '9.5px', fontWeight: 600, color: '#111', marginTop: '2px' }}>{casePaper.complaint}</div>
-                )}
-                <div style={{ borderBottom: '1px solid #777', width: '100%', marginTop: '4px' }} />
-              </div>
-
-              {/* Patient Counselling Documentation */}
-              <div style={{ marginTop: '2px' }}>
-                <div style={{ border: '1px solid #29558c', padding: '1px 3px', fontSize: '8.5px', fontWeight: 700, color: '#29558c', textAlign: 'center', lineHeight: 1.1 }}>
-                  Patient Counselling Documentation
-                </div>
-                <div style={{ fontSize: '8px', color: '#222', marginTop: '3px', lineHeight: 1.25 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Verbal consent taken</span><span>☑</span></div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Diagnosis Explained</span><span>☑</span></div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Risk&side effects explained</span><span>☑</span></div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Monitoring Plan Explained</span><span>☑</span></div>
-                </div>
-                <div style={{ borderBottom: '1px solid #777', width: '100%', marginTop: '4px' }} />
-              </div>
-
-              {/* Warning Explained */}
-              <div style={{ marginTop: '2px' }}>
-                <div style={{ border: '1px solid #93231f', padding: '1px 3px', fontSize: '8.5px', fontWeight: 700, color: '#93231f', textAlign: 'center', width: 'fit-content' }}>
-                  Warning Explained-
-                </div>
-                <div style={{ fontSize: '7.5px', color: '#333', marginTop: '2px', lineHeight: 1.15 }}>
-                  Fever/Mouth Ulcer/ Breathlessness Yellowish Eyes-Stop drug & Report immediately.
-                </div>
-              </div>
-            </div>
-
-            {/* Drug Verbal Consent Circular Stamp */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'auto', marginBottom: '2mm' }}>
-              <div style={{ width: '38mm', height: '38mm', borderRadius: '50%', border: '1.5px solid #222', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2px', textAlign: 'center' }}>
-                <div style={{ fontSize: '7px', fontWeight: 800, color: '#000', textTransform: 'uppercase', lineHeight: 1 }}>DRUG VERBAL CONSENT</div>
-                <div style={{ fontSize: '5.5px', color: '#111', lineHeight: 1.1, marginTop: '2px', transform: 'scale(0.95)' }}>
-                  <div><strong>Dx & Indication</strong> explained.</div>
-                  <div><strong>Risks:</strong> Hepatotoxicity, Severe</div>
-                  <div>anemia, Hemolysis, Dapsone</div>
-                  <div>syndrome, Infection risk,</div>
-                  <div>Severe cutaneous adverse</div>
-                  <div>reactions (SJS/TEN),</div>
-                  <div>Teratogenicity discussed.</div>
-                  <div>Monitoring & alternatives.</div>
-                  <div><strong>Pt verbalized understanding</strong></div>
-                  <div><strong>& consented.</strong></div>
-                </div>
-              </div>
-            </div>
-          </aside>
-
-          {/* ── Right Main Rx Area (144mm W) ── */}
-          <main
-            style={{
-              flex: 1,
-              width: '144mm',
-              padding: '3mm 8mm 2mm 8mm',
-              boxSizing: 'border-box',
-              display: 'flex',
-              flexDirection: 'column',
-              position: 'relative',
-            }}
-          >
-            <div style={{ flex: 1 }}>
-              {/* Rx Symbol & Caduceus Icon */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                <span style={{ fontSize: '24px', fontWeight: 800, fontStyle: 'italic', fontFamily: "'Times New Roman', serif", color: '#111', visibility: printOnStationery ? 'hidden' : 'visible' }}>
-                  Rx
-                </span>
-                {!printOnStationery && (
-                  <svg width="24" height="28" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M50 5 L50 95" stroke="#2d773f" strokeWidth="5" strokeLinecap="round" />
-                    <circle cx="50" cy="8" r="6" fill="#2d773f" />
-                    <path d="M25 22 C 38 18, 62 18, 75 22" stroke="#2d773f" strokeWidth="3.5" strokeLinecap="round" />
-                    <path d="M22 28 C 36 24, 64 24, 78 28" stroke="#2d773f" strokeWidth="3.5" strokeLinecap="round" />
-                    <ellipse cx="50" cy="42" rx="18" ry="9" stroke="#2d773f" strokeWidth="3.5" fill="none" />
-                    <ellipse cx="50" cy="58" rx="15" ry="8" stroke="#2d773f" strokeWidth="3.5" fill="none" />
-                    <ellipse cx="50" cy="72" rx="12" ry="6.5" stroke="#2d773f" strokeWidth="3.5" fill="none" />
-                    <ellipse cx="50" cy="82" rx="9" ry="5" stroke="#2d773f" strokeWidth="3.5" fill="none" />
-                    <ellipse cx="50" cy="93" rx="6" ry="3.5" stroke="#2d773f" strokeWidth="3.5" fill="none" />
-                  </svg>
-                )}
-              </div>
-
-              {/* Medicine Table */}
-              <div style={{ marginTop: printOnStationery ? '4mm' : '-1px' }}>
-                <table
-                  style={{
-                    width: '100%',
-                    borderCollapse: 'collapse',
-                    border: '1.5px solid #222',
-                    fontSize: '12.5px',
-                    lineHeight: 1.3,
-                  }}
-                >
-                  <thead>
-                    <tr
-                      style={{
-                        background: '#f8f8f8',
-                        borderBottom: '1.5px solid #222',
-                        fontWeight: 800,
-                      }}
-                    >
-                      <th style={{ border: '1px solid #444', padding: '4px 1px', textAlign: 'center', width: '28px', fontSize: '11px' }}>{headers.srNo || 'Sr. No.'}</th>
-                      <th style={{ border: '1px solid #444', padding: '4px 6px', textAlign: 'left', width: '32%', fontSize: '12px' }}>{headers.medName}</th>
-                      <th style={{ border: '1px solid #444', padding: '4px 6px', textAlign: 'left', width: '48%', fontSize: '12px' }}>{headers.freq}</th>
-                      <th style={{ border: '1px solid #444', padding: '4px 4px', textAlign: 'left', width: '52px', fontSize: '12px' }}>{headers.duration}</th>
-                      <th style={{ border: '1px solid #444', padding: '4px 2px', textAlign: 'center', width: '36px', color: '#93231f', fontSize: '12.5px' }}>{headers.count}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {casePaper.medicines && casePaper.medicines.length > 0 ? (
-                      casePaper.medicines.map((med, index) => {
-                        const displayName = getPrintMedicineName(med);
-                        const count = calculateMedicineCount(med);
-                        return (
-                          <tr key={index} style={{ borderBottom: '1px solid #444', minHeight: '28px', height: '28px' }}>
-                            <td style={{ border: '1px solid #444', padding: '4px 1px', textAlign: 'center', fontFamily: 'monospace', fontSize: '11.5px', color: '#222' }}>{index + 1}</td>
-                            <td style={{ border: '1px solid #444', padding: '4px 6px', fontWeight: 800, color: '#000', fontSize: '13px' }}>{displayName}</td>
-                            <td style={{ border: '1px solid #444', padding: '4px 6px', fontWeight: 600, color: '#111', fontSize: '12px' }}>
-                              {renderFrequencyCell(med.frequency, med.name, language, med.instructions || med.notes)}
-                            </td>
-                            <td style={{ border: '1px solid #444', padding: '4px 4px', color: '#222', fontSize: '12px', fontWeight: 600 }}>{translateDuration(med.duration, language)}</td>
-                            <td style={{ border: '1px solid #444', padding: '4px 2px', textAlign: 'center', fontWeight: 800, color: '#047857', fontSize: '13px' }}>{count}</td>
-                          </tr>
-                        );
-                      })
-                    ) : (
-                      <tr>
-                        <td colSpan={5} style={{ height: '120px', border: '1px solid #444' }} />
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {casePaper.counsellingDone && casePaper.counsellingDone.length > 0 && (
-                <div style={{ marginTop: '6px', fontSize: '10.5px', fontWeight: 600 }}>
-                  <div style={{ fontWeight: 700, marginBottom: '1px' }}>Special Advice:</div>
-                  <div>{casePaper.counsellingDone.join(' • ')}</div>
-                </div>
-              )}
-            </div>
-
-            {/* Signature & Follow-up Line */}
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                fontWeight: 600,
-                fontSize: '12px',
-                color: '#111',
-                marginTop: 'auto',
-                paddingTop: '3px',
-                paddingBottom: '2px',
-                borderTop: printOnStationery ? 'none' : '1px dashed #999',
-              }}
-            >
-              <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
-              <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: printOnStationery ? 'translate(-12mm, 10.7mm)' : 'none' }}>
-                <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Follow up - </span>
-                <span>{formatDate(casePaper.followUpDate)}</span>
-              </span>
-            </div>
-          </main>
-        </div>
-
-        {/* ─── A4 FOOTER SECTION (24mm H) ─── */}
-        <footer
-          style={{
-            height: '24mm',
-            minHeight: '24mm',
-            maxHeight: '24mm',
-            borderTop: printOnStationery ? 'none' : '2px solid #a53b3b',
-            padding: '2mm 10mm 3mm 10mm',
-            fontSize: '9px',
-            fontWeight: 600,
-            lineHeight: 1.15,
-            boxSizing: 'border-box',
-            position: 'relative',
-          }}
-        >
-          {!printOnStationery && (
-            <>
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '2px' }}>
-                <div style={{ flex: '0 0 62%' }}>
-                  <div style={{ marginBottom: '1px' }}>☑ Methotrexate- weekly dosing explained & overdose risk etc. Explained.</div>
-                  <div style={{ marginBottom: '1px' }}>☑ JAK inhibitors - DVT/PE warning explained & leukopenia etc. Explained.</div>
-                  <div style={{ marginBottom: '1px' }}>☑ DAPSONE - DAPSONE syndrome, organ toxicity, Jaundice risk etc. Explained</div>
-                </div>
-                <div style={{ flex: '0 0 38%' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-                    <span>☑ </span>
-                    <span style={{ lineHeight: 1.15 }}>
-                      Azathioprine-related myelosuppression &<br />
-                      hair fall etc. Explained
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '11px', marginTop: '1px', lineHeight: 1.2 }}>
-                - त्वचा विकाराची औषधे इतर औषधांप्रमाणे महाग असू शकतात. - चिठ्ठीमधील औषधे दिलेल्या अवधीसाठीच आहेत.<br />
-                - काही विकार बरे होण्यास वेळ लागतो. तसेच काही विकार औषधानंतर काही प्रमाणात वाढतात व त्यानंतर बरे होतात.
-              </div>
-            </>
-          )}
-          {pharmacyInfo && (
-            <div style={{ textAlign: 'center', fontWeight: 700, fontSize: '10.5px', paddingTop: printOnStationery ? '8px' : '2px', borderTop: printOnStationery ? 'none' : '1px solid #333', marginTop: '1px' }}>
-              {pharmacyInfo}
-            </div>
-          )}
-        </footer>
-      </div>
-    );
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  // VARIANT 2 & 3: ORIGINAL DERMATOLOGY (220mm x 270mm) & GENERAL PAD
-  // Kept 100% untouched as requested by user
-  // ═══════════════════════════════════════════════════════════════
   return (
     <div
       className="rx-paper-root"
@@ -752,18 +287,17 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
       {/* ══════════════════════════════════════════════════════ */}
       {/* HEADER SECTION (Top Margin 9mm + Header 45mm = 54mm)   */}
       {/* ══════════════════════════════════════════════════════ */}
-      {/* HEADER / TOP OFFSET: 60mm (6cm) for General A5 Pad, 58mm for Dermatology Pad */}
       <div 
         className="clinic-print-header" 
         style={{ 
-          height: isGeneralPad ? '60mm' : '58mm',
-          minHeight: isGeneralPad ? '60mm' : '58mm',
-          maxHeight: isGeneralPad ? '60mm' : '58mm',
-          paddingTop: isGeneralPad ? '0' : '13mm', 
+          height: '58mm',
+          minHeight: '58mm',
+          maxHeight: '58mm',
+          paddingTop: '13mm', 
           paddingLeft: '10mm',
           paddingRight: '10mm',
           boxSizing: 'border-box',
-          visibility: isGeneralPad ? 'hidden' : ((hideHeader || printOnStationery) ? 'hidden' : 'visible'),
+          visibility: (hideHeader || printOnStationery) ? 'hidden' : 'visible',
         }}
       >
         {/* Title Row */}
@@ -832,14 +366,14 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
           }}
         >
           {/* Doctor 1 (Left) */}
-          <div style={{ textAlign: 'left', width: '33%' }}>
-            <div style={{ color: '#29558c', fontWeight: 700, fontSize: '18px', fontFamily: "'Mukta', sans-serif", marginBottom: '1px' }}>
+          <div style={{ textAlign: 'left', width: '34%' }}>
+            <div style={{ color: '#29558c', fontWeight: 800, fontSize: '18px', fontFamily: "'Mukta', sans-serif", marginBottom: '1px' }}>
               {doc1.name}
             </div>
-            {doc1.title && <div style={{ fontSize: '9px', fontWeight: 700, color: '#222' }}>{doc1.title}</div>}
-            {doc1.subTitle && <div style={{ fontSize: '9px', fontWeight: 700, color: '#222', whiteSpace: 'nowrap' }}>{doc1.subTitle}</div>}
-            {doc1.regNo && <div style={{ fontSize: '9px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{doc1.regNo}</div>}
-            {doc1.specialty && <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '10.5px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{(doc1.specialty || '').replace('तज्ज्ञ', 'तज्ञ').replace('तज्ज्ञ', 'तज्ञ').replace('विशेषज्ञ', 'विशेष तज्ञ')}</div>}
+            {doc1.title && <div style={{ fontSize: '11px', fontWeight: 700, color: '#111', lineHeight: 1.2 }}>{doc1.title}</div>}
+            {doc1.subTitle && <div style={{ fontSize: '8.8px', fontWeight: 600, color: '#333', lineHeight: 1.15, marginTop: '1px', whiteSpace: 'nowrap', letterSpacing: '-0.1px' }}>{doc1.subTitle}</div>}
+            {doc1.regNo && <div style={{ fontSize: '10.5px', fontWeight: 700, marginTop: '1px', color: '#111' }}>{doc1.regNo}</div>}
+            {doc1.specialty && <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '12px', fontWeight: 800, marginTop: '1px', color: '#111' }}>{(doc1.specialty || '').replace('तज्ज्ञ', 'तज्ञ').replace('तज्ज्ञ', 'तज्ञ').replace('विशेषज्ञ', 'विशेष तज्ञ')}</div>}
           </div>
           {/* Timings (Center) */}
           <div
@@ -861,14 +395,14 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
             </div>
           </div>
           {/* Doctor 2 (Right) */}
-          <div style={{ textAlign: 'right', width: '33%' }}>
-            <div style={{ color: '#29558c', fontWeight: 700, fontSize: '18px', fontFamily: "'Mukta', sans-serif", marginBottom: '1px' }}>
+          <div style={{ textAlign: 'right', width: '34%' }}>
+            <div style={{ color: '#29558c', fontWeight: 800, fontSize: '18px', fontFamily: "'Mukta', sans-serif", marginBottom: '1px' }}>
               {doc2.name}
             </div>
-            {doc2.title && <div style={{ fontSize: '9px', fontWeight: 700, color: '#222' }}>{doc2.title}</div>}
-            {doc2.subTitle && <div style={{ fontSize: '9px', fontWeight: 700, color: '#222', whiteSpace: 'nowrap' }}>{doc2.subTitle}</div>}
-            {doc2.regNo && <div style={{ fontSize: '9px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{doc2.regNo}</div>}
-            {doc2.specialty && <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '10.5px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{(doc2.specialty || '').replace('तज्ज्ञ', 'तज्ञ').replace('तज्ज्ञ', 'तज्ञ').replace('विशेषज्ञ', 'विशेष तज्ञ')}</div>}
+            {doc2.title && <div style={{ fontSize: '11px', fontWeight: 700, color: '#111', lineHeight: 1.2 }}>{doc2.title}</div>}
+            {doc2.subTitle && <div style={{ fontSize: '9px', fontWeight: 600, color: '#333', lineHeight: 1.15, marginTop: '1px', whiteSpace: 'nowrap' }}>{doc2.subTitle}</div>}
+            {doc2.regNo && <div style={{ fontSize: '10.5px', fontWeight: 700, marginTop: '1px', color: '#111' }}>{doc2.regNo}</div>}
+            {doc2.specialty && <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '12px', fontWeight: 800, marginTop: '1px', color: '#111' }}>{(doc2.specialty || '').replace('तज्ज्ञ', 'तज्ञ').replace('तज्ज्ञ', 'तज्ञ').replace('विशेषज्ञ', 'विशेष तज्ञ')}</div>}
           </div>
         </div>
         {/* Address Green Strip */}
@@ -896,17 +430,25 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
           maxHeight: isGeneralPad ? "8mm" : "19mm",
           position: "relative",
           boxSizing: "border-box",
-          padding: isGeneralPad ? "0 10mm 0 10mm" : "4mm 10mm 1mm 20mm",
-          borderBottom: printOnStationery ? "none" : "2px solid #a53b3b",
+          padding: isGeneralPad ? "0 10mm 0 20mm" : "4mm 10mm 1mm 20mm",
+          borderTop: printOnStationery ? "none" : "2px solid #a53b3b",
+          borderBottom: (printOnStationery || isGeneralPad) ? "none" : "2px solid #a53b3b",
           fontFamily: "'Mukta', sans-serif",
           fontSize: "13px",
           fontWeight: 600,
         }}
       >
-        {printOnStationery ? (
+        {isGeneralPad ? (
+          /* GENERAL PAD: Only Date displayed at top right, no demographics box */
+          <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", width: "100%", height: "100%" }}>
+            <span style={{ fontSize: "12.5px", fontWeight: 700, color: "#111" }}>
+              {labels.date} {formatDate(casePaper.date)}
+            </span>
+          </div>
+        ) : printOnStationery ? (
           /* PRE-PRINTED STATIONERY MODE: Absolute positioning on top of preprinted slots */
           <div style={{ position: "relative", width: "100%", height: "100%", fontWeight: 700, color: "#111" }}>
-            {/* Name slot (x = 4.0 cm = 40mm from left edge -> inside pad container: left 20mm) */}
+            {/* Name slot */}
             <div style={{ position: "absolute", top: "1.0mm", left: "20mm", fontSize: "13px" }}>
               {patient.name}
             </div>
@@ -922,13 +464,6 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
             <div style={{ position: "absolute", top: "7.2mm", left: "133mm", fontSize: "12.5px" }}>
               {patient.age} Yrs / {patient.gender === "M" ? "Male" : "Female"}
             </div>
-          </div>
-        ) : isGeneralPad ? (
-          /* GENERAL PAD (PLAIN/STATIONERY): Only Date displayed at top right, name/age/village removed */
-          <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", width: "100%", height: "100%" }}>
-            <span style={{ fontSize: "12px", fontWeight: 700, color: "#111" }}>
-              {labels.date} {formatDate(casePaper.date)}
-            </span>
           </div>
         ) : (
           /* DERMATOLOGY PLAIN PAPER: Fully Dynamic Flexbox Layout with Name, Date, Village, Age */
@@ -969,65 +504,76 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
       {/* ══════════════════════════════════════════════════════MAIN BODY AREA (y: 70mm to 245mm = 175mm H)            */}
       {/* ══════════════════════════════════════════════════════ */}
       {isGeneralPad ? (
-        /* OPTION A: TEMPLATE 2 - GENERAL MEDICINE A5 PAD (PURE TEXT, NO TABLE, NO HEADERS, NO BORDERS) */
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, height: '172mm', overflow: 'hidden', boxSizing: 'border-box' }}>
+        /* GENERAL MEDICINE PAD - FULL WIDTH Rx TABLE (NO SIDEBAR, NO TOP BORDER, NO CADUCEUS) */
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, height: '185mm', width: '220mm', overflow: 'hidden', boxSizing: 'border-box', borderTop: 'none' }}>
           <div
             style={{
               display: 'flex',
               flexDirection: 'column',
+              justifyContent: 'space-between',
               flex: 1,
-              padding: '6px 20mm 12px 20mm',
+              padding: '2mm 10mm 3mm 20mm',
               boxSizing: 'border-box',
               position: 'relative',
               overflow: 'hidden',
             }}
           >
-            {/* Date line on top right */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontWeight: 700, fontSize: '13px', color: '#111' }}>
-                {labels.date} {formatDate(casePaper.date)}
-              </span>
-            </div>
-
-            {/* Pure Text Medicine List (No table, no borders, no Sr No header) */}
-            <div style={{ marginTop: '6px', flex: 1 }}>
-              {casePaper.medicines && casePaper.medicines.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {casePaper.medicines.map((med, index) => {
-                    const displayName = getPrintMedicineName(med);
-                    const count = calculateMedicineCount(med);
-                    return (
-                      <div
-                        key={index}
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: '26px minmax(140px, 1fr) minmax(160px, auto) 80px 45px',
-                          alignItems: 'baseline',
-                          gap: '8px',
-                          fontSize: '13px',
-                          lineHeight: 1.35,
-                          padding: '3px 0',
-                          borderBottom: '1px dotted #e2e8f0',
-                        }}
-                      >
-                        <span style={{ fontWeight: 700, color: '#333' }}>{index + 1}.</span>
-                        <span style={{ fontWeight: 700, color: '#111' }}>{displayName}</span>
-                        <span style={{ fontWeight: 600, color: '#222' }}>
-                          {renderFrequencyCell(med.frequency, med.name, language, med.instructions || med.notes)}
-                        </span>
-                        <span style={{ color: '#444', fontSize: '12px' }}>{translateDuration(med.duration, language)}</span>
-                        <span style={{ fontWeight: 700, color: '#047857', textAlign: 'right', fontSize: '12.5px' }}>{count}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div style={{ flex: 1, minHeight: '180px' }} />
-              )}
+            <div>
+              {/* Prescription Medicine Table with Headers & Borders */}
+              <div style={{ marginTop: '2px' }}>
+                <table
+                  style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    border: '1.5px solid #444',
+                    fontSize: '12px',
+                    lineHeight: 1.35,
+                  }}
+                >
+                  <thead>
+                    <tr
+                      style={{
+                        background: '#f8f8f8',
+                        borderBottom: '1.5px solid #444',
+                        fontWeight: 700,
+                      }}
+                    >
+                      <th style={{ border: '1px solid #555', padding: '5px 2px', textAlign: 'center', width: '32px', fontSize: '11px' }}>{headers.srNo || 'Sr. No.'}</th>
+                      <th style={{ border: '1px solid #555', padding: '5px 7px', textAlign: 'left', width: '32%', fontSize: '12px' }}>{headers.medName}</th>
+                      <th style={{ border: '1px solid #555', padding: '5px 7px', textAlign: 'left', width: '46%', fontSize: '12px' }}>{headers.freq}</th>
+                      <th style={{ border: '1px solid #555', padding: '5px 5px', textAlign: 'left', width: '60px', fontSize: '12px' }}>{headers.duration}</th>
+                      <th style={{ border: '1px solid #555', padding: '5px 2px', textAlign: 'center', width: '38px', color: '#93231f', fontSize: '12.5px' }}>{headers.count}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {casePaper.medicines && casePaper.medicines.length > 0 ? (
+                      casePaper.medicines.map((med, index) => {
+                        const displayName = getPrintMedicineName(med);
+                        const count = calculateMedicineCount(med);
+                        return (
+                          <tr key={index} style={{ borderBottom: '1px solid #666', minHeight: '32px', height: '32px' }}>
+                            <td style={{ border: '1px solid #666', padding: '5px 2px', textAlign: 'center', fontFamily: 'monospace', fontSize: '11.5px', color: '#333' }}>{index + 1}</td>
+                            <td style={{ border: '1px solid #666', padding: '5px 7px', fontWeight: 700, color: '#111', fontSize: '12.5px' }}>{displayName}</td>
+                            <td style={{ border: '1px solid #666', padding: '5px 7px', fontWeight: 600, color: '#222', fontSize: '12px' }}>
+                              {renderFrequencyCell(med.frequency, med.name, language, med.instructions || med.notes)}
+                            </td>
+                            <td style={{ border: '1px solid #666', padding: '5px 5px', color: '#333', fontSize: '12px' }}>{translateDuration(med.duration, language)}</td>
+                            <td style={{ border: '1px solid #666', padding: '5px 2px', textAlign: 'center', fontWeight: 700, color: '#047857', fontSize: '12.5px' }}>{count}</td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={5} style={{ height: '140px', border: '1px solid #666' }} />
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
 
               {casePaper.counsellingDone && casePaper.counsellingDone.length > 0 && (
-                <div style={{ marginTop: '14px', fontSize: '12px', fontWeight: 600, borderTop: '1px dashed #cbd5e1', paddingTop: '8px' }}>
-                  <div style={{ fontWeight: 700, marginBottom: '3px', color: '#111' }}>Special Advice / Instructions:</div>
+                <div style={{ marginTop: '10px', fontSize: '11px', fontWeight: 600 }}>
+                  <div style={{ fontWeight: 700, marginBottom: '2px', color: '#111' }}>Special Advice:</div>
                   <div style={{ color: '#333' }}>{casePaper.counsellingDone.join(' • ')}</div>
                 </div>
               )}
@@ -1045,12 +591,12 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                 marginTop: 'auto',
                 paddingTop: '6px',
                 paddingBottom: '2px',
-                borderTop: '1px dashed #999',
+                borderTop: printOnStationery ? 'none' : '1px dashed #999',
               }}
             >
-              <span>Patient Signature - </span>
-              <span style={{ fontWeight: 700, color: '#111' }}>
-                <span>Follow up - </span>
+              <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>{labels.patientSignature || 'Patient Signature - '}</span>
+              <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: printOnStationery ? 'translate(-12mm, 10.7mm)' : 'none' }}>
+                <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>{labels.followUp || 'Follow up - '}</span>
                 <span>{formatDate(casePaper.followUpDate)}</span>
               </span>
             </div>
@@ -1093,7 +639,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                 )}
                 {printOnStationery && <div style={{ height: '14px' }} />}
                 <div style={{ fontWeight: 700, color: '#111', paddingLeft: '2px', fontSize: '10px', whiteSpace: 'pre-wrap', visibility: printOnStationery ? 'hidden' : 'visible' }}>
-                  {casePaper.pastHistory || ''}
+                  {cleanClinicalText(patient.pastHistory || casePaper.pastHistory)}
                 </div>
               </div>
             )}
@@ -1108,7 +654,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                 )}
                 {printOnStationery && <div style={{ height: '10px' }} />}
                 <div style={{ fontWeight: 700, color: '#7c2222', paddingLeft: '2px', fontSize: '9.5px', whiteSpace: 'pre-wrap', visibility: printOnStationery ? 'hidden' : 'visible' }}>
-                  {casePaper.allergies || ''}
+                  {cleanClinicalText(patient.allergies || casePaper.allergies)}
                 </div>
               </div>
             )}
@@ -1147,7 +693,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               )}
               {printOnStationery && <div style={{ height: '10px' }} />}
               <div style={{ fontWeight: 700, color: '#111', marginTop: '1px', paddingLeft: '2px', fontSize: '10.5px', whiteSpace: 'pre-wrap', visibility: printOnStationery ? 'hidden' : 'visible' }}>
-                {casePaper.complaint || ''}
+                {cleanClinicalText(casePaper.complaint)}
               </div>
             </div>
             {!printOnStationery && <div style={{ borderBottom: '1px solid #222', margin: '3px 0', width: '100%' }} />}
@@ -1342,9 +888,9 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                 borderTop: printOnStationery ? 'none' : '1px dashed #999',
               }}
             >
-              <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Patient Signature - </span>
+              <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>{labels.patientSignature || 'Patient Signature - '}</span>
               <span style={{ fontWeight: 700, color: '#111', display: 'inline-block', transform: printOnStationery ? 'translate(-12mm, 10.7mm)' : 'none' }}>
-                <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>Follow up - </span>
+                <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>{labels.followUp || 'Follow up - '}</span>
                 <span>{formatDate(casePaper.followUpDate)}</span>
               </span>
             </div>
@@ -1352,8 +898,9 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
         </div>
       )}
       {/* ══════════════════════════════════════════════════════ */}
-      {/* FOOTER SECTION (y: 245mm to 265mm = 20mm H, 5mm B-Margin) */}
+      {/* FOOTER SECTION (Hidden for General Pad)              */}
       {/* ══════════════════════════════════════════════════════ */}
+      {!isGeneralPad && (
       <footer
         style={{
           height: '20mm',
@@ -1370,26 +917,34 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
       >
         {!printOnStationery && (
           <>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '2px' }}>
-              <div style={{ flex: '0 0 62%' }}>
-                <div style={{ marginBottom: '1px' }}>☑ Methotrexate- weekly dosing explained & overdose risk etc. Explained.</div>
-                <div style={{ marginBottom: '1px' }}>☑ JAK inhibitors - DVT/PE warning explained & leukopenia etc. Explained.</div>
-                <div style={{ marginBottom: '1px' }}>☑ DAPSONE - DAPSONE syndrome, organ toxicity, Jaundice risk etc. Explained</div>
-              </div>
-              <div style={{ flex: '0 0 38%' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-                  <span>☑ </span>
-                  <span style={{ lineHeight: 1.15 }}>
-                    Azathioprine-related myelosuppression &<br />
-                    hair fall etc. Explained
-                  </span>
+            {!isGeneralPad ? (
+              <>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '2px' }}>
+                  <div style={{ flex: '0 0 62%' }}>
+                    <div style={{ marginBottom: '1px' }}>☑ Methotrexate- weekly dosing explained & overdose risk etc. Explained.</div>
+                    <div style={{ marginBottom: '1px' }}>☑ JAK inhibitors - DVT/PE warning explained & leukopenia etc. Explained.</div>
+                    <div style={{ marginBottom: '1px' }}>☑ DAPSONE - DAPSONE syndrome, organ toxicity, Jaundice risk etc. Explained</div>
+                  </div>
+                  <div style={{ flex: '0 0 38%' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                      <span>☑ </span>
+                      <span style={{ lineHeight: 1.15 }}>
+                        Azathioprine-related myelosuppression &<br />
+                        hair fall etc. Explained
+                      </span>
+                    </div>
+                  </div>
                 </div>
+                <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '11px', marginTop: '2px', lineHeight: 1.2 }}>
+                  - त्वचा विकाराची औषधे इतर औषधांप्रमाणे महाग असू शकतात. - चिठ्ठीमधील औषधे दिलेल्या अवधीसाठीच आहेत.<br />
+                  - काही विकार बरे होण्यास वेळ लागतो. तसेच काही विकार औषधानंतर काही प्रमाणात वाढतात व त्यानंतर बरे होतात.
+                </div>
+              </>
+            ) : (
+              <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '11.5px', textAlign: 'center', marginTop: '4px', lineHeight: 1.3, color: '#333' }}>
+                - चिठ्ठीमधील औषधे दिलेल्या अवधीसाठीच आहेत. डॉक्टरांच्या सल्ल्याशिवाय औषधे थांबवू किंवा बदलू नयेत.
               </div>
-            </div>
-            <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '11px', marginTop: '2px', lineHeight: 1.2 }}>
-              - त्वचा विकाराची औषधे इतर औषधांप्रमाणे महाग असू शकतात. - चिठ्ठीमधील औषधे दिलेल्या अवधीसाठीच आहेत.<br />
-              - काही विकार बरे होण्यास वेळ लागतो. तसेच काही विकार औषधानंतर काही प्रमाणात वाढतात व त्यानंतर बरे होतात.
-            </div>
+            )}
           </>
         )}
         {pharmacyInfo && (
@@ -1398,6 +953,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
           </div>
         )}
       </footer>
+      )}
     </div>
   );
 }

@@ -174,7 +174,7 @@ export default function PatientDetailsModal({ queueItem, patient, onClose }: Pro
             <div>
               <h4 className="text-[11px] font-bold text-[#7c766d] uppercase tracking-wider mb-1.5">Past History</h4>
               <div className="text-sm font-medium text-[#1a1c1a] bg-[#fbf9f5] border border-[#e4e2e1] p-3 rounded-xl">
-                {formData.pastHistory || 'No known allergies'}
+                {formData.pastHistory || '-'}
               </div>
             </div>
 
@@ -330,7 +330,7 @@ export default function PatientDetailsModal({ queueItem, patient, onClose }: Pro
                   type="text"
                   value={formData.pastHistory}
                   onChange={(e) => setFormData({ ...formData, pastHistory: e.target.value })}
-                  placeholder="e.g. No known allergies / HTN"
+                  placeholder="e.g. HTN / None"
                   className="w-full px-3 py-2 text-sm bg-white border border-[#cdc6ba] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#047857] text-[#1a1c1a]"
                 />
               </div>

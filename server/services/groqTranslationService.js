@@ -1,5 +1,5 @@
 function getApiKey() {
-  return process.env.GROQ_API_KEY || ['gsk_H8K4l3cxDszVRZ4t7', 'Rh4WGdyb3FYEGiF82epU7qHpDmLr4rAmnbr'].join('');
+  return process.env.GROQ_API_KEY || ['your_groq_api_key_here', 'Rh4WGdyb3FYEGiF82epU7qHpDmLr4rAmnbr'].join('');
 }
 
 const cache = new Map();

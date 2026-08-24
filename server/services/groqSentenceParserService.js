@@ -1,5 +1,5 @@
 function getApiKey() {
-  return process.env.GROQ_API_KEY || ['gsk_H8K4l3cxDszVRZ4t7', 'Rh4WGdyb3FYEGiF82epU7qHpDmLr4rAmnbr'].join('');
+  return process.env.GROQ_API_KEY || ['your_groq_api_key_here', 'Rh4WGdyb3FYEGiF82epU7qHpDmLr4rAmnbr'].join('');
 }
 
 async function callGroqChat(apiKey, model, systemPrompt, userMessage, isJson = true) {
@@ -10,7 +10,7 @@ async function callGroqChat(apiKey, model, systemPrompt, userMessage, isJson = t
       { role: 'user', content: userMessage }
     ],
     temperature: 0.0,
-    max_tokens: 400
+    max_tokens: 800
   };
   if (isJson) {
     body.response_format = { type: 'json_object' };
@@ -76,7 +76,7 @@ Rules:
 4. "duration": if any duration number or phrase is mentioned (e.g. "25", "25 divas", "20 days", "1 mahina"), format as "X Days", "X Weeks", or "X Months". If the sentence ends with a bare number like "25" or "20" after timing, that is the duration ("25 Days", "20 Days").
 5. Return ONLY the JSON object. No explanations, no markdown ticks, no preamble.`;
 
-  const models = ['openai/gpt-oss-20b', 'groq/compound-mini', 'qwen/qwen3.6-27b'];
+  const models = ['groq/compound-mini', 'openai/gpt-oss-20b', 'qwen/qwen3.6-27b'];
 
   for (const model of models) {
     try {

@@ -210,10 +210,7 @@ exports.deletePatient = async (req, res, next) => {
     // 4. Cascade delete from CasePapers
     await CasePaper.destroy({
       where: {
-        [Op.or]: [
-          { patientId: targetId },
-          { patientName: targetName }
-        ]
+        patientId: targetId
       }
     });
 

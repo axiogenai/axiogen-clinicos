@@ -47,7 +47,7 @@ export default function PrescriptionTemplateEditor({ onClose }: Props) {
     phone: '9876543210',
     village: 'शिराळा, सांगली',
     pastHistory: 'DM / HTN (Controlled)',
-    allergies: 'Penicillin Allergy',
+    allergies: '',
   };
 
   const sampleCasePaper = {
@@ -56,7 +56,7 @@ export default function PrescriptionTemplateEditor({ onClose }: Props) {
     templateId: 'tpl_1',
     complaint: 'Severe Ringworm Infection on thigh & arms since 2 weeks',
     pastHistory: 'Diabetes Mellitus type 2',
-    allergies: 'No known drug allergies (NKDA)',
+    allergies: '',
     medicines: [
       { medicineId: 'm1', name: 'Tab. Itraconazole 200mg', dosage: '200mg', frequency: '1-0-1 (BD) After Meals', duration: '14 Days' },
       { medicineId: 'm2', name: 'Luliconazole 1% Cream', dosage: '1%', frequency: 'Apply 1-0-1 (BD) Clean & Dry area', duration: '21 Days' },
