@@ -562,6 +562,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
       gender?: 'M' | 'F' | 'Other';
       phone?: string;
       village?: string;
+      casePaperNo?: string;
       complaint?: string;
       notes?: string;
       pastHistory?: string;
@@ -581,6 +582,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
             gender: data.gender !== undefined ? data.gender : p.gender,
             phone: cleanPhone || p.phone,
             village: data.village !== undefined ? data.village : p.village,
+            casePaperNo: data.casePaperNo !== undefined ? data.casePaperNo : p.casePaperNo,
             pastHistory: data.pastHistory !== undefined ? data.pastHistory : p.pastHistory,
             allergies: data.allergies !== undefined ? data.allergies : p.allergies
           };
@@ -595,6 +597,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
         gender: data.gender,
         phone: cleanPhone,
         village: data.village,
+        casePaperNo: data.casePaperNo,
         pastHistory: data.pastHistory,
         allergies: data.allergies
       }).catch(() => {});
@@ -610,6 +613,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
             age: data.age !== undefined ? data.age : q.age,
             phone: cleanPhone || q.phone,
             village: data.village !== undefined ? data.village : q.village,
+            casePaperNo: data.casePaperNo !== undefined ? data.casePaperNo : q.casePaperNo,
             complaint: data.complaint !== undefined ? data.complaint : q.complaint,
             notes: data.notes !== undefined ? data.notes : q.notes
           };
@@ -617,7 +621,15 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
         return q;
       }));
 
-      api.updateQueueStatus(queueId, 'waiting').catch(() => {});
+      api.updateQueueItem(queueId, {
+        name: data.name,
+        age: data.age,
+        phone: cleanPhone,
+        village: data.village,
+        casePaperNo: data.casePaperNo,
+        complaint: data.complaint,
+        notes: data.notes
+      }).catch(() => {});
     }
 
     setToast({
