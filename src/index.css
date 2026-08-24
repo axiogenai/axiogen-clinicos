@@ -199,19 +199,20 @@ select, select.form-input {
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 1.25rem;
-  background: linear-gradient(135deg, #064e3b, #047857);
-  color: #ecfdf5;
+  background-color: #047857;
+  color: #ffffff;
   font-size: 0.75rem;
   font-weight: 700;
   border-radius: 0.75rem;
-  border: none;
+  border: 1px solid #065f46;
   cursor: pointer;
-  box-shadow: 0 3px 8px rgba(6, 78, 59, 0.22);
+  box-shadow: 0 2px 5px rgba(6, 78, 59, 0.18);
   transition: all 0.15s;
 }
 .btn-primary:hover {
-  background: linear-gradient(135deg, #022c22, #064e3b);
-  box-shadow: 0 4px 12px rgba(6, 78, 59, 0.3);
+  background-color: #065f46;
+  border-color: #064e3b;
+  box-shadow: 0 3px 8px rgba(6, 78, 59, 0.25);
 }
 .btn-primary:active { transform: scale(0.97); }
 

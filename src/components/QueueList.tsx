@@ -242,7 +242,7 @@ export default function QueueList({
                     <button
                       type="button"
                       onClick={() => onStatusChange(item.queueId, 'in-consultation')}
-                      className="bg-gradient-to-r from-[#064e3b] to-[#047857] text-[#ecfdf5] text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1"
+                      className="bg-[#047857] hover:bg-[#065f46] text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 border border-[#065f46]"
                     >
                       <span>Send In</span>
                       <ArrowRight className="w-3 h-3" />
@@ -466,7 +466,7 @@ export default function QueueList({
                           <button
                             type="button"
                             onClick={() => onStatusChange(item.queueId, 'in-consultation')}
-                            className="bg-gradient-to-r from-[#064e3b] to-[#047857] hover:from-[#022c22] hover:to-[#064e3b] text-[#ecfdf5] text-xs font-bold px-3 py-1.5 rounded-xl shadow-md shadow-emerald-950/20 transition-all flex items-center justify-center gap-1 w-full active:scale-95"
+                            className="bg-[#047857] hover:bg-[#065f46] text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm transition-all flex items-center justify-center gap-1 w-full active:scale-95 border border-[#065f46]"
                           >
                             <span>Send In</span>
                             <ArrowRight className="w-3 h-3" />

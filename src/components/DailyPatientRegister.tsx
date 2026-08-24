@@ -806,7 +806,7 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
 
             <button
               onClick={handleEndDaySession}
-              className="bg-gradient-to-r from-red-800 to-rose-700 hover:from-red-950 text-[#ecfdf5] text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm transition-all flex items-center gap-1.5 active:scale-95 border border-red-900 cursor-pointer whitespace-nowrap"
+              className="bg-red-700 hover:bg-red-800 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm transition-all flex items-center gap-1.5 active:scale-95 border border-red-800 cursor-pointer whitespace-nowrap"
             >
               <Save className="w-4 h-4" />
               <span>End Day & Save</span>
@@ -876,7 +876,7 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
             <button
               type="button"
               onClick={handleBackgroundAutoSend}
-              className="bg-gradient-to-r from-[#064e3b] to-[#047857] hover:from-[#022c22] hover:to-[#064e3b] text-[#ecfdf5] text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm transition-all flex items-center gap-1.5 shrink-0 active:scale-95"
+              className="bg-[#047857] hover:bg-[#065f46] text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm transition-all flex items-center gap-1.5 shrink-0 active:scale-95 border border-[#065f46]"
             >
               <Send className="w-3.5 h-3.5" />
               <span>Auto-Send Reminders</span>
@@ -966,7 +966,7 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
               onClick={() => setStatusFilter(status)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all whitespace-nowrap ${
                 statusFilter === status 
-                  ? 'bg-gradient-to-r from-[#064e3b] to-[#047857] text-[#ecfdf5] shadow-sm'
+                  ? 'bg-[#047857] text-white shadow-sm'
                   : 'text-[#4b463e] hover:text-[#1a1c1a]'
               }`}
             >
@@ -1640,7 +1640,7 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
               <button
                 type="button"
                 onClick={() => setIsPrintPreviewOpen(true)}
-                className="bg-gradient-to-r from-[#064e3b] to-[#047857] text-[#ecfdf5] text-xs font-bold px-4 py-2 rounded-xl shadow-sm hover:from-[#022c22] hover:to-[#064e3b] flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                className="bg-[#047857] hover:bg-[#065f46] text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer border border-[#065f46]"
               >
                 <Printer className="w-3.5 h-3.5" />
                 <span>Print Prescription</span>

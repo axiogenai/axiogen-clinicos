@@ -66,7 +66,7 @@ export default function PatientDetailsModal({ queueItem, patient, onClose }: Pro
       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[92vh] flex flex-col overflow-hidden border border-[#cdc6ba] my-auto transition-all animate-in fade-in zoom-in-95 duration-150">
         
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#064e3b] via-[#047857] to-[#065f46] text-white p-3.5 sm:p-5 flex justify-between items-center shrink-0">
+        <div className="bg-[#047857] text-white p-3.5 sm:p-5 flex justify-between items-center shrink-0">
           <div className="flex-1 mr-2 min-w-0">
             {!isEditing ? (
               <>
@@ -74,7 +74,7 @@ export default function PatientDetailsModal({ queueItem, patient, onClose }: Pro
                   <h3 className="text-base sm:text-xl font-bold font-serif tracking-tight truncate max-w-[240px] sm:max-w-none">
                     {formData.name || 'Unknown Patient'}
                   </h3>
-                  <span className="bg-emerald-800/90 border border-emerald-400/30 text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full text-emerald-100 uppercase tracking-wider shrink-0">
+                  <span className="bg-[#064e3b] border border-emerald-500/40 text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full text-emerald-100 uppercase tracking-wider shrink-0">
                     {queueItem.status}
                   </span>
                   {formData.casePaperNo && (
@@ -104,7 +104,7 @@ export default function PatientDetailsModal({ queueItem, patient, onClose }: Pro
               <button
                 type="button"
                 onClick={() => setIsEditing(true)}
-                className="bg-white/15 hover:bg-white/25 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-white/20 transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-sm"
+                className="bg-[#064e3b] hover:bg-[#022c22] text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-emerald-600 transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-sm"
                 title="Edit Patient Details"
               >
                 <Edit2 className="w-3.5 h-3.5" />
@@ -113,7 +113,7 @@ export default function PatientDetailsModal({ queueItem, patient, onClose }: Pro
             )}
             <button 
               onClick={onClose}
-              className="text-emerald-100 hover:text-white hover:bg-white/20 p-1.5 rounded-lg transition-colors cursor-pointer"
+              className="text-white hover:bg-[#064e3b] p-1.5 rounded-lg transition-colors cursor-pointer"
               title="Close modal"
             >
               <X className="w-5 h-5" />
@@ -374,7 +374,7 @@ export default function PatientDetailsModal({ queueItem, patient, onClose }: Pro
               <button
                 type="button"
                 onClick={() => setIsEditing(true)}
-                className="px-3.5 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-[#064e3b] to-[#047857] hover:from-[#022c22] hover:to-[#064e3b] text-[#ecfdf5] rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
+                className="px-3.5 sm:px-4 py-2 sm:py-2.5 bg-[#047857] hover:bg-[#065f46] text-white rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer border border-[#065f46]"
               >
                 <Edit2 className="w-3.5 h-3.5" />
                 <span>Edit Details</span>
@@ -401,7 +401,7 @@ export default function PatientDetailsModal({ queueItem, patient, onClose }: Pro
                 type="submit"
                 form="edit-patient-form"
                 disabled={isSaving}
-                className="flex-1 sm:flex-none px-5 py-2 sm:py-2.5 bg-gradient-to-r from-[#064e3b] to-[#047857] hover:from-[#022c22] hover:to-[#064e3b] text-[#ecfdf5] rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-950/20 active:scale-95 disabled:opacity-50 cursor-pointer text-center"
+                className="flex-1 sm:flex-none px-5 py-2 sm:py-2.5 bg-[#047857] hover:bg-[#065f46] text-white rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 disabled:opacity-50 cursor-pointer text-center border border-[#065f46]"
               >
                 <Save className="w-3.5 h-3.5" />
                 <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
