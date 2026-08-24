@@ -39,3 +39,7 @@ server/*.sqlite-shm
 # WhatsApp gateway credentials
 server/whatsapp_auth_info/
 server/whatsapp_auth/
+
+# Deploy archives
+*.tar.gz
+deploy_payload.tar.gz
