@@ -325,7 +325,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                 {doc1.name}
               </div>
               {doc1.title && <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#222' }}>{doc1.title}</div>}
-              {doc1.subTitle && <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#222' }}>{doc1.subTitle}</div>}
+              {doc1.subTitle && <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#222', whiteSpace: 'nowrap' }}>{doc1.subTitle}</div>}
               {doc1.regNo && <div style={{ fontSize: '9.5px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{doc1.regNo}</div>}
               {doc1.specialty && <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '10.5px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{(doc1.specialty || '').replace('तज्ज्ञ', 'तज्ञ').replace('विशेषज्ञ', 'विशेष तज्ञ')}</div>}
             </div>
@@ -356,7 +356,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                 {doc2.name}
               </div>
               {doc2.title && <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#222' }}>{doc2.title}</div>}
-              {doc2.subTitle && <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#222' }}>{doc2.subTitle}</div>}
+              {doc2.subTitle && <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#222', whiteSpace: 'nowrap' }}>{doc2.subTitle}</div>}
               {doc2.regNo && <div style={{ fontSize: '9.5px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{doc2.regNo}</div>}
               {doc2.specialty && <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '10.5px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{(doc2.specialty || '').replace('तज्ज्ञ', 'तज्ञ').replace('विशेषज्ञ', 'विशेष तज्ञ')}</div>}
             </div>
@@ -837,7 +837,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               {doc1.name}
             </div>
             {doc1.title && <div style={{ fontSize: '9px', fontWeight: 700, color: '#222' }}>{doc1.title}</div>}
-            {doc1.subTitle && <div style={{ fontSize: '9px', fontWeight: 700, color: '#222' }}>{doc1.subTitle}</div>}
+            {doc1.subTitle && <div style={{ fontSize: '9px', fontWeight: 700, color: '#222', whiteSpace: 'nowrap' }}>{doc1.subTitle}</div>}
             {doc1.regNo && <div style={{ fontSize: '9px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{doc1.regNo}</div>}
             {doc1.specialty && <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '10.5px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{(doc1.specialty || '').replace('तज्ज्ञ', 'तज्ञ').replace('तज्ज्ञ', 'तज्ञ').replace('विशेषज्ञ', 'विशेष तज्ञ')}</div>}
           </div>
@@ -866,7 +866,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               {doc2.name}
             </div>
             {doc2.title && <div style={{ fontSize: '9px', fontWeight: 700, color: '#222' }}>{doc2.title}</div>}
-            {doc2.subTitle && <div style={{ fontSize: '9px', fontWeight: 700, color: '#222' }}>{doc2.subTitle}</div>}
+            {doc2.subTitle && <div style={{ fontSize: '9px', fontWeight: 700, color: '#222', whiteSpace: 'nowrap' }}>{doc2.subTitle}</div>}
             {doc2.regNo && <div style={{ fontSize: '9px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{doc2.regNo}</div>}
             {doc2.specialty && <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '10.5px', fontWeight: 700, marginTop: '1px', color: '#222' }}>{(doc2.specialty || '').replace('तज्ज्ञ', 'तज्ञ').replace('तज्ज्ञ', 'तज्ञ').replace('विशेषज्ञ', 'विशेष तज्ञ')}</div>}
           </div>
@@ -897,7 +897,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
           position: "relative",
           boxSizing: "border-box",
           padding: isGeneralPad ? "0 10mm 0 10mm" : "4mm 10mm 1mm 20mm",
-          borderBottom: (printOnStationery || isGeneralPad) ? "none" : "2px solid #a53b3b",
+          borderBottom: printOnStationery ? "none" : "2px solid #a53b3b",
           fontFamily: "'Mukta', sans-serif",
           fontSize: "13px",
           fontWeight: 600,

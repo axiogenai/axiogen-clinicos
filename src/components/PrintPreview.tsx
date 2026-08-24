@@ -107,22 +107,21 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
     doc.close();
 
     setTimeout(() => {
-
       try {
-
+        if (iframe.contentWindow) {
+          iframe.contentWindow.onafterprint = () => {
+            if (onReturnToQueue) onReturnToQueue();
+          };
+        }
         iframe.contentWindow?.focus();
-
         iframe.contentWindow?.print();
-
       } finally {
-
-        setTimeout(() => { try { document.body.removeChild(iframe); } catch {} }, 2000);
-
+        setTimeout(() => { 
+          try { document.body.removeChild(iframe); } catch {} 
+        }, 2000);
       }
-
     }, 600);
-
-  }, []);
+  }, [onReturnToQueue]);
 
 
 

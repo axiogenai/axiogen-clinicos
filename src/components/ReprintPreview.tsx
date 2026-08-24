@@ -56,13 +56,18 @@ export default function ReprintPreview({ patient, casePaper, onBack, onReturnToQ
     // Wait for fonts/images to load then print
     setTimeout(() => {
       try {
+        if (iframe.contentWindow) {
+          iframe.contentWindow.onafterprint = () => {
+            if (onReturnToQueue) onReturnToQueue();
+          };
+        }
         iframe.contentWindow?.focus();
         iframe.contentWindow?.print();
       } finally {
         setTimeout(() => { try { document.body.removeChild(iframe); } catch {} }, 2000);
       }
     }, 600);
-  }, []);
+  }, [onReturnToQueue]);
 
   const fitToScreen = useCallback(() => {
     if (!canvasRef.current) return;
