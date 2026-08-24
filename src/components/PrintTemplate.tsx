@@ -235,14 +235,14 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
       {/* ══════════════════════════════════════════════════════ */}
       {/* HEADER SECTION (Top Margin 9mm + Header 45mm = 54mm)   */}
       {/* ══════════════════════════════════════════════════════ */}
-      {/* HEADER / TOP OFFSET: 60mm (6cm) for General A5 Pad, 54mm for Dermatology Pad */}
+      {/* HEADER / TOP OFFSET: 60mm (6cm) for General A5 Pad, 58mm for Dermatology Pad */}
       <div 
         className="clinic-print-header" 
         style={{ 
-          height: isGeneralPad ? '60mm' : '54mm',
-          minHeight: isGeneralPad ? '60mm' : '54mm',
-          maxHeight: isGeneralPad ? '60mm' : '54mm',
-          paddingTop: isGeneralPad ? '0' : '9mm', 
+          height: isGeneralPad ? '60mm' : '58mm',
+          minHeight: isGeneralPad ? '60mm' : '58mm',
+          maxHeight: isGeneralPad ? '60mm' : '58mm',
+          paddingTop: isGeneralPad ? '0' : '13mm', 
           paddingLeft: '10mm',
           paddingRight: '10mm',
           boxSizing: 'border-box',
@@ -256,7 +256,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               src={clinicSettings.logoUrl}
               alt="Clinic Logo"
               style={{
-                height: '48px',
+                height: '56px',
                 width: 'auto',
                 objectFit: 'contain',
                 mixBlendMode: 'multiply',
@@ -268,7 +268,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               src="/logo-symbol.png"
               alt="Clinic Logo"
               style={{
-                height: '48px',
+                height: '56px',
                 width: 'auto',
                 objectFit: 'contain',
                 display: 'block',
@@ -278,7 +278,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span
               style={{
-                fontSize: '38px',
+                fontSize: '46px',
                 fontWeight: 700,
                 color: '#93231f',
                 fontFamily: "'DV-TTYogesh', 'Shivaji', 'Amita', 'Karma', serif",
@@ -289,7 +289,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
             </span>
             <span
               style={{
-                fontSize: '20px',
+                fontSize: '24px',
                 fontWeight: 700,
                 color: '#3b2c63',
                 fontFamily: "'Mukta', 'Poppins', sans-serif",
@@ -316,7 +316,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
         >
           {/* Doctor 1 (Left) */}
           <div style={{ textAlign: 'left', width: '33%' }}>
-            <div style={{ color: '#29558c', fontWeight: 700, fontSize: '15px', fontFamily: "'Mukta', sans-serif", marginBottom: '1px' }}>
+            <div style={{ color: '#29558c', fontWeight: 700, fontSize: '18px', fontFamily: "'Mukta', sans-serif", marginBottom: '1px' }}>
               {doc1.name}
             </div>
             {doc1.title && <div style={{ fontSize: '9px', fontWeight: 700, color: '#222' }}>{doc1.title}</div>}
@@ -345,7 +345,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
           </div>
           {/* Doctor 2 (Right) */}
           <div style={{ textAlign: 'right', width: '33%' }}>
-            <div style={{ color: '#29558c', fontWeight: 700, fontSize: '15px', fontFamily: "'Mukta', sans-serif", marginBottom: '1px' }}>
+            <div style={{ color: '#29558c', fontWeight: 700, fontSize: '18px', fontFamily: "'Mukta', sans-serif", marginBottom: '1px' }}>
               {doc2.name}
             </div>
             {doc2.title && <div style={{ fontSize: '9px', fontWeight: 700, color: '#222' }}>{doc2.title}</div>}
