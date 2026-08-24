@@ -89,7 +89,6 @@ export default function ReprintPreview({ patient, casePaper, onBack, onReturnToQ
   useEffect(() => { setTimeout(fitToScreen, 80); }, [drawerOpen, fitToScreen]);
 
   const scale  = zoom / 100;
-  const isDerm = (clinicSettings.templateVariant || 'dermatology') === 'dermatology';
 
   const pill = (active: boolean, onClick: () => void, label: React.ReactNode, activeColor = 'bg-[#047857] text-white') => (
     <button type="button" onClick={onClick}
@@ -175,8 +174,9 @@ export default function ReprintPreview({ patient, casePaper, onBack, onReturnToQ
           </div>
           {sep}
           <div className="inline-flex items-center gap-1 shrink-0">
-            {pill(isDerm, () => updateClinicSettings({ ...clinicSettings, templateVariant: 'dermatology' }, false), 'Dermatology')}
-            {pill(!isDerm, () => updateClinicSettings({ ...clinicSettings, templateVariant: 'general' }, false), 'General')}
+            {pill((clinicSettings.templateVariant || 'a4') === 'a4', () => updateClinicSettings({ ...clinicSettings, templateVariant: 'a4' }, false), 'A4')}
+            {pill(clinicSettings.templateVariant === 'dermatology', () => updateClinicSettings({ ...clinicSettings, templateVariant: 'dermatology' }, false), 'Dermatology')}
+            {pill(clinicSettings.templateVariant === 'general', () => updateClinicSettings({ ...clinicSettings, templateVariant: 'general' }, false), 'General')}
           </div>
           {sep}
           <button
@@ -250,8 +250,9 @@ export default function ReprintPreview({ patient, casePaper, onBack, onReturnToQ
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#7c766d] mb-1.5">Template</p>
               <div className="flex flex-wrap gap-1.5">
-                {drawerPill(isDerm, () => updateClinicSettings({ ...clinicSettings, templateVariant: 'dermatology' }, false), 'T1 — Dermatology')}
-                {drawerPill(!isDerm, () => updateClinicSettings({ ...clinicSettings, templateVariant: 'general' }, false), 'T2 — General')}
+                {drawerPill((clinicSettings.templateVariant || 'a4') === 'a4', () => updateClinicSettings({ ...clinicSettings, templateVariant: 'a4' }, false), 'A4 (Default)')}
+                {drawerPill(clinicSettings.templateVariant === 'dermatology', () => updateClinicSettings({ ...clinicSettings, templateVariant: 'dermatology' }, false), 'T1 — Dermatology')}
+                {drawerPill(clinicSettings.templateVariant === 'general', () => updateClinicSettings({ ...clinicSettings, templateVariant: 'general' }, false), 'T2 — General')}
               </div>
             </div>
             <div className="flex flex-wrap gap-1.5 pt-0.5 border-t border-[#e4e2e1]">
