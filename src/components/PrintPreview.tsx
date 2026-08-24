@@ -176,8 +176,6 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
 
   const scale  = zoom / 100;
 
-  const isDerm = (clinicSettings.templateVariant || 'dermatology') === 'dermatology';
-
 
 
   /* ── Desktop pill helper ── */
@@ -358,9 +356,11 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
 
           <div className="inline-flex items-center gap-1 shrink-0">
 
-            {pill(isDerm, () => updateClinicSettings({ ...clinicSettings, templateVariant: 'dermatology' }, false), 'Dermatology')}
+            {pill((clinicSettings.templateVariant || 'a4') === 'a4', () => updateClinicSettings({ ...clinicSettings, templateVariant: 'a4' }, false), 'A4')}
 
-            {pill(!isDerm, () => updateClinicSettings({ ...clinicSettings, templateVariant: 'general' }, false), 'General')}
+            {pill(clinicSettings.templateVariant === 'dermatology', () => updateClinicSettings({ ...clinicSettings, templateVariant: 'dermatology' }, false), 'Dermatology')}
+
+            {pill(clinicSettings.templateVariant === 'general', () => updateClinicSettings({ ...clinicSettings, templateVariant: 'general' }, false), 'General')}
 
           </div>
 
@@ -512,9 +512,11 @@ export default function PrintPreview({ patient, casePaper, onBack, onReturnToQue
 
               <div className="flex flex-wrap gap-1.5">
 
-                {drawerPill(isDerm, () => updateClinicSettings({ ...clinicSettings, templateVariant: 'dermatology' }, false), 'T1 — Dermatology')}
+                {drawerPill((clinicSettings.templateVariant || 'a4') === 'a4', () => updateClinicSettings({ ...clinicSettings, templateVariant: 'a4' }, false), 'A4 (Default)')}
 
-                {drawerPill(!isDerm, () => updateClinicSettings({ ...clinicSettings, templateVariant: 'general' }, false), 'T2 — General')}
+                {drawerPill(clinicSettings.templateVariant === 'dermatology', () => updateClinicSettings({ ...clinicSettings, templateVariant: 'dermatology' }, false), 'T1 — Dermatology')}
+
+                {drawerPill(clinicSettings.templateVariant === 'general', () => updateClinicSettings({ ...clinicSettings, templateVariant: 'general' }, false), 'T2 — General')}
 
               </div>
 
