@@ -74,18 +74,31 @@ export default function ClinicSettingsModal({ settings, onSave, onClose }: Props
             <label className="block text-xs font-bold uppercase tracking-wider text-emerald-900">
               Active Prescription Pad Layout
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <button
                 type="button"
-                onClick={() => setFormData({ ...formData, templateVariant: 'dermatology' })}
+                onClick={() => setFormData({ ...formData, templateVariant: 'a4' })}
                 className={`p-3 rounded-lg text-left border transition-all ${
-                  (formData.templateVariant || 'dermatology') === 'dermatology'
+                  (formData.templateVariant || 'a4') === 'a4'
                     ? 'bg-white border-emerald-600 ring-2 ring-emerald-600 shadow-sm'
                     : 'bg-white/60 border-slate-200 text-slate-600 hover:bg-white'
                 }`}
               >
-                <div className="font-bold text-xs text-slate-900">📄 Template 1: Dermatology Pad</div>
-                <div className="text-[11px] text-slate-500 mt-0.5">32% sidebar, drug warnings, verbal consent stamp</div>
+                <div className="font-bold text-xs text-slate-900">📄 A4 Template (Default)</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">Exact A4 full bleed, balanced fonts & spacing</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, templateVariant: 'dermatology' })}
+                className={`p-3 rounded-lg text-left border transition-all ${
+                  formData.templateVariant === 'dermatology'
+                    ? 'bg-white border-emerald-600 ring-2 ring-emerald-600 shadow-sm'
+                    : 'bg-white/60 border-slate-200 text-slate-600 hover:bg-white'
+                }`}
+              >
+                <div className="font-bold text-xs text-slate-900">📑 Template 1: Dermatology Pad</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">Original pad layout, sidebar & stamps</div>
               </button>
 
               <button
@@ -98,7 +111,7 @@ export default function ClinicSettingsModal({ settings, onSave, onClose }: Props
                 }`}
               >
                 <div className="font-bold text-xs text-slate-900">📋 Template 2: General Pad</div>
-                <div className="text-[11px] text-slate-500 mt-0.5">Clean open layout, Marathi follow-up, Shree Medical footer</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">Clean open layout, minimal text list</div>
               </button>
             </div>
           </div>
