@@ -16,7 +16,7 @@ interface QueueViewProps {
 const EMPTY_FORM = { name: '', age: '', gender: 'M' as 'M' | 'F' | 'Other', phone: '', village: '', complaint: '' };
 
 export default function QueueView({ queue, patients, onSelectPatient }: QueueViewProps) {
-  const { deletePatient, registerAndEnqueue, patients: allPatients, refreshPatients } = useClinic();
+  const { deletePatient, registerAndEnqueue, patients: allPatients, refreshPatients, addToQueue } = useClinic();
   const [patientSearchQuery, setPatientSearchQuery] = useState('');
   const [selectedEMRPatient, setSelectedEMRPatient] = useState<Patient | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -189,17 +189,21 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
           <div className="bg-white border border-[#e4e2e1] rounded-xl shadow-lg max-h-72 overflow-y-auto divide-y divide-[#f2eee3]">
             {searchedPatients.length > 0 ? (
               searchedPatients.map((p) => {
-                const existingQueueItem = queue.find(q => q.patientId === p.id || q.name === p.name);
+                const existingQueueItem = queue.find(q => q.patientId === p.id || (q.name && q.name.trim().toLowerCase() === p.name.trim().toLowerCase()));
+                const isAlreadyInQueue = Boolean(existingQueueItem);
                 const qItem: QueueItem = existingQueueItem || {
-                  queueId: `Q_TEMP_${p.id}`,
+                  queueId: `Q${Date.now()}`,
                   patientId: p.id,
                   name: p.name,
                   age: p.age,
                   phone: p.phone,
                   village: p.village,
-                  timeAdded: 'Direct Consultation',
-                  complaint: 'Returning Patient Visit',
-                  status: 'waiting'
+                  timeAdded: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
+                  complaint: p.pastHistory || '',
+                  status: 'waiting',
+                  paymentStatus: 'unpaid',
+                  paymentMode: 'cash',
+                  casePaperNo: p.casePaperNo,
                 };
 
                 return (
@@ -221,33 +225,48 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                             <span>{p.village || 'N/A'}</span>
                           </span>
                         </div>
-                        {/* Validity Badge */}
-                        {(() => {
-                          if (!p.validity) return null;
-                          const expiry = new Date(p.validity);
-                          const today = new Date();
-                          today.setHours(0, 0, 0, 0);
-                          const daysLeft = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-                          const fmt = expiry.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-                          if (daysLeft < 0) return (
-                            <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
-                              <AlertCircle className="w-3 h-3 text-red-600 shrink-0" />
-                              <span>Expired on {fmt}</span>
+                        {/* Validity Badge & Queue Status */}
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                          {(() => {
+                            if (!p.validity) return null;
+                            const expiry = new Date(p.validity);
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            const daysLeft = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                            const fmt = expiry.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                            if (daysLeft < 0) return (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+                                <AlertCircle className="w-3 h-3 text-red-600 shrink-0" />
+                                <span>Expired on {fmt}</span>
+                              </span>
+                            );
+                            if (daysLeft <= 7) return (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                                <Clock className="w-3 h-3 text-amber-600 shrink-0" />
+                                <span>Expiring in {daysLeft} day{daysLeft !== 1 ? 's' : ''} ({fmt})</span>
+                              </span>
+                            );
+                            return (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                                <span>Valid till {fmt}</span>
+                              </span>
+                            );
+                          })()}
+
+                          {existingQueueItem && (
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                              existingQueueItem.status === 'in-consultation'
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                : existingQueueItem.status === 'completed'
+                                ? 'bg-gray-100 text-gray-700 border border-gray-300'
+                                : 'bg-amber-100 text-amber-800 border border-amber-300'
+                            }`}>
+                              <Clock className="w-3 h-3" />
+                              <span>In Queue ({existingQueueItem.status === 'in-consultation' ? 'In Room' : existingQueueItem.status === 'completed' ? 'Completed' : 'Waiting'})</span>
                             </span>
-                          );
-                          if (daysLeft <= 7) return (
-                            <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
-                              <Clock className="w-3 h-3 text-amber-600 shrink-0" />
-                              <span>Expiring in {daysLeft} day{daysLeft !== 1 ? 's' : ''} ({fmt})</span>
-                            </span>
-                          );
-                          return (
-                            <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
-                              <span>Valid till {fmt}</span>
-                            </span>
-                          );
-                        })()}
+                          )}
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
@@ -259,6 +278,20 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                           <FileText className="w-3.5 h-3.5 text-[#047857]" />
                           <span>View EMR History</span>
                         </button>
+
+                        {!isAlreadyInQueue && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              addToQueue(qItem);
+                            }}
+                            className="btn-secondary text-xs py-1.5 px-3 flex-1 sm:flex-initial justify-center border-[#047857] text-[#047857] hover:bg-[#ecfdf5]"
+                            title="Add patient to today's queue"
+                          >
+                            <UserPlus className="w-3.5 h-3.5" />
+                            <span>Add to Queue</span>
+                          </button>
+                        )}
 
                         <button
                           type="button"
