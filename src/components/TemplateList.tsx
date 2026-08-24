@@ -51,15 +51,24 @@ export default function TemplateList({
     <div className="space-y-6">
       {/* Filter & Sort Bar */}
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-[#faf9f6] p-4 rounded-2xl border border-[#e4e2e1] shadow-sm">
-        <div className="relative w-full sm:max-w-md">
-          <Search className="w-4 h-4 text-[#7c766d] absolute left-3.5 top-3" />
-          <input
-            type="text"
-            className="block w-full pl-10 pr-4 py-2 border border-[#cdc6ba] rounded-xl text-xs bg-white text-[#1a1c1a] placeholder-[#7c766d] focus:outline-none focus:ring-2 focus:ring-[#047857] transition-all font-semibold"
-            placeholder="Search templates by name..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+        <div className="flex items-center gap-3 w-full sm:max-w-lg">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-[#7c766d] absolute left-3.5 top-3" />
+            <input
+              type="text"
+              className="block w-full pl-10 pr-4 py-2 border border-[#cdc6ba] rounded-xl text-xs bg-white text-[#1a1c1a] placeholder-[#7c766d] focus:outline-none focus:ring-2 focus:ring-[#047857] transition-all font-semibold"
+              placeholder="Search templates by name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          {/* Dynamic Total Protocol Template Count */}
+          <div className="px-3 py-2 rounded-xl bg-[#ecfdf5] border border-[#a7f3d0] text-[#047857] text-xs font-bold whitespace-nowrap shrink-0 flex items-center gap-1.5 shadow-xs">
+            <span className="text-[11px] text-[#065f46] font-semibold">Total:</span>
+            <span className="text-sm font-black text-[#047857]">{templates.length}</span>
+            <span className="text-[11px] text-[#047857] font-semibold">{templates.length === 1 ? 'Template' : 'Templates'}</span>
+          </div>
         </div>
 
         <div className="w-full sm:w-auto flex items-center gap-2 justify-end">
