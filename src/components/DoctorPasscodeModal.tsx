@@ -31,7 +31,7 @@ export default function DoctorPasscodeModal({ onUnlock, onLogout }: Props) {
     setError(null);
 
     // Instant client-side check for master passcode (no network / DB error possible)
-    if (val === 'adi.patil#1' || val === 'clinic123' || val === 'doc123' || val === 'doctor123') {
+    if (val === 'adi.patil#1') {
       sessionStorage.setItem('clinicos_doctor_passcode_unlocked', 'true');
       onUnlock();
       return;
@@ -44,7 +44,7 @@ export default function DoctorPasscodeModal({ onUnlock, onLogout }: Props) {
       sessionStorage.setItem('clinicos_doctor_passcode_unlocked', 'true');
       onUnlock();
     } catch (err: any) {
-      setError(err.message || 'Incorrect passcode. Try clinic123 or click Forgot Passcode.');
+      setError(err.message || 'Incorrect passcode. Please enter your security passcode or master key.');
     } finally {
       setLoading(false);
     }

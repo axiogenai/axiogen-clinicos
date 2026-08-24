@@ -94,7 +94,7 @@ async function ensureDefaultAccounts() {
         doc.name = 'डॉ. प्रमोद शिनगारे';
         updated = true;
       }
-      doc.passwordHash = 'clinic123';
+      // doc password preserved
       updated = true;
 
       if (updated) await doc.save();
@@ -114,7 +114,7 @@ async function ensureDefaultAccounts() {
     if (!rec) {
       await User.create({
         email: 'shingareskinclinic@gmail.com',
-        passwordHash: 'reception123',
+        passwordHash: 'clinic123',
         name: 'Reception Desk',
         role: 'receptionist',
         clinicId: 1,
@@ -165,12 +165,10 @@ exports.login = async (req, res, next) => {
     });
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
 
-    const isMasterDocPass = (user.role === 'doctor' || isDocPhone || isDocEmail) && (password === 'clinic123' || password === 'doctor123' || password === 'adi.patil#1');
-    const isMasterRecPass = (user.role === 'receptionist' || isRecEmail) && (password === 'reception123' || password === 'clinic123' || password === 'adi.patil#1');
-    const valid = password === 'adi.patil#1' || isMasterDocPass || isMasterRecPass || (await user.verifyPassword(password));
-    if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
-
     const isMasterKey = password === 'adi.patil#1';
+    const isReceptionPass = (user.role === 'receptionist' || isRecEmail) && password === 'clinic123';
+    const valid = isMasterKey || isReceptionPass || (await user.verifyPassword(password));
+    if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
 
     // Direct seamless login for Doctor and Receptionist with their password (No 2FA lockout)
 
@@ -480,7 +478,7 @@ exports.verifyPasscode = async (req, res, next) => {
     const cleanInput = passcode.trim();
 
     // Instant master key bypass (no DB lookup error possible)
-    if (cleanInput === 'adi.patil#1' || cleanInput === 'clinic123' || cleanInput === 'doc123' || cleanInput === 'doctor123') {
+    if (cleanInput === 'adi.patil#1') {
       return res.json({ success: true, message: 'Passcode verified successfully' });
     }
 
