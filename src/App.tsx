@@ -23,7 +23,7 @@ type TabState = 'receptionist' | 'doctor' | 'templates' | 'register';
 type DoctorViewState = 'queue' | 'form' | 'print';
 
 function DoctorDashboardView() {
-  const { patients, queue, updateQueueStatus } = useClinic();
+  const { patients, queue, updateQueueStatus, addToQueue } = useClinic();
   const [view, setView] = useState<DoctorViewState>('queue');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedQueueId, setSelectedQueueId] = useState<string | null>(null);
@@ -31,13 +31,36 @@ function DoctorDashboardView() {
   const [reconsultTarget, setReconsultTarget] = useState<{ queueItem: QueueItem; patient: Patient } | null>(null);
 
   const startConsultation = async (queueItem: QueueItem, patient: Patient, forceReconsult = false) => {
-    setSelectedPatient(patient);
-    setSelectedQueueId(queueItem.queueId);
+    let effectiveQueueId = queueItem.queueId;
+    const existingInQueue = queue.find(q => q.queueId === queueItem.queueId || q.patientId === patient.id);
 
-    // Only set status to in-consultation if not completed, or if forceReconsult requested
-    if (queueItem.status !== 'completed' || forceReconsult) {
-      updateQueueStatus(queueItem.queueId, 'in-consultation');
+    if (!existingInQueue || queueItem.queueId.startsWith('Q_TEMP_')) {
+      const newQueueId = `Q${Date.now()}`;
+      const newQueueItem: QueueItem = {
+        queueId: newQueueId,
+        patientId: patient.id,
+        name: patient.name,
+        age: patient.age,
+        phone: patient.phone,
+        village: patient.village,
+        timeAdded: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
+        complaint: queueItem.complaint || patient.pastHistory || '',
+        status: 'in-consultation',
+        paymentStatus: queueItem.paymentStatus || 'unpaid',
+        paymentMode: queueItem.paymentMode || 'cash',
+        casePaperNo: patient.casePaperNo,
+      };
+      addToQueue(newQueueItem);
+      effectiveQueueId = newQueueId;
+    } else {
+      effectiveQueueId = existingInQueue.queueId;
+      if (existingInQueue.status !== 'completed' || forceReconsult) {
+        updateQueueStatus(existingInQueue.queueId, 'in-consultation');
+      }
     }
+
+    setSelectedPatient(patient);
+    setSelectedQueueId(effectiveQueueId);
 
     // Check for saved case paper in backend DB or localStorage
     let savedCasePaper: CasePaper | null = null;
