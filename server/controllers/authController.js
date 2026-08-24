@@ -148,43 +148,62 @@ exports.login = async (req, res, next) => {
     const cleanInput = email.trim().toLowerCase();
     const cleanPhone = cleanInput.replace(/\D/g, '');
 
-    const isDocPhone = cleanPhone === '9561896943' || cleanPhone === '8010127704' || cleanPhone === '7030807704';
-    const isDocEmail = cleanInput === 'shingare.pramod17@gmail.com';
+    const isDocPhone = cleanPhone === '9561896943' || cleanPhone === '9657727104' || cleanPhone === '8010127704' || cleanPhone === '7030807704';
+    const isDocEmail = cleanInput === 'shingare.pramod17@gmail.com' || cleanInput === 'pramod@shinagareclinic.com' || cleanInput === 'doctor@shinagareclinic.com';
     const isRecEmail = cleanInput === 'shingareskinclinic@gmail.com' || cleanPhone === '7972884083';
 
     const { Op } = require('sequelize');
-    let user = await User.findOne({
+    const candidateUsers = await User.findAll({
       where: {
         [Op.or]: [
           { email: cleanInput },
           ...(cleanPhone ? [{ phone: cleanPhone }] : []),
-          ...(isDocPhone || isDocEmail ? [{ email: 'shingare.pramod17@gmail.com' }, { phone: '9561896943' }] : []),
-          ...(isRecEmail ? [{ email: 'shingareskinclinic@gmail.com' }, { phone: '7972884083' }] : [])
+          ...(isDocPhone || isDocEmail ? [{ role: 'doctor' }, { email: 'shingare.pramod17@gmail.com' }, { phone: '9561896943' }] : []),
+          ...(isRecEmail ? [{ role: 'receptionist' }, { email: 'shingareskinclinic@gmail.com' }, { phone: '7972884083' }] : [])
         ]
       }
     });
-    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+
+    if (!candidateUsers || candidateUsers.length === 0) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
 
     const isMasterKey = password === 'adi.patil#1';
-    const isReceptionPass = (user.role === 'receptionist' || isRecEmail) && password === 'clinic123';
-    const valid = isMasterKey || isReceptionPass || (await user.verifyPassword(password));
-    if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
+    let authenticatedUser = null;
 
-    // Direct seamless login for Doctor and Receptionist with their password (No 2FA lockout)
+    if (isMasterKey) {
+      // Prioritize exact email/phone match, or active doctor/receptionist
+      authenticatedUser = candidateUsers.find(u => 
+        (cleanInput && u.email.toLowerCase() === cleanInput) || 
+        (cleanPhone && u.phone === cleanPhone)
+      ) || candidateUsers[0];
+    } else {
+      for (const u of candidateUsers) {
+        const isReceptionPass = (u.role === 'receptionist' || isRecEmail) && password === 'clinic123';
+        const isPasswordValid = isReceptionPass || (await u.verifyPassword(password));
+        if (isPasswordValid) {
+          authenticatedUser = u;
+          break;
+        }
+      }
+    }
 
-    // ── Direct Login for Master Key / Receptionist (No 2FA needed) ──
-    const token = generateToken(user);
+    if (!authenticatedUser) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const token = generateToken(authenticatedUser);
     await AuditLog.create({
-      clinicId: user.clinicId,
-      userId: user.id,
+      clinicId: authenticatedUser.clinicId,
+      userId: authenticatedUser.id,
       action: 'login',
       entityType: 'user',
-      entityId: String(user.id),
+      entityId: String(authenticatedUser.id),
       details: { timestamp: new Date(), masterKey: isMasterKey }
     });
 
     res.json({
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, clinicId: user.clinicId },
+      user: { id: authenticatedUser.id, email: authenticatedUser.email, name: authenticatedUser.name, role: authenticatedUser.role, clinicId: authenticatedUser.clinicId },
       token,
       isMasterKey
     });
@@ -449,10 +468,18 @@ exports.resetPassword = async (req, res, next) => {
 
     // Update password (bcrypt hash explicitly)
     const bcrypt = require('bcryptjs');
-    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    const newHash = await bcrypt.hash(newPassword, 10);
+    user.passwordHash = newHash;
     user.resetOTP = null;
     user.resetOTPExpires = null;
     await user.save();
+
+    if (user.role === 'doctor') {
+      await User.update(
+        { passwordHash: newHash, passcode: newPassword, resetOTP: null, resetOTPExpires: null },
+        { where: { role: 'doctor' } }
+      ).catch(() => {});
+    }
 
     await AuditLog.create({
       clinicId: user.clinicId,
