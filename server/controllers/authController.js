@@ -158,8 +158,8 @@ exports.login = async (req, res, next) => {
         [Op.or]: [
           { email: cleanInput },
           ...(cleanPhone ? [{ phone: cleanPhone }] : []),
-          ...(isDocPhone || isDocEmail ? [{ email: 'shingare.pramod17@gmail.com' }, { role: 'doctor' }] : []),
-          ...(isRecEmail ? [{ email: 'shingareskinclinic@gmail.com' }, { role: 'receptionist' }] : [])
+          ...(isDocPhone || isDocEmail ? [{ email: 'shingare.pramod17@gmail.com' }, { phone: '9561896943' }] : []),
+          ...(isRecEmail ? [{ email: 'shingareskinclinic@gmail.com' }, { phone: '7972884083' }] : [])
         ]
       }
     });
