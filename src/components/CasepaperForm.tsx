@@ -12,6 +12,7 @@ import AddCustomMedicineModal from './AddCustomMedicineModal';
 import ConfirmModal from './ConfirmModal';
 
 import { calculateMedicineCount } from '../utils/countCalculator';
+import { formatFollowUpDate } from '../utils/dateFormatter';
 import { translateFrequencyToMarathi } from '../utils/marathiTranslator';
 import { parsePrescriptionSentence, parseSentenceWithGroqAI } from '../utils/sentenceParser';
 
@@ -388,22 +389,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
 
   const getFollowUpText = (dateStr?: string) => {
     if (!dateStr) return '';
-    const parts = dateStr.split('-');
-    if (parts.length !== 3) return dateStr;
-    const target = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    target.setHours(0, 0, 0, 0);
-    const diffTime = target.getTime() - today.getTime();
-    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-    
-    const formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
-    if (diffDays > 0) {
-      return `${diffDays} Days (${formattedDate})`;
-    } else if (diffDays === 0) {
-      return `Today (${formattedDate})`;
-    }
-    return formattedDate;
+    return formatFollowUpDate(dateStr, 'marathi');
   };
 
   const filteredTemplates = useMemo(() => {
@@ -1753,7 +1739,8 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                   { label: '5 Days', days: 5 },
                   { label: '7 Days (1 Wk)', days: 7 },
                   { label: '10 Days', days: 10 },
-                  { label: '15 Days (2 Wks)', days: 15 },
+                  { label: '14 Days (2 Wks)', days: 14 },
+                  { label: '15 Days', days: 15 },
                   { label: '21 Days (3 Wks)', days: 21 },
                   { label: '30 Days (1 Mo)', days: 30 },
                   { label: 'No Follow-up', days: 0 },

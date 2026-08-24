@@ -4,6 +4,7 @@ import type { CasePaper } from '../types';
 import type { ClinicSettings } from '../data/clinicSettings';
 import { calculateMedicineCount } from '../utils/countCalculator';
 import { translateMedicalText, translateMedicalTextAsync, cleanFrequencyString } from '../utils/medicalTranslator';
+import { formatLocalizedDate, formatFollowUpDate } from '../utils/dateFormatter';
 
 export type PrintLanguage = 'marathi' | 'english' | 'hindi' | 'kannada';
 
@@ -175,39 +176,11 @@ export default function A4PrintTemplate({
   const labels = getPatientLabels(language);
   const headers = getTableHeaders(language);
 
-  const formatDate = (dateString?: string) => {
+  const formatDate = (dateString?: string, isFollowUp = false) => {
     if (!dateString) return '__________';
-    try {
-      const parts = dateString.split('-');
-      let dateObj = new Date(dateString);
-      if (parts.length === 3) {
-        dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-      }
-      const formatted = new Intl.DateTimeFormat('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      }).format(dateObj);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      dateObj.setHours(0, 0, 0, 0);
-      const diffTime = dateObj.getTime() - today.getTime();
-      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-      if (diffDays > 0) {
-        if (language === 'marathi') {
-          return `${diffDays} दिवस (${formatted})`;
-        } else if (language === 'hindi') {
-          return `${diffDays} दिन (${formatted})`;
-        } else if (language === 'kannada') {
-          return `${diffDays} ದಿನಗಳು (${formatted})`;
-        } else {
-          return `${diffDays} Days (${formatted})`;
-        }
-      }
-      return formatted;
-    } catch {
-      return dateString;
-    }
+    return isFollowUp 
+      ? formatFollowUpDate(dateString, language)
+      : formatLocalizedDate(dateString, language);
   };
 
   const {
@@ -1240,7 +1213,7 @@ export default function A4PrintTemplate({
               <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>
                 {labels.followUp || 'Follow up - '}
               </span>
-              <span>{formatDate(casePaper.followUpDate)}</span>
+              <span>{formatDate(casePaper.followUpDate, true)}</span>
             </span>
           </div>
         </main>
