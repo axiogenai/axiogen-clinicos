@@ -1,5 +1,16 @@
+let _groqKeyWarned = false;
+
 function getApiKey() {
-  return process.env.GROQ_API_KEY || ['your_groq_api_key_here', 'Rh4WGdyb3FYEGiF82epU7qHpDmLr4rAmnbr'].join('');
+  const key = process.env.GROQ_API_KEY;
+  // Skip if no key or placeholder key
+  if (!key || key === 'your_groq_api_key_here' || key.length < 20) {
+    if (!_groqKeyWarned) {
+      console.warn('⚠️ Groq API key not configured — AI prescription translation disabled. Set GROQ_API_KEY in .env to enable.');
+      _groqKeyWarned = true;
+    }
+    return null;
+  }
+  return key;
 }
 
 async function callGroqChat(apiKey, model, systemPrompt, userMessage, isJson = true) {

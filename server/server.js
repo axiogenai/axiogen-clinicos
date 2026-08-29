@@ -125,9 +125,11 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 const isProd = process.env.NODE_ENV === 'production';
 
-async function startServer() {
+async function startServer(attempt = 1, maxAttempts = 5) {
   try {
     await sequelize.authenticate();
+    console.log(`✅ Database connected (attempt ${attempt}/${maxAttempts})`);
+
     // Execute safe column migrations
     const dialect = sequelize.getDialect();
     if (dialect === 'postgres') {
@@ -168,8 +170,20 @@ async function startServer() {
       console.log(`🚀 ClinicOS Express Backend Server running on http://localhost:${PORT} [Prod: ${isProd}]`);
     });
   } catch (err) {
-    console.error('❌ Database connection / sync error:', err);
+    console.error(`❌ Database connection failed (attempt ${attempt}/${maxAttempts}):`, err.message);
+    if (attempt < maxAttempts) {
+      const delaySec = Math.min(5 * attempt, 30); // 5s, 10s, 15s, 20s, 25s
+      console.log(`⏳ Retrying in ${delaySec}s... (Supabase may be waking up)`);
+      await new Promise(r => setTimeout(r, delaySec * 1000));
+      return startServer(attempt + 1, maxAttempts);
+    } else {
+      console.error('💀 All DB connection attempts failed. Starting server anyway for health checks...');
+      app.listen(PORT, () => {
+        console.log(`🚀 ClinicOS running on http://localhost:${PORT} [DB: OFFLINE - will retry on requests]`);
+      });
+    }
   }
 }
 
 startServer();
+

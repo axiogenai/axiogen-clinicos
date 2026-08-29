@@ -1,5 +1,15 @@
+let _groqTransKeyWarned = false;
+
 function getApiKey() {
-  return process.env.GROQ_API_KEY || ['your_groq_api_key_here', 'Rh4WGdyb3FYEGiF82epU7qHpDmLr4rAmnbr'].join('');
+  const key = process.env.GROQ_API_KEY;
+  if (!key || key === 'your_groq_api_key_here' || key.length < 20) {
+    if (!_groqTransKeyWarned) {
+      console.warn('⚠️ Groq API key not configured — AI translation disabled.');
+      _groqTransKeyWarned = true;
+    }
+    return null;
+  }
+  return key;
 }
 
 const cache = new Map();
