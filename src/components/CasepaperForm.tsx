@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Pill, FlaskConical, Lightbulb, Calendar, ArrowLeft, Printer, Trash2, CheckCircle2, Search, Plus, X, ChevronDown, FileText, Languages, Loader2 } from 'lucide-react';
+import { Pill, FlaskConical, Lightbulb, Calendar, ArrowLeft, Printer, Trash2, CheckCircle2, Search, Plus, X, ChevronDown, FileText, Languages, Loader2, Edit2, Save, User, BookOpen, Phone, MapPin } from 'lucide-react';
 import type { Patient } from '../data/patients';
 import { medicines as initialLocalMedicines } from '../data/medicines';
 import { useClinic } from '../context/ClinicContext';
@@ -277,11 +277,105 @@ const COUNSELLING = [
 ];
 
 export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCasePaper, onBack }: CasepaperFormProps) {
-  const { templates, queue, clinicSettings, addCustomFrequency, updateQueueStatus, setToast } = useClinic();
+  const { templates, queue, clinicSettings, addCustomFrequency, updateQueueStatus, setToast, updatePatientDetails, refreshPatients } = useClinic();
   const allFrequencies = useMemo(() => {
     const custom = clinicSettings?.customFrequencies || [];
     return Array.from(new Set([...custom, ...FREQUENCIES])).filter(Boolean);
   }, [clinicSettings?.customFrequencies]);
+
+  const [currentPatient, setCurrentPatient] = useState<Patient>(patient);
+  const [showEditPatientModal, setShowEditPatientModal] = useState(false);
+  const [isSavingPatient, setIsSavingPatient] = useState(false);
+  const [patientEditForm, setPatientEditForm] = useState({
+    name: patient.name || '',
+    age: patient.age || 0,
+    gender: (patient.gender || 'M') as 'M' | 'F' | 'Other',
+    phone: patient.phone || '',
+    village: patient.village || '',
+    casePaperNo: patient.casePaperNo || '',
+    pastHistory: casePaper.pastHistory || patient.pastHistory || '',
+    allergies: casePaper.allergies || patient.allergies || '',
+  });
+
+  useEffect(() => {
+    setCurrentPatient(patient);
+  }, [patient]);
+
+  const openPatientEditModal = () => {
+    setPatientEditForm({
+      name: currentPatient.name || '',
+      age: currentPatient.age || 0,
+      gender: (currentPatient.gender || 'M') as 'M' | 'F' | 'Other',
+      phone: currentPatient.phone || '',
+      village: currentPatient.village || '',
+      casePaperNo: currentPatient.casePaperNo || '',
+      pastHistory: casePaper.pastHistory || currentPatient.pastHistory || '',
+      allergies: casePaper.allergies || currentPatient.allergies || '',
+    });
+    setShowEditPatientModal(true);
+  };
+
+  const handleSavePatientEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!patientEditForm.name.trim()) {
+      setToast({ type: 'error', message: 'Patient name cannot be empty' });
+      return;
+    }
+    setIsSavingPatient(true);
+    try {
+      const payload = {
+        name: patientEditForm.name.trim(),
+        age: Number(patientEditForm.age) || 0,
+        gender: patientEditForm.gender,
+        phone: patientEditForm.phone.trim(),
+        village: patientEditForm.village.trim(),
+        casePaperNo: patientEditForm.casePaperNo.trim(),
+        pastHistory: patientEditForm.pastHistory.trim(),
+        allergies: patientEditForm.allergies.trim(),
+      };
+
+      if (typeof updatePatientDetails === 'function') {
+        await updatePatientDetails(currentPatient.id, queueId || '', payload);
+      } else {
+        await api.updatePatient(currentPatient.id, payload);
+      }
+
+      const updatedPatient: Patient = {
+        ...currentPatient,
+        ...payload,
+      };
+      setCurrentPatient(updatedPatient);
+
+      // Sync updated past history or allergies to active case paper
+      if (payload.pastHistory !== casePaper.pastHistory || payload.allergies !== casePaper.allergies) {
+        onUpdateCasePaper({
+          ...casePaper,
+          pastHistory: payload.pastHistory,
+          allergies: payload.allergies,
+        });
+      }
+
+      if (typeof refreshPatients === 'function') {
+        refreshPatients().catch(() => {});
+      }
+
+      setToast({
+        type: 'success',
+        title: 'Patient Updated',
+        message: `Details for ${updatedPatient.name} updated successfully`,
+      });
+      setShowEditPatientModal(false);
+    } catch (err: any) {
+      setToast({
+        type: 'error',
+        title: 'Update Failed',
+        message: err.message || 'Failed to update patient details',
+      });
+    } finally {
+      setIsSavingPatient(false);
+    }
+  };
+
   const [searchQuery, setSearchQuery] = useState('');
   const [sentenceInput, setSentenceInput] = useState('');
   const [templateSearchQuery, setTemplateSearchQuery] = useState('');
@@ -892,16 +986,41 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
               type="button"
               onClick={onBack}
               className="p-2 bg-[#f2eee3] hover:bg-[#e8e2d2] rounded-xl border border-[#cdc6ba] transition-colors text-[#4b463e] shrink-0"
+              title="Back"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#064e3b] to-[#047857] flex items-center justify-center shrink-0 shadow-md shadow-emerald-950/20">
-              <span className="text-[#ecfdf5] font-bold text-sm">{patient.name.charAt(0)}</span>
+              <span className="text-[#ecfdf5] font-bold text-sm">{currentPatient.name.charAt(0)}</span>
             </div>
             <div className="min-w-0">
-              <h2 className="text-base sm:text-lg font-serif font-bold text-[#1a1c1a] leading-tight truncate">{patient.name}</h2>
-              <p className="text-[10px] sm:text-xs text-[#7c766d] mt-0.5 truncate">
-                {patient.age} Yrs / {patient.gender === 'M' ? 'Male' : 'Female'} · {patient.phone} · {patient.village || 'N/A'}
+              <div className="flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-serif font-bold text-[#1a1c1a] leading-tight truncate">{currentPatient.name}</h2>
+                <button
+                  type="button"
+                  onClick={openPatientEditModal}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 hover:border-emerald-400 transition-all shadow-2xs cursor-pointer shrink-0"
+                  title="Edit Patient Details"
+                >
+                  <Edit2 className="w-3 h-3 text-emerald-700" />
+                  <span>Edit</span>
+                </button>
+              </div>
+              <p className="text-[10px] sm:text-xs text-[#7c766d] mt-0.5 flex items-center gap-1.5 flex-wrap">
+                <span>{currentPatient.age} Yrs / {currentPatient.gender === 'M' ? 'Male' : (currentPatient.gender === 'F' ? 'Female' : 'Other')}</span>
+                <span>·</span>
+                <span>{currentPatient.phone || 'N/A'}</span>
+                <span>·</span>
+                <span>{currentPatient.village || 'N/A'}</span>
+                {Boolean(currentPatient.casePaperNo) && (
+                  <>
+                    <span>·</span>
+                    <span className="inline-flex items-center gap-0.5 font-mono font-bold text-[10px] px-1.5 py-0.2 rounded bg-amber-50 text-amber-900 border border-amber-200">
+                      <BookOpen className="w-2.5 h-2.5 text-amber-700" />
+                      #{currentPatient.casePaperNo}
+                    </span>
+                  </>
+                )}
               </p>
             </div>
           </div>
@@ -1892,6 +2011,181 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
             });
           }}
         />
+      )}
+      
+      {/* Edit Patient Details Modal */}
+      {showEditPatientModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-[#e4e2e1] animate-scale-in">
+            <div className="px-6 py-4 bg-gradient-to-r from-[#064e3b] to-[#047857] text-white flex justify-between items-center">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-white/10 rounded-lg">
+                  <User className="w-5 h-5 text-emerald-200" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-bold text-lg leading-tight">Edit Patient Details</h3>
+                  <p className="text-emerald-100 text-xs mt-0.5">Update patient demographics and case paper number</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowEditPatientModal(false)}
+                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSavePatientEdit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1.5">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={patientEditForm.name}
+                  onChange={(e) => setPatientEditForm({ ...patientEditForm, name: e.target.value })}
+                  placeholder="e.g. Rahul Patil"
+                  className="w-full px-3.5 py-2.5 bg-[#faf9f6] border border-[#d1cbbe] rounded-xl text-sm font-medium text-[#1a1c1a] focus:bg-white focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/20 outline-hidden transition-all"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1.5">
+                    Age (Years)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="130"
+                    value={patientEditForm.age || ''}
+                    onChange={(e) => setPatientEditForm({ ...patientEditForm, age: parseInt(e.target.value) || 0 })}
+                    placeholder="e.g. 28"
+                    className="w-full px-3.5 py-2.5 bg-[#faf9f6] border border-[#d1cbbe] rounded-xl text-sm font-medium text-[#1a1c1a] focus:bg-white focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/20 outline-hidden transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1.5">
+                    Gender
+                  </label>
+                  <select
+                    value={patientEditForm.gender}
+                    onChange={(e) => setPatientEditForm({ ...patientEditForm, gender: e.target.value as any })}
+                    className="w-full px-3.5 py-2.5 bg-[#faf9f6] border border-[#d1cbbe] rounded-xl text-sm font-medium text-[#1a1c1a] focus:bg-white focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/20 outline-hidden transition-all"
+                  >
+                    <option value="M">Male (पुरुष)</option>
+                    <option value="F">Female (स्त्री)</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1.5">
+                    Phone / Mobile
+                  </label>
+                  <div className="relative">
+                    <Phone className="w-4 h-4 text-[#7c766d] absolute left-3 top-3" />
+                    <input
+                      type="tel"
+                      value={patientEditForm.phone}
+                      onChange={(e) => setPatientEditForm({ ...patientEditForm, phone: e.target.value })}
+                      placeholder="10 digit number"
+                      className="w-full pl-9 pr-3.5 py-2.5 bg-[#faf9f6] border border-[#d1cbbe] rounded-xl text-sm font-medium text-[#1a1c1a] focus:bg-white focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/20 outline-hidden transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1.5">
+                    Village / City
+                  </label>
+                  <div className="relative">
+                    <MapPin className="w-4 h-4 text-[#7c766d] absolute left-3 top-3" />
+                    <input
+                      type="text"
+                      value={patientEditForm.village}
+                      onChange={(e) => setPatientEditForm({ ...patientEditForm, village: e.target.value })}
+                      placeholder="e.g. Peth Vadgaon"
+                      className="w-full pl-9 pr-3.5 py-2.5 bg-[#faf9f6] border border-[#d1cbbe] rounded-xl text-sm font-medium text-[#1a1c1a] focus:bg-white focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/20 outline-hidden transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-amber-900 mb-1.5 flex items-center gap-1.5">
+                  <BookOpen className="w-3.5 h-3.5 text-amber-700" />
+                  Case Paper No. (केसपेपर क्रमांक)
+                </label>
+                <input
+                  type="text"
+                  value={patientEditForm.casePaperNo}
+                  onChange={(e) => setPatientEditForm({ ...patientEditForm, casePaperNo: e.target.value })}
+                  placeholder="e.g. 1042 or CP-2026-08"
+                  className="w-full px-3.5 py-2.5 bg-amber-50/50 border border-amber-300 rounded-xl text-sm font-bold font-mono text-amber-950 focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-hidden transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1.5">
+                  Past Medical History
+                </label>
+                <textarea
+                  rows={2}
+                  value={patientEditForm.pastHistory}
+                  onChange={(e) => setPatientEditForm({ ...patientEditForm, pastHistory: e.target.value })}
+                  placeholder="DM, HTN, Thyroid, previous skin conditions..."
+                  className="w-full px-3.5 py-2 bg-[#faf9f6] border border-[#d1cbbe] rounded-xl text-xs font-medium text-[#1a1c1a] focus:bg-white focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/20 outline-hidden transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-red-700 mb-1.5">
+                  Drug Allergies
+                </label>
+                <textarea
+                  rows={2}
+                  value={patientEditForm.allergies}
+                  onChange={(e) => setPatientEditForm({ ...patientEditForm, allergies: e.target.value })}
+                  placeholder="e.g. Sulfa drugs, Penicillin, None..."
+                  className="w-full px-3.5 py-2 bg-red-50/40 border border-red-200 rounded-xl text-xs font-medium text-red-900 focus:bg-white focus:border-red-400 focus:ring-2 focus:ring-red-400/20 outline-hidden transition-all"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-[#e4e2e1] flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowEditPatientModal(false)}
+                  className="px-4 py-2.5 rounded-xl border border-[#d1cbbe] text-[#4b463e] text-xs font-bold hover:bg-[#f2eee3] transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingPatient}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#064e3b] to-[#047857] text-white text-xs font-bold shadow-md shadow-emerald-950/20 hover:from-[#047857] hover:to-[#065f46] transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {isSavingPatient ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      <span>Save Changes</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
       
       {/* Confirm Modal */}

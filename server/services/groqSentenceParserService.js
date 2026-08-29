@@ -87,7 +87,7 @@ Rules:
 4. "duration": if any duration number or phrase is mentioned (e.g. "25", "25 divas", "20 days", "1 mahina"), format as "X Days", "X Weeks", or "X Months". If the sentence ends with a bare number like "25" or "20" after timing, that is the duration ("25 Days", "20 Days").
 5. Return ONLY the JSON object. No explanations, no markdown ticks, no preamble.`;
 
-  const models = ['groq/compound-mini', 'openai/gpt-oss-20b', 'qwen/qwen3.6-27b'];
+  const models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'];
 
   for (const model of models) {
     try {
