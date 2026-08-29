@@ -462,10 +462,15 @@ async function autoBackupDailyQueue(targetDate = null) {
 }
 
 
+let schedulerStarted = false;
+
 /**
  * Start Background Cron Scheduler (Runs every morning at 09:00 AM)
  */
 function initBackgroundScheduler() {
+  if (schedulerStarted) return;
+  schedulerStarted = true;
+
   let lastReminderDate = '';
   let lastBackupDate = '';
   let lastFestivalDate = '';
@@ -611,9 +616,6 @@ function initBackgroundScheduler() {
   runChecks();
   setInterval(runChecks, checkIntervalMs);
 }
-
-// Auto-start background scheduler engine for WhatsApp reminders & festival wishes
-initBackgroundScheduler();
 
 module.exports = {
   buildReminderMessage,

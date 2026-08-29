@@ -12,11 +12,21 @@ let connectionStatus = 'disconnected'; // 'disconnected' | 'connecting' | 'qr_re
 let connectedPhone = '';
 let isInitializing = false;
 let reconnectTimer = null;
+let qrTimeoutTimer = null;
+
+function hasStoredCredentials() {
+  const credsPath = path.join(AUTH_FOLDER, 'creds.json');
+  return fs.existsSync(credsPath);
+}
 
 function cleanupSocket() {
   if (reconnectTimer) {
     clearTimeout(reconnectTimer);
     reconnectTimer = null;
+  }
+  if (qrTimeoutTimer) {
+    clearTimeout(qrTimeoutTimer);
+    qrTimeoutTimer = null;
   }
   if (sock) {
     try {
@@ -55,13 +65,13 @@ async function initWhatsAppGateway(forceFresh = false) {
 
     sock = makeWASocket({
       auth: state,
-      printQRInTerminal: true,
+      printQRInTerminal: false, // Don't spam terminal logs with massive ASCII QR
       logger: pino({ level: 'silent' }),
       browser: Browsers.macOS('Desktop'),
-      connectTimeoutMs: 60000,
-      defaultQueryTimeoutMs: 60000,
-      keepAliveIntervalMs: 30000,
-      retryRequestDelayMs: 3000,
+      connectTimeoutMs: 30000,
+      defaultQueryTimeoutMs: 30000,
+      keepAliveIntervalMs: 60000,
+      retryRequestDelayMs: 5000,
       markOnlineOnConnect: false,
       syncFullHistory: false,
     });
@@ -75,11 +85,18 @@ async function initWhatsAppGateway(forceFresh = false) {
         try {
           qrCodeDataUrl = await QRCode.toDataURL(qr);
           connectionStatus = 'qr_ready';
-          console.log('📱 WhatsApp Gateway: New QR Code generated!');
-          try {
-            const asciiQr = await QRCode.toString(qr, { type: 'terminal', small: true });
-            console.log(asciiQr);
-          } catch (e) {}
+          console.log('📱 WhatsApp Gateway: QR Code ready for scan');
+
+          // Auto-stop QR generation after 3 minutes of no scan to protect CPU/RAM
+          if (qrTimeoutTimer) clearTimeout(qrTimeoutTimer);
+          qrTimeoutTimer = setTimeout(() => {
+            if (connectionStatus === 'qr_ready') {
+              console.log('⏳ WhatsApp QR code timed out. Idle until user opens WhatsApp modal.');
+              cleanupSocket();
+              connectionStatus = 'disconnected';
+              qrCodeDataUrl = '';
+            }
+          }, 180000); // 3 minutes
         } catch (err) {
           console.error('Error generating QR Data URL:', err);
         }
@@ -96,7 +113,6 @@ async function initWhatsAppGateway(forceFresh = false) {
         connectedPhone = '';
         isInitializing = false;
 
-        // ONLY wipe credentials if explicitly logged out by user action, NEVER on transient 401 disconnects or server restarts!
         if (isExplicitLogout) {
           console.log('🗑️ Explicit user logout detected. Wiping stored credentials...');
           if (fs.existsSync(AUTH_FOLDER)) {
@@ -104,28 +120,43 @@ async function initWhatsAppGateway(forceFresh = false) {
           }
         }
 
-        // Always schedule automatic silent reconnection with saved credentials
-        if (reconnectTimer) clearTimeout(reconnectTimer);
-        reconnectTimer = setTimeout(() => {
-          if (connectionStatus === 'disconnected' && !isInitializing) {
-            console.log('🔄 Reconnecting WhatsApp Gateway using saved session credentials...');
-            initWhatsAppGateway();
-          }
-        }, 3000);
+        // CRITICAL FIX: Only auto-reconnect if we ALREADY HAVE saved session credentials!
+        // Never auto-reconnect in an infinite loop when waiting for initial QR scan!
+        if (hasStoredCredentials() && !isExplicitLogout) {
+          if (reconnectTimer) clearTimeout(reconnectTimer);
+          reconnectTimer = setTimeout(() => {
+            if (connectionStatus === 'disconnected' && !isInitializing) {
+              console.log('🔄 Reconnecting WhatsApp Gateway using saved session credentials...');
+              initWhatsAppGateway();
+            }
+          }, 10000); // 10s backoff (not 3s aggressive loop)
+        } else {
+          console.log('📱 WhatsApp Gateway idle. Waiting for user interaction.');
+        }
       } else if (connection === 'open') {
         connectionStatus = 'connected';
         qrCodeDataUrl = '';
         connectedPhone = sock?.user?.id ? sock.user.id.split(':')[0] : 'Connected Phone';
         isInitializing = false;
-        console.log(`✅ WhatsApp Gateway CONNECTED & PERSISTED as +${connectedPhone}`);
+        console.log(`✅ WhatsApp Gateway CONNECTED as +${connectedPhone}`);
       }
     });
   } catch (err) {
-    console.error('Failed to init WASocket:', err);
+    console.error('Failed to init WASocket:', err.message);
     connectionStatus = 'disconnected';
     qrCodeDataUrl = '';
   } finally {
     isInitializing = false;
+  }
+}
+
+// Auto-boot ONLY if previously authenticated credentials exist
+function bootIfSavedSessionExists() {
+  if (hasStoredCredentials()) {
+    console.log('📱 Saved WhatsApp session found. Initializing gateway...');
+    initWhatsAppGateway();
+  } else {
+    console.log('📱 No saved WhatsApp session. Gateway idle (0% CPU impact).');
   }
 }
 
@@ -158,22 +189,18 @@ async function sendWhatsAppMessage(toPhone, messageText) {
 
 async function logoutGateway() {
   cleanupSocket();
-  connectionStatus = 'disconnected';
-  qrCodeDataUrl = '';
-  connectedPhone = '';
-
   if (fs.existsSync(AUTH_FOLDER)) {
     try { fs.rmSync(AUTH_FOLDER, { recursive: true, force: true }); } catch (e) {}
   }
-
-  setTimeout(() => initWhatsAppGateway(true), 1000);
+  connectionStatus = 'disconnected';
+  qrCodeDataUrl = '';
+  connectedPhone = '';
+  return { success: true, message: 'Logged out successfully' };
 }
-
-// Auto-initialize on boot
-initWhatsAppGateway().catch(() => {});
 
 module.exports = {
   initWhatsAppGateway,
+  bootIfSavedSessionExists,
   getGatewayStatus,
   sendWhatsAppMessage,
   logoutGateway

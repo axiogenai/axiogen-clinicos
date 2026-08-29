@@ -24,11 +24,11 @@ const clinicRoutes = require('./routes/clinic');
 const whatsappRoutes = require('./routes/whatsapp');
 const registerRoutes = require('./routes/register');
 const { initBackgroundScheduler } = require('./services/whatsappService');
-const { initWhatsAppGateway } = require('./services/whatsappGateway');
+const { bootIfSavedSessionExists } = require('./services/whatsappGateway');
 
-// Start automated background scheduler & boot WhatsApp session
+// Start automated background scheduler & boot saved WhatsApp session (if one exists)
 initBackgroundScheduler();
-initWhatsAppGateway().catch(err => console.error('❌ Failed to boot WhatsApp Gateway:', err));
+bootIfSavedSessionExists();
 
 // Middlewares
 app.use(compression()); // Gzip all responses - reduces payload size by 70-80%
@@ -161,10 +161,6 @@ async function startServer(attempt = 1, maxAttempts = 5) {
     }
 
     await sequelize.sync({ alter: false });
-
-    // Initialize WhatsApp Automated Festival & Follow-Up Engine
-    const { initBackgroundScheduler } = require('./services/whatsappService');
-    initBackgroundScheduler();
 
     app.listen(PORT, () => {
       console.log(`🚀 ClinicOS Express Backend Server running on http://localhost:${PORT} [Prod: ${isProd}]`);
