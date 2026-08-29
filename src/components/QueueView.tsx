@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Users, Clock, Stethoscope, CheckCircle2, ArrowRight, FileText, Phone, MapPin, Search, X, Trash2, UserPlus, RefreshCw, AlertCircle } from 'lucide-react';
+import { Users, Clock, Stethoscope, CheckCircle2, ArrowRight, FileText, Phone, MapPin, Search, X, Trash2, UserPlus, RefreshCw, AlertCircle, BookOpen } from 'lucide-react';
 import type { Patient, QueueItem } from '../data/patients';
 import { filterAndSortPatients } from './PatientSearch';
 import PatientEMRHistoryModal from './PatientEMRHistoryModal';
@@ -385,6 +385,7 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
             const isWaiting = item.status === 'waiting';
             const isConsulting = item.status === 'in-consultation';
             const isCompleted = item.status === 'completed';
+            const casePaper = item.casePaperNo || patient.casePaperNo;
 
             return (
               <div 
@@ -399,7 +400,15 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                     </span>
                     <div className="min-w-0">
                       <div className="font-bold text-[#1a1c1a] text-sm truncate">{patient.name}</div>
-                      <div className="text-[11px] text-[#7c766d]">{patient.age}y · {patient.gender === 'M' ? 'Male' : 'Female'}</div>
+                      <div className="text-[11px] text-[#7c766d] flex items-center gap-1.5 flex-wrap">
+                        <span>{patient.age}y · {patient.gender === 'M' ? 'Male' : 'Female'}</span>
+                        {casePaper && (
+                          <span className="inline-flex items-center gap-0.5 text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-900 border border-amber-200">
+                            <BookOpen className="w-2.5 h-2.5 text-amber-700" />
+                            #{casePaper}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="shrink-0">
@@ -474,16 +483,17 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
 
         {/* Desktop Table View */}
         <div className="hidden md:block w-full overflow-x-auto">
-          <table className="clinic-table w-full min-w-[750px]">
+          <table className="clinic-table w-full min-w-[850px]">
             <thead>
               <tr>
                 <th className="text-center w-12">Sr. No.</th>
-                <th className="text-center w-28">Time</th>
-                <th className="text-left w-64">Patient</th>
-                <th className="text-left w-56">Contact & Location</th>
+                <th className="text-center w-24">Time</th>
+                <th className="text-left w-56">Patient</th>
+                <th className="text-left w-48">Contact & Location</th>
+                <th className="text-center w-36">Case Paper No.</th>
                 <th className="text-center">Chief Complaint</th>
-                <th className="text-center w-36">Status</th>
-                <th className="text-right w-44">Action</th>
+                <th className="text-center w-32">Status</th>
+                <th className="text-right w-40">Action</th>
               </tr>
             </thead>
 
@@ -504,6 +514,7 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                 const isWaiting = item.status === 'waiting';
                 const isConsulting = item.status === 'in-consultation';
                 const isCompleted = item.status === 'completed';
+                const casePaper = item.casePaperNo || patient.casePaperNo;
 
                 return (
                   <tr 
@@ -534,6 +545,17 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                         <MapPin className="w-3 h-3 shrink-0" />
                         <span className="truncate">{item.village || patient.village || 'N/A'}</span>
                       </div>
+                    </td>
+                    {/* Case Paper Number */}
+                    <td className="text-center">
+                      {casePaper ? (
+                        <span className="inline-flex items-center gap-1 font-mono font-bold text-xs px-2.5 py-1 rounded-lg bg-amber-50 text-amber-900 border border-amber-200/80 shadow-2xs">
+                          <BookOpen className="w-3 h-3 text-amber-700 shrink-0" />
+                          <span>#{casePaper}</span>
+                        </span>
+                      ) : (
+                        <span className="text-[#7c766d] text-xs font-mono">—</span>
+                      )}
                     </td>
                     <td className="text-center" title={item.complaint || 'No complaint listed'}>
                       <span className="text-[#4b463e] text-sm font-medium truncate block text-center">{item.complaint || '—'}</span>
