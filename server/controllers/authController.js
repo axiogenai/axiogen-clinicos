@@ -324,9 +324,25 @@ exports.forgotPassword = async (req, res, next) => {
 
     // Generate secure 6-digit OTP code
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // Valid for 15 mins
+
+    // Save to target user
     user.resetOTP = otp;
-    user.resetOTPExpires = new Date(Date.now() + 15 * 60 * 1000); // Valid for 15 mins
+    user.resetOTPExpires = expiresAt;
     await user.save();
+
+    // If doctor or receptionist, ensure all alias accounts share the exact same active OTP
+    if (user.role === 'doctor' || isDocPhone || isDocEmail) {
+      await User.update(
+        { resetOTP: otp, resetOTPExpires: expiresAt },
+        { where: { role: 'doctor' } }
+      ).catch(() => {});
+    } else if (user.role === 'receptionist' || isRecEmail) {
+      await User.update(
+        { resetOTP: otp, resetOTPExpires: expiresAt },
+        { where: { role: 'receptionist' } }
+      ).catch(() => {});
+    }
 
     const isDoctor = user.role === 'doctor' || isDocPhone || isDocEmail;
     const targetPhone = isDoctor ? '9561896943' : (user.phone || cleanPhone);
@@ -389,31 +405,49 @@ exports.verifyOTP = async (req, res, next) => {
     const cleanInput = identifier.trim().toLowerCase();
     const cleanPhone = cleanInput.replace(/\D/g, '');
 
-    const isDocPhone = cleanPhone === '9561896943' || cleanPhone === '8010127704' || cleanPhone === '7030807704';
-    const isDocEmail = cleanInput === 'shingare.pramod17@gmail.com';
+    const isDocPhone = cleanPhone === '9561896943' || cleanPhone === '8010127704' || cleanPhone === '7030807704' || cleanPhone === '9657727104';
+    const isDocEmail = cleanInput === 'shingare.pramod17@gmail.com' || cleanInput === 'doctor@shingareclinic.com' || cleanInput === 'doctor@shinagareclinic.com';
     const isRecEmail = cleanInput === 'shingareskinclinic@gmail.com' || cleanPhone === '7972884083';
 
-    let user = await User.findOne({
+    const users = await User.findAll({
       where: {
         [Op.or]: [
           { email: cleanInput },
           ...(cleanPhone ? [{ phone: cleanPhone }] : []),
-          ...(isDocPhone || isDocEmail ? [{ email: 'shingare.pramod17@gmail.com' }, { role: 'doctor' }] : []),
-          ...(isRecEmail ? [{ email: 'shingareskinclinic@gmail.com' }, { role: 'receptionist' }] : []),
+          ...(isDocPhone || isDocEmail ? [{ role: 'doctor' }, { email: 'shingare.pramod17@gmail.com' }] : []),
+          ...(isRecEmail ? [{ role: 'receptionist' }, { email: 'shingareskinclinic@gmail.com' }] : []),
           { name: cleanInput }
         ]
       }
     });
 
-    if (!user) {
-      user = await User.findOne({ where: { role: 'doctor' } }) || await User.findOne();
-    }
-
     const cleanOTP = otp.trim();
     const isMasterOTP = cleanOTP === '123456' || cleanOTP === 'adi.patil#1';
-    const isValidOTP = user && user.resetOTP && user.resetOTP === cleanOTP;
 
-    if (!isMasterOTP && !isValidOTP) {
+    let matched = isMasterOTP;
+    if (!matched && users && users.length > 0) {
+      for (const u of users) {
+        if (u.resetOTP && u.resetOTP === cleanOTP) {
+          matched = true;
+          break;
+        }
+      }
+    }
+
+    if (!matched) {
+      // Also check any doctor account if identifier was a doctor alias
+      if (isDocPhone || isDocEmail) {
+        const docUsers = await User.findAll({ where: { role: 'doctor' } });
+        for (const doc of docUsers) {
+          if (doc.resetOTP && doc.resetOTP === cleanOTP) {
+            matched = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!matched) {
       return res.status(400).json({ error: 'Invalid 6-digit OTP code. Please check your email / WhatsApp or use 123456.' });
     }
 
