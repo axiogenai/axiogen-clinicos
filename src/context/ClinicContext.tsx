@@ -4,7 +4,7 @@ import type { Patient, QueueItem } from '../data/patients';
 import type { CaseTemplate } from '../data/templates';
 import type { ClinicSettings } from '../data/clinicSettings';
 import { defaultClinicSettings } from '../data/clinicSettings';
-import { api } from '../api/client';
+import { api, type HealthStatusUpdate } from '../api/client';
 import { supabaseAuth } from '../lib/supabase';
 
 export interface UserSession {
@@ -24,7 +24,7 @@ export interface ToastMessage {
 interface ClinicContextType {
   user: UserSession | null;
   token: string | null;
-  login: (email: string, password: string, onStatus?: (msg: string) => void) => Promise<void>;
+  login: (email: string, password: string, onStatus?: (status: HealthStatusUpdate) => void) => Promise<void>;
   logout: () => void;
   patients: Patient[];
   queue: QueueItem[];
@@ -127,14 +127,14 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
   // Real Supabase + Database Login Action
-  const login = useCallback(async (emailInput: string, passwordInput: string, onStatus?: (msg: string) => void) => {
+  const login = useCallback(async (emailInput: string, passwordInput: string, onStatus?: (status: HealthStatusUpdate) => void) => {
     try {
       // 1. Health check & waking backend/DB if needed
-      if (onStatus) onStatus('Checking server & database connectivity...');
+      if (onStatus) onStatus({ step: 'pinging', message: 'Checking server & database connectivity...' });
       await api.checkSystemHealth(onStatus);
 
       // 2. Perform authentication
-      if (onStatus) onStatus('Authenticating credentials...');
+      if (onStatus) onStatus({ step: 'authenticating', message: 'Authenticating credentials...' });
       const data = await api.login(emailInput, passwordInput);
 
       // Doctor 2FA — backend sends requires2FA instead of token
@@ -148,7 +148,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem('clinicos_jwt_token', data.token!);
 
       // 4. Pre-load real database records before marking login as successful
-      if (onStatus) onStatus('📥 Loading clinic database & patients...');
+      if (onStatus) onStatus({ step: 'syncing', message: 'Syncing patient records and prescription protocols...' });
       try {
         const [dbPatients, dbQueue, dbTemplates, dbSettings] = await Promise.allSettled([
           api.getPatients(),

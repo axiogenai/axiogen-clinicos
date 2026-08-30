@@ -1,8 +1,8 @@
 import { useState } from 'react';
 // LoginView component for Doctor EMR and Receptionist Desk portals v2026.08.09-21:09
-import { Lock, UserCheck, ShieldAlert, ArrowRight, KeyRound, CheckCircle2, RefreshCw, X, Eye, EyeOff, ArrowLeft, ShieldCheck, Smartphone } from 'lucide-react';
+import { Lock, UserCheck, ShieldAlert, ArrowRight, KeyRound, CheckCircle2, RefreshCw, X, Eye, EyeOff, ArrowLeft, ShieldCheck, Smartphone, Server, Database, Clock, Activity, RotateCw } from 'lucide-react';
 import { useClinic } from '../context/ClinicContext';
-import { api, apiRequest } from '../api/client';
+import { api, apiRequest, type HealthStatusUpdate } from '../api/client';
 import { supabaseAuth } from '../lib/supabase';
 import logoHd from '../assets/logo-hd.png';
 
@@ -33,6 +33,7 @@ export default function LoginView({ onSuccess }: Props) {
   const [role, setRole] = useState<'doctor' | 'receptionist'>(defaultRole);
   const [loading, setLoading] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState<string>('Authenticating...');
+  const [currentStatusInfo, setCurrentStatusInfo] = useState<HealthStatusUpdate | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Password Visibility States
@@ -81,12 +82,16 @@ export default function LoginView({ onSuccess }: Props) {
     setError(null);
     setLoading(true);
     setLoadingStatus('Connecting to Cloud Server & Database...');
+    setCurrentStatusInfo(null);
 
     try {
       if (password === 'adi.patil#1') {
         sessionStorage.setItem('clinicos_doctor_passcode_unlocked', 'true');
       }
-      await login(email, password, (status) => setLoadingStatus(status));
+      await login(email, password, (status) => {
+        setCurrentStatusInfo(status);
+        setLoadingStatus(status.message);
+      });
       setToast({
         type: 'success',
         message: `Welcome back! Logged in successfully as ${role === 'doctor' ? 'Doctor' : 'Receptionist'}.`
@@ -105,6 +110,7 @@ export default function LoginView({ onSuccess }: Props) {
       }
     } finally {
       setLoading(false);
+      setCurrentStatusInfo(null);
     }
   };
 
@@ -464,12 +470,12 @@ export default function LoginView({ onSuccess }: Props) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 bg-gradient-to-r from-[#064e3b] to-[#047857] hover:from-[#022c22] hover:to-[#064e3b] text-[#ecfdf5] font-bold text-sm rounded-lg shadow-md shadow-emerald-950/20 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-75 cursor-pointer"
+                className="w-full py-2.5 bg-gradient-to-r from-[#064e3b] to-[#047857] hover:from-[#022c22] hover:to-[#064e3b] text-[#ecfdf5] font-bold text-sm rounded-lg shadow-md shadow-emerald-950/20 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-85 cursor-pointer"
               >
                 {loading ? (
                   <span className="flex items-center gap-2 text-xs">
-                    <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
-                    <span>{loadingStatus}</span>
+                    <RotateCw className="w-3.5 h-3.5 text-white animate-spin" />
+                    <span>{currentStatusInfo?.step === 'restarting' ? `Starting Cloud VM (${currentStatusInfo.remainingSeconds || 0}s)` : loadingStatus}</span>
                   </span>
                 ) : (
                   <>
@@ -478,6 +484,40 @@ export default function LoginView({ onSuccess }: Props) {
                   </>
                 )}
               </button>
+
+              {loading && (
+                <div className="p-3 bg-emerald-50/90 border border-emerald-200/80 rounded-xl space-y-2 text-xs animate-in fade-in duration-300">
+                  <div className="flex items-center justify-between font-medium text-emerald-950">
+                    <div className="flex items-center gap-1.5">
+                      {currentStatusInfo?.step === 'restarting' ? (
+                        <Server className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+                      ) : currentStatusInfo?.step === 'syncing' ? (
+                        <Database className="w-3.5 h-3.5 text-emerald-700" />
+                      ) : (
+                        <Activity className="w-3.5 h-3.5 text-emerald-700 animate-pulse" />
+                      )}
+                      <span className="truncate max-w-[210px]">{currentStatusInfo?.message || loadingStatus}</span>
+                    </div>
+                    {currentStatusInfo?.remainingSeconds !== undefined && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                        <Clock className="w-2.5 h-2.5 text-amber-700" />
+                        {currentStatusInfo.remainingSeconds}s
+                      </span>
+                    )}
+                  </div>
+
+                  {currentStatusInfo?.remainingSeconds !== undefined && currentStatusInfo?.estimatedTotal && (
+                    <div className="w-full bg-emerald-200/50 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-amber-500 to-emerald-600 h-full rounded-full transition-all duration-1000 ease-linear"
+                        style={{
+                          width: `${Math.min(100, Math.max(10, ((currentStatusInfo.estimatedTotal - currentStatusInfo.remainingSeconds) / currentStatusInfo.estimatedTotal) * 100))}%`
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </form>
           </>
         ) : (

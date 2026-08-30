@@ -55,27 +55,66 @@ export async function apiRequest<T>(endpoint: string, options: RequestInit = {})
   return fallbackRes.json();
 }
 
+export interface HealthStatusUpdate {
+  step: 'pinging' | 'restarting' | 'authenticating' | 'syncing';
+  message: string;
+  remainingSeconds?: number;
+  estimatedTotal?: number;
+  attempt?: number;
+  maxAttempts?: number;
+}
+
 export const api = {
-  // System Health Pre-check
-  checkSystemHealth: async (onStatus?: (msg: string) => void): Promise<{ healthy: boolean; database: boolean }> => {
-    const maxAttempts = 3;
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      try {
-        if (onStatus && attempt > 1) {
-          onStatus(`🔄 Restarting / Waking Backend VM (Attempt ${attempt}/${maxAttempts})...`);
+  // System Health Pre-check with Real-time Countdown Timer
+  checkSystemHealth: async (onStatus?: (status: HealthStatusUpdate) => void): Promise<{ healthy: boolean; database: boolean }> => {
+    // 1. Quick initial ping
+    try {
+      if (onStatus) {
+        onStatus({ step: 'pinging', message: 'Verifying server and database status...' });
+      }
+      const initial = await apiRequest<{ status: string; database?: string }>('/health');
+      if (initial.status === 'healthy' || initial.database === 'connected') {
+        return { healthy: true, database: true };
+      }
+    } catch {
+      // Backend is starting up or Nginx reconnecting
+    }
+
+    // 2. Countdown loop with real-time estimation
+    const estimatedTotal = 12;
+    let remaining = estimatedTotal;
+    const maxRetries = 4;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      for (let sec = 0; sec < 3; sec++) {
+        if (onStatus) {
+          onStatus({
+            step: 'restarting',
+            message: `Restarting backend & connecting to database... Ready in ${remaining}s`,
+            remainingSeconds: remaining,
+            estimatedTotal,
+            attempt,
+            maxAttempts: maxRetries,
+          });
         }
+        await new Promise((r) => setTimeout(r, 1000));
+        remaining = Math.max(1, remaining - 1);
+      }
+
+      try {
         const res = await apiRequest<{ status: string; database?: string }>('/health');
         if (res.status === 'healthy' || res.database === 'connected') {
+          if (onStatus) {
+            onStatus({ step: 'authenticating', message: 'Server online! Authenticating...' });
+          }
           return { healthy: true, database: true };
         }
-      } catch (err: any) {
-        if (onStatus && attempt < maxAttempts) {
-          onStatus(`🔄 Restarting backend & connecting to database... (${attempt}/${maxAttempts})`);
-        }
-        await new Promise((r) => setTimeout(r, 2000));
+      } catch {
+        // Retry next cycle
       }
     }
-    throw new Error('⚠️ Backend server or Database is currently unreachable. Please check connection and try again.');
+
+    throw new Error('Cloud Server or Database is currently unreachable. Please check connection and try again.');
   },
 
   // Auth
