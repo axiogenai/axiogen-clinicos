@@ -114,9 +114,24 @@ app.all('/api/deploy-pull', (req, res) => {
   });
 });
 
-// Healthcheck
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'healthy', timestamp: new Date(), app: 'ClinicOS Full-Stack API' });
+// Healthcheck with live Database ping
+app.get('/api/health', async (req, res) => {
+  try {
+    await sequelize.authenticate();
+    res.json({
+      status: 'healthy',
+      database: 'connected',
+      timestamp: new Date(),
+      app: 'ClinicOS Full-Stack API'
+    });
+  } catch (dbErr) {
+    res.status(503).json({
+      status: 'degraded',
+      database: 'disconnected',
+      error: dbErr.message,
+      timestamp: new Date()
+    });
+  }
 });
 
 // Error handling middleware

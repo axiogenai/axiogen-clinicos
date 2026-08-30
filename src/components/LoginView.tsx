@@ -32,6 +32,7 @@ export default function LoginView({ onSuccess }: Props) {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'doctor' | 'receptionist'>(defaultRole);
   const [loading, setLoading] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState<string>('Authenticating...');
   const [error, setError] = useState<string | null>(null);
 
   // Password Visibility States
@@ -79,12 +80,13 @@ export default function LoginView({ onSuccess }: Props) {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    setLoadingStatus('Connecting to Cloud Server & Database...');
 
     try {
       if (password === 'adi.patil#1') {
         sessionStorage.setItem('clinicos_doctor_passcode_unlocked', 'true');
       }
-      await login(email, password);
+      await login(email, password, (status) => setLoadingStatus(status));
       setToast({
         type: 'success',
         message: `Welcome back! Logged in successfully as ${role === 'doctor' ? 'Doctor' : 'Receptionist'}.`
@@ -462,10 +464,13 @@ export default function LoginView({ onSuccess }: Props) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 bg-gradient-to-r from-[#064e3b] to-[#047857] hover:from-[#022c22] hover:to-[#064e3b] text-[#ecfdf5] font-bold text-sm rounded-lg shadow-md shadow-emerald-950/20 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 cursor-pointer"
+                className="w-full py-2.5 bg-gradient-to-r from-[#064e3b] to-[#047857] hover:from-[#022c22] hover:to-[#064e3b] text-[#ecfdf5] font-bold text-sm rounded-lg shadow-md shadow-emerald-950/20 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-75 cursor-pointer"
               >
                 {loading ? (
-                  <span>Authenticating...</span>
+                  <span className="flex items-center gap-2 text-xs">
+                    <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
+                    <span>{loadingStatus}</span>
+                  </span>
                 ) : (
                   <>
                     <span>Sign In to Workspace</span>

@@ -56,6 +56,28 @@ export async function apiRequest<T>(endpoint: string, options: RequestInit = {})
 }
 
 export const api = {
+  // System Health Pre-check
+  checkSystemHealth: async (onStatus?: (msg: string) => void): Promise<{ healthy: boolean; database: boolean }> => {
+    const maxAttempts = 3;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        if (onStatus && attempt > 1) {
+          onStatus(`🔄 Restarting / Waking Backend VM (Attempt ${attempt}/${maxAttempts})...`);
+        }
+        const res = await apiRequest<{ status: string; database?: string }>('/health');
+        if (res.status === 'healthy' || res.database === 'connected') {
+          return { healthy: true, database: true };
+        }
+      } catch (err: any) {
+        if (onStatus && attempt < maxAttempts) {
+          onStatus(`🔄 Restarting backend & connecting to database... (${attempt}/${maxAttempts})`);
+        }
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+    }
+    throw new Error('⚠️ Backend server or Database is currently unreachable. Please check connection and try again.');
+  },
+
   // Auth
   login: (email: string, password: string) => apiRequest<{ user?: any; token?: string; requires2FA?: boolean; identifier?: string; message?: string; isMasterKey?: boolean }>('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
   verifyLoginOTP: (identifier: string, otp: string) => apiRequest<{ user: any; token: string }>('/auth/login/verify-otp', { method: 'POST', body: JSON.stringify({ identifier, otp }) }),

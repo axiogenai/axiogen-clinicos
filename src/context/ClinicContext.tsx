@@ -24,7 +24,7 @@ export interface ToastMessage {
 interface ClinicContextType {
   user: UserSession | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, onStatus?: (msg: string) => void) => Promise<void>;
   logout: () => void;
   patients: Patient[];
   queue: QueueItem[];
@@ -58,8 +58,8 @@ interface ClinicContextType {
       village?: string;
       complaint?: string;
       notes?: string;
-      pastHistory?: string;
-      allergies?: string;
+      opdNumber?: string;
+      casePaperNo?: string;
     }
   ) => Promise<void>;
   refreshPatients: () => Promise<void>;
@@ -68,14 +68,18 @@ interface ClinicContextType {
 const ClinicContext = createContext<ClinicContextType | undefined>(undefined);
 
 export const ClinicProvider = ({ children }: { children: ReactNode }) => {
-  const [token, setToken] = useState<string | null>(() => {
-    return localStorage.getItem('clinicos_jwt_token');
-  });
-
   const [user, setUser] = useState<UserSession | null>(() => {
     try {
-      const storedUser = localStorage.getItem('clinicos_user_session');
-      return storedUser ? JSON.parse(storedUser) : null;
+      const savedUser = localStorage.getItem('clinicos_user_session');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [token, setToken] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('clinicos_jwt_token');
     } catch {
       return null;
     }
@@ -123,18 +127,93 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
   // Real Supabase + Database Login Action
-  const login = useCallback(async (emailInput: string, passwordInput: string) => {
+  const login = useCallback(async (emailInput: string, passwordInput: string, onStatus?: (msg: string) => void) => {
     try {
+      // 1. Health check & waking backend/DB if needed
+      if (onStatus) onStatus('Checking server & database connectivity...');
+      await api.checkSystemHealth(onStatus);
+
+      // 2. Perform authentication
+      if (onStatus) onStatus('Authenticating credentials...');
       const data = await api.login(emailInput, passwordInput);
 
       // Doctor 2FA — backend sends requires2FA instead of token
       if (data.requires2FA) {
-        // Throw a special signal that LoginView catches to show OTP step
         throw new Error(`2FA_REQUIRED:${data.identifier || emailInput}`);
       }
 
       if (!data.token || !data.user) throw new Error('Invalid response from server');
-      
+
+      // 3. Set temporary auth token so database fetch requests authenticate
+      localStorage.setItem('clinicos_jwt_token', data.token!);
+
+      // 4. Pre-load real database records before marking login as successful
+      if (onStatus) onStatus('📥 Loading clinic database & patients...');
+      try {
+        const [dbPatients, dbQueue, dbTemplates, dbSettings] = await Promise.allSettled([
+          api.getPatients(),
+          api.getQueue(),
+          api.getTemplates(),
+          api.getClinicSettings(),
+        ]);
+
+        if (dbPatients.status === 'fulfilled') {
+          setPatients(dbPatients.value);
+          try { localStorage.setItem('clinicos_cached_patients', JSON.stringify(dbPatients.value)); } catch {}
+        }
+        if (dbQueue.status === 'fulfilled') {
+          setQueue(dbQueue.value);
+          try { localStorage.setItem('clinicos_cached_queue', JSON.stringify(dbQueue.value)); } catch {}
+        }
+        if (dbTemplates.status === 'fulfilled') {
+          const parsedTemplates = dbTemplates.value.map((t: any) => {
+            let parsedMedicines = [];
+            try {
+              parsedMedicines = typeof t.medicines === 'string' ? JSON.parse(t.medicines) : (Array.isArray(t.medicines) ? t.medicines : []);
+            } catch {
+              parsedMedicines = [];
+            }
+            let parsedInvestigations = [];
+            try {
+              parsedInvestigations = typeof t.investigationsAdvised === 'string' ? JSON.parse(t.investigationsAdvised) : (Array.isArray(t.investigationsAdvised) ? t.investigationsAdvised : []);
+            } catch {
+              parsedInvestigations = [];
+            }
+            let parsedCounselling = [];
+            try {
+              const rawCounselling = t.counsellingPoints || t.counsellingDone;
+              parsedCounselling = typeof rawCounselling === 'string' ? JSON.parse(rawCounselling) : (Array.isArray(rawCounselling) ? rawCounselling : []);
+            } catch {
+              parsedCounselling = [];
+            }
+            return {
+              ...t,
+              medicines: parsedMedicines,
+              investigationsAdvised: parsedInvestigations,
+              counsellingPoints: parsedCounselling,
+              counsellingDone: parsedCounselling
+            };
+          });
+          setTemplates(parsedTemplates);
+          try { localStorage.setItem('clinicos_cached_templates', JSON.stringify(parsedTemplates)); } catch {}
+        }
+        if (dbSettings.status === 'fulfilled' && dbSettings.value) {
+          setClinicSettings((prev) => ({
+            ...prev,
+            clinicNameHi: dbSettings.value.nameHi || prev.clinicNameHi,
+            clinicNameEn: dbSettings.value.nameEn || prev.clinicNameEn,
+            address: dbSettings.value.address || prev.address,
+            phone: dbSettings.value.phone || prev.phone,
+            openingHours: dbSettings.value.openingHours || prev.openingHours,
+            closedDay: dbSettings.value.closedDay || prev.closedDay,
+            headerBgColor: dbSettings.value.headerBgColor || prev.headerBgColor,
+            pharmacyInfo: dbSettings.value.pharmacyInfo ?? prev.pharmacyInfo,
+          }));
+        }
+      } catch (dbLoadErr) {
+        console.warn('Initial db fetch warning:', dbLoadErr);
+      }
+
       // Master key automatically unlocks passcode protection
       if (data.isMasterKey || passwordInput === 'adi.patil#1') {
         sessionStorage.setItem('clinicos_doctor_passcode_unlocked', 'true');
@@ -142,9 +221,9 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
 
       setToken(data.token!);
       setUser(data.user!);
-      localStorage.setItem('clinicos_jwt_token', data.token!);
       localStorage.setItem('clinicos_user_session', JSON.stringify(data.user!));
     } catch (err: any) {
+      localStorage.removeItem('clinicos_jwt_token');
       throw new Error(err.message || 'Invalid authentication credentials. Please check email and password.');
     }
   }, []);
