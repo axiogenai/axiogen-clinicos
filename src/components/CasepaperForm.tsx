@@ -470,6 +470,28 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     }
   };
 
+  const handleCalendarDateChange = (dateValue: string) => {
+    if (!dateValue) {
+      setCustomDaysInput('');
+      onUpdateCasePaper({ ...casePaper, followUpDate: '' });
+      return;
+    }
+    onUpdateCasePaper({ ...casePaper, followUpDate: dateValue });
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const chosen = new Date(dateValue);
+      chosen.setHours(0, 0, 0, 0);
+      const diffMs = chosen.getTime() - today.getTime();
+      const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+      if (diffDays > 0) {
+        setCustomDaysInput(`${diffDays} Days`);
+      } else {
+        setCustomDaysInput('');
+      }
+    } catch {}
+  };
+
   const isPresetSelected = (currentDateStr?: string, days?: number) => {
     if (days === 0) return !currentDateStr;
     if (!currentDateStr) return false;
@@ -1884,37 +1906,56 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                 })}
               </div>
 
-              {/* Direct Days Text Entry (No Date Picker Required) */}
-              <div className="flex flex-wrap items-center gap-3 pt-2.5 border-t border-[#e4e2e1]">
-                <span className="text-xs font-bold text-[#4b463e] flex items-center gap-1.5 shrink-0">
-                  <Calendar className="w-3.5 h-3.5 text-[#047857]" />
-                  Direct Days Entry:
-                </span>
-                <div className="flex items-center gap-2 flex-wrap">
+              {/* Direct Days Entry and Custom Calendar Date Picker */}
+              <div className="flex flex-wrap items-center gap-4 pt-3 border-t border-[#e4e2e1]">
+                {/* Direct Days text entry */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-[#4b463e] shrink-0">
+                    Days:
+                  </span>
                   <input
                     type="text"
                     value={customDaysInput}
                     onChange={(e) => handleDirectDaysInput(e.target.value)}
                     placeholder="e.g. 10 or 15 days"
-                    className="form-input form-input-sm w-36 text-xs font-bold text-[#047857] bg-white border-[#cdc6ba] focus:border-[#047857]"
+                    className="form-input form-input-sm w-32 text-xs font-bold text-[#047857] bg-white border-[#cdc6ba] focus:border-[#047857]"
                   />
-                  {casePaper.followUpDate ? (
-                    <div className="flex items-center gap-1.5 bg-[#ecfdf5] border border-[#a7f3d0] px-3 py-1 rounded-lg text-xs font-bold text-[#047857]">
-                      <span>✓ {getFollowUpText(casePaper.followUpDate)}</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCustomDaysInput('');
-                          onUpdateCasePaper({ ...casePaper, followUpDate: '' });
-                        }}
-                        className="text-red-500 hover:text-red-700 font-bold ml-1 text-sm leading-none"
-                        title="Clear follow-up"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ) : null}
                 </div>
+
+                <div className="h-4 w-px bg-[#e4e2e1] hidden sm:block"></div>
+
+                {/* Interactive Calendar Date Picker */}
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-bold text-[#4b463e] flex items-center gap-1.5 shrink-0 cursor-pointer">
+                    <Calendar className="w-4 h-4 text-[#047857]" />
+                    <span>Pick Date:</span>
+                  </label>
+                  <input
+                    type="date"
+                    min={new Date().toISOString().split('T')[0]}
+                    value={casePaper.followUpDate || ''}
+                    onChange={(e) => handleCalendarDateChange(e.target.value)}
+                    className="form-input form-input-sm px-2.5 py-1 text-xs font-bold text-[#064e3b] bg-white border-[#cdc6ba] focus:border-[#047857] cursor-pointer"
+                  />
+                </div>
+
+                {/* Selected Date Badge */}
+                {casePaper.followUpDate ? (
+                  <div className="flex items-center gap-2 bg-[#ecfdf5] border border-[#a7f3d0] px-3 py-1 rounded-xl text-xs font-bold text-[#047857] shadow-xs">
+                    <span>✓ {getFollowUpText(casePaper.followUpDate)}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomDaysInput('');
+                        onUpdateCasePaper({ ...casePaper, followUpDate: '' });
+                      }}
+                      className="p-0.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full font-bold ml-1 transition-colors cursor-pointer"
+                      title="Clear follow-up date"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
