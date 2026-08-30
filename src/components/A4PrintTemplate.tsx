@@ -996,18 +996,44 @@ export default function A4PrintTemplate({
                 Rx
               </div>
               {!printOnStationery && (
-                <svg width="34" height="38" viewBox="0 0 100 110" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="47.5" y="14" width="5" height="88" rx="2.5" fill="#2d773f" />
-                  <circle cx="50" cy="12" r="5" fill="#2d773f" />
-                  <path d="M 46 22 C 32 10, 15 15, 8 21 C 22 26, 36 27, 46 30 Z" fill="#2d773f" />
-                  <path d="M 45 27 C 32 20, 20 22, 12 27 C 24 30, 36 30, 45 32 Z" fill="#2d773f" />
-                  <path d="M 54 22 C 68 10, 85 15, 92 21 C 78 26, 64 27, 54 30 Z" fill="#2d773f" />
-                  <path d="M 55 27 C 68 20, 80 22, 88 27 C 76 30, 64 30, 55 32 Z" fill="#2d773f" />
-                  <ellipse cx="50" cy="38" rx="18" ry="7.5" stroke="#2d773f" strokeWidth="4.5" fill="none" />
-                  <ellipse cx="50" cy="54" rx="15" ry="7" stroke="#2d773f" strokeWidth="4.5" fill="none" />
-                  <ellipse cx="50" cy="69" rx="12" ry="6" stroke="#2d773f" strokeWidth="4" fill="none" />
-                  <ellipse cx="50" cy="82" rx="9" ry="5" stroke="#2d773f" strokeWidth="3.5" fill="none" />
-                  <ellipse cx="50" cy="93" rx="6" ry="3.5" stroke="#2d773f" strokeWidth="3" fill="none" />
+                <svg width="38" height="38" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {/* Natural Tree Trunk & Grounded Root Flares */}
+                  <path d="M48 95 C48 84, 46 72, 44 60 C42 50, 46 42, 50 36 C54 42, 58 50, 56 60 C54 72, 52 84, 52 95 C50 96, 49 96, 48 95 Z" fill="#2d6a4f" />
+                  <path d="M44 76 C37 83, 30 89, 21 93 C24 90, 32 83, 40 71 Z" fill="#2d6a4f" />
+                  <path d="M56 76 C63 83, 70 89, 79 93 C76 90, 68 83, 60 71 Z" fill="#2d6a4f" />
+                  {/* Natural Organic Tree Branches */}
+                  <path d="M46 48 C37 40, 27 36, 17 38 C27 34, 38 36, 47 44 Z" fill="#2d6a4f" />
+                  <path d="M54 46 C63 38, 73 34, 83 36 C73 32, 62 34, 53 42 Z" fill="#2d6a4f" />
+                  <path d="M48 36 C43 28, 36 21, 26 18 C34 20, 42 25, 48 32 Z" fill="#2d6a4f" />
+                  <path d="M52 34 C57 26, 64 19, 74 16 C66 18, 58 23, 52 30 Z" fill="#2d6a4f" />
+                  <path d="M50 32 C50 22, 49 14, 50 7 C51 14, 50 22, 50 32 Z" fill="#2d6a4f" />
+                  {/* Organic Foliage / Botanical Leaf Canopy Clusters */}
+                  {/* Center & Top Crown */}
+                  <ellipse cx="50" cy="11" rx="14" ry="9" fill="#1b4332" />
+                  <ellipse cx="49" cy="9" rx="11" ry="7" fill="#2d6a4f" />
+                  <ellipse cx="48" cy="7" rx="7" ry="4.5" fill="#52b788" />
+                  {/* Top Left Leaf Cluster */}
+                  <ellipse cx="27" cy="20" rx="13" ry="8.5" fill="#1b4332" transform="rotate(-15 27 20)" />
+                  <ellipse cx="26" cy="18" rx="10" ry="6.5" fill="#2d6a4f" transform="rotate(-15 27 20)" />
+                  <ellipse cx="24" cy="16" rx="6" ry="4" fill="#74c69d" transform="rotate(-15 27 20)" />
+                  {/* Top Right Leaf Cluster */}
+                  <ellipse cx="73" cy="18" rx="13" ry="8.5" fill="#1b4332" transform="rotate(15 73 18)" />
+                  <ellipse cx="74" cy="16" rx="10" ry="6.5" fill="#2d6a4f" transform="rotate(15 73 18)" />
+                  <ellipse cx="76" cy="14" rx="6" ry="4" fill="#74c69d" transform="rotate(15 73 18)" />
+                  {/* Mid Left Leaf Cluster */}
+                  <ellipse cx="17" cy="38" rx="15" ry="9.5" fill="#1b4332" transform="rotate(-8 17 38)" />
+                  <ellipse cx="16" cy="36" rx="11" ry="7" fill="#2d6a4f" transform="rotate(-8 17 38)" />
+                  <ellipse cx="14" cy="34" rx="7" ry="4" fill="#52b788" transform="rotate(-8 17 38)" />
+                  {/* Mid Right Leaf Cluster */}
+                  <ellipse cx="83" cy="36" rx="15" ry="9.5" fill="#1b4332" transform="rotate(8 83 36)" />
+                  <ellipse cx="84" cy="34" rx="11" ry="7" fill="#2d6a4f" transform="rotate(8 83 36)" />
+                  <ellipse cx="86" cy="32" rx="7" ry="4" fill="#52b788" transform="rotate(8 83 36)" />
+                  {/* Dense Central Lush Foliage */}
+                  <ellipse cx="50" cy="26" rx="18" ry="12" fill="#1b4332" />
+                  <ellipse cx="50" cy="24" rx="14" ry="9" fill="#2d6a4f" />
+                  <ellipse cx="49" cy="22" rx="9" ry="5.5" fill="#52b788" />
+                  <ellipse cx="37" cy="32" rx="11" ry="7" fill="#2d6a4f" />
+                  <ellipse cx="63" cy="30" rx="11" ry="7" fill="#2d6a4f" />
                 </svg>
               )}
             </div>

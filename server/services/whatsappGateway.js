@@ -161,9 +161,6 @@ function bootIfSavedSessionExists() {
 }
 
 function getGatewayStatus() {
-  if (connectionStatus === 'disconnected' && !isInitializing) {
-    initWhatsAppGateway();
-  }
   return {
     status: connectionStatus,
     qrCodeDataUrl,
