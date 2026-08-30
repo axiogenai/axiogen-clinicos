@@ -14,7 +14,7 @@ import ConfirmModal from './ConfirmModal';
 import { calculateMedicineCount } from '../utils/countCalculator';
 import { formatFollowUpDate } from '../utils/dateFormatter';
 import { translateFrequencyToMarathi } from '../utils/marathiTranslator';
-import { parsePrescriptionSentence, parseSentenceWithGroqAI } from '../utils/sentenceParser';
+import { parsePrescriptionSentence, parseSentenceWithGroqAI, formatClinicalMedicineName } from '../utils/sentenceParser';
 
 interface CasepaperFormProps {
   patient: Patient;
@@ -495,16 +495,20 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     );
   }, [templates, templateSearchQuery]);
 
-  const normalizeMedicine = (m: any, idx: number) => ({
-    id: m.id || m.productId || `med_${idx}`,
-    name: m.name || m['Medicine Name'] || m.productId || `Medicine #${idx + 1}`,
-    brand: m.brand || m['Brand'] || '',
-    strength: m.strength || m['Strength'] || '',
-    form: m.form || m['Form'] || 'Tablet',
-    category: m.category || m['Category'] || 'General',
-    defaultFrequency: m.frequency || m.defaultFrequency || '',
-    defaultDuration: m.duration || m.defaultDuration || '7 Days',
-  });
+  const normalizeMedicine = (m: any, idx: number) => {
+    const rawName = m.name || m['Medicine Name'] || m.productId || `Medicine #${idx + 1}`;
+    const form = m.form || m['Form'] || 'Tablet';
+    return {
+      id: m.id || m.productId || `med_${idx}`,
+      name: formatClinicalMedicineName(rawName, form),
+      brand: m.brand || m['Brand'] || '',
+      strength: m.strength || m['Strength'] || '',
+      form,
+      category: m.category || m['Category'] || 'General',
+      defaultFrequency: m.frequency || m.defaultFrequency || '',
+      defaultDuration: m.duration || m.defaultDuration || '7 Days',
+    };
+  };
 
   const loadMedicines = async () => {
     try {
@@ -656,10 +660,11 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     const parsed = parsePrescriptionSentence(sentenceToParse);
     const med = filteredMedicines.find(m => m.id === medicineId) || dbMedicines.find(m => m.id === medicineId);
 
-    let fullName = med ? med.name.trim() : (parsed.formattedMedicineName || sentenceToParse || 'Medicine');
-    if (med && med.strength && !fullName.toLowerCase().includes(med.strength.toLowerCase())) {
-      fullName = `${fullName} ${med.strength}`;
+    let rawName = med ? med.name.trim() : (parsed.formattedMedicineName || sentenceToParse || 'Medicine');
+    if (med && med.strength && !rawName.toLowerCase().includes(med.strength.toLowerCase())) {
+      rawName = `${rawName} ${med.strength}`;
     }
+    const fullName = formatClinicalMedicineName(rawName, med?.form);
 
     const freq = parsed.frequency || (med ? med.defaultFrequency || '' : '');
     const dur = parsed.duration || (med ? med.defaultDuration || '7 Days' : '7 Days');

@@ -11,6 +11,66 @@ export interface ParsedPrescriptionSentence {
 }
 
 /**
+ * Standardizes clinical medicine names with appropriate dosage form prefixes
+ * (Tab., Cap., Syp., Inj., Ointment, Cream, Gel, Lotion, Drops, Soap, Powder).
+ */
+export function formatClinicalMedicineName(rawName: string, explicitForm = '', isTopicalHint = false): string {
+  let text = (rawName || '').trim();
+  if (!text) return 'Medicine';
+
+  const lower = text.toLowerCase();
+  
+  let form = (explicitForm || '').toLowerCase();
+  if (!form) {
+    if (/\b(tablet|tab|tabs|goli)\b/i.test(lower)) form = 'tablet';
+    else if (/\b(capsule|cap|caps)\b/i.test(lower)) form = 'capsule';
+    else if (/\b(syrup|syp|suspension|susp)\b/i.test(lower)) form = 'syrup';
+    else if (/\b(injection|inj)\b/i.test(lower)) form = 'injection';
+    else if (/\b(ointment|oint|oliment|oliments)\b/i.test(lower)) form = 'ointment';
+    else if (/\b(cream|crm)\b/i.test(lower)) form = 'cream';
+    else if (/\b(gel)\b/i.test(lower)) form = 'gel';
+    else if (/\b(lotion|lot)\b/i.test(lower)) form = 'lotion';
+    else if (/\b(drops?|drp)\b/i.test(lower)) form = 'drops';
+    else if (/\b(soap|wash|shampoo)\b/i.test(lower)) form = 'soap';
+    else if (/\b(powder|pwd)\b/i.test(lower)) form = 'powder';
+  }
+
+  // Strip standalone type tokens from text so we don't end up with "Tab. Tab Dolo"
+  let cleanCore = text
+    .replace(/^(tab\.|tab\b|tablet\b|cap\.|cap\b|capsule\b|syp\.|syp\b|syrup\b|inj\.|inj\b|injection\b)\s*/gi, '')
+    .replace(/\b(goli|tabs?|caps?)\b/gi, '')
+    .replace(/[\s\-\:\,\(\)\/]+/g, ' ')
+    .trim();
+
+  // Title case core words while preserving strengths like 650, 500mg, 10ml, 1%
+  const titleCasedCore = cleanCore
+    .split(' ')
+    .filter(Boolean)
+    .map(w => {
+      if (/^\d+[a-z%]*$/i.test(w)) return w.toUpperCase();
+      return w.charAt(0).toUpperCase() + w.slice(1);
+    })
+    .join(' ');
+
+  if (form === 'capsule') return `Cap. ${titleCasedCore}`;
+  if (form === 'syrup') return `Syp. ${titleCasedCore}`;
+  if (form === 'injection') return `Inj. ${titleCasedCore}`;
+  if (form === 'ointment') return /ointment/i.test(titleCasedCore) ? titleCasedCore : `${titleCasedCore} Ointment`;
+  if (form === 'cream') return /cream/i.test(titleCasedCore) ? titleCasedCore : `${titleCasedCore} Cream`;
+  if (form === 'gel') return /gel/i.test(titleCasedCore) ? titleCasedCore : `${titleCasedCore} Gel`;
+  if (form === 'lotion') return /lotion/i.test(titleCasedCore) ? titleCasedCore : `${titleCasedCore} Lotion`;
+  if (form === 'drops') return /drops?/i.test(titleCasedCore) ? titleCasedCore : `${titleCasedCore} Drops`;
+  if (form === 'soap') return /soap|wash|shampoo/i.test(titleCasedCore) ? titleCasedCore : `${titleCasedCore} Soap`;
+  if (form === 'powder') return /powder/i.test(titleCasedCore) ? titleCasedCore : `${titleCasedCore} Powder`;
+
+  if (isTopicalHint) {
+    return /ointment|cream|gel|lotion/i.test(titleCasedCore) ? titleCasedCore : `${titleCasedCore} Cream`;
+  }
+
+  return `Tab. ${titleCasedCore}`;
+}
+
+/**
  * High-precision clinical prescription sentence parser with complete Marathi & Latin clinical terminology.
  * Runs in 0ms locally with 100% offline accuracy for Indian OPD prescriptions.
  */
@@ -32,8 +92,21 @@ export function parsePrescriptionSentence(input: string): ParsedPrescriptionSent
   const lower = originalInput.toLowerCase();
   const isTopical = /\b(cream|crm|ointment|oint|oliment|gel|lotion|lot|soap|wash|drops|spray|apply|lavne|lavave|lavayche|ghasa)\b/i.test(lower);
 
+  // Extract explicit form if typed
+  let detectedForm = '';
+  if (/\b(tablet|tab|tabs|goli)\b/i.test(lower)) detectedForm = 'tablet';
+  else if (/\b(capsule|cap|caps)\b/i.test(lower)) detectedForm = 'capsule';
+  else if (/\b(syrup|syp|suspension|susp)\b/i.test(lower)) detectedForm = 'syrup';
+  else if (/\b(injection|inj)\b/i.test(lower)) detectedForm = 'injection';
+  else if (/\b(ointment|oint|oliment|oliments)\b/i.test(lower)) detectedForm = 'ointment';
+  else if (/\b(cream|crm)\b/i.test(lower)) detectedForm = 'cream';
+  else if (/\b(gel)\b/i.test(lower)) detectedForm = 'gel';
+  else if (/\b(lotion|lot)\b/i.test(lower)) detectedForm = 'lotion';
+  else if (/\b(drops?|drp)\b/i.test(lower)) detectedForm = 'drops';
+  else if (/\b(soap|wash|shampoo)\b/i.test(lower)) detectedForm = 'soap';
+  else if (/\b(powder|pwd)\b/i.test(lower)) detectedForm = 'powder';
+
   // ── 1. DURATION EXTRACTION ──
-  // Match "7 divas", "7 days", "15 d", "1 mahina", "1 month", "2 weeks", "2 athavade" or trailing bare number like "20"
   const durMatch = text.match(/\b(\d+)\s*(divas|divasa|days|day|d|mahina|mahine|months|month|mo|athavada|athavade|weeks|week|w)\b/i);
   if (durMatch) {
     const num = parseInt(durMatch[1], 10);
@@ -45,10 +118,8 @@ export function parsePrescriptionSentence(input: string): ParsedPrescriptionSent
     } else {
       detectedDur = num === 1 ? '1 Day' : `${num} Days`;
     }
-    // Remove duration from text
     text = text.replace(durMatch[0], ' ');
   } else {
-    // Check if ends with a trailing number after frequency words (e.g. "Dolo 650 sakali ratri 7")
     const trailingNumMatch = text.match(/\b(sakali|ratri|dupari|lavne|ghene|bd|bid|od|tds|tid|hs|qid|sos)\b.*\s+(\d{1,3})\s*$/i);
     if (trailingNumMatch) {
       const num = parseInt(trailingNumMatch[2], 10);
@@ -60,11 +131,10 @@ export function parsePrescriptionSentence(input: string): ParsedPrescriptionSent
   }
 
   // ── 2. FREQUENCY & TIMING EXTRACTION ──
-  // Check for Tapering instructions
   const taperMatch = text.match(/\b(?:tapering|taper)\s*(?:goli|cream)?\s*(\d+)\s*(?:divas|days)?/i);
   if (taperMatch) {
     const d = taperMatch[1];
-    if (isTopical) {
+    if (isTopical || detectedForm === 'ointment' || detectedForm === 'cream') {
       detectedFreq = `क्रीम टेपरिंग: ${d} दिवस सकाळी-रात्री नंतर फक्त सकाळी लावणे`;
     } else {
       detectedFreq = `गोळी टेपरिंग: ${d} दिवस सकाळी-रात्री नंतर फक्त सकाळी घेणे`;
@@ -72,7 +142,6 @@ export function parsePrescriptionSentence(input: string): ParsedPrescriptionSent
     text = text.replace(taperMatch[0], ' ');
   }
 
-  // Check specific body locations for topical applications
   if (!detectedFreq && isTopical) {
     if (/\b(pimples?|modyanvar|modyan|modi)\b/i.test(text)) {
       detectedFreq = 'pimples (मोड्यांवर) लावणे';
@@ -114,86 +183,55 @@ export function parsePrescriptionSentence(input: string): ParsedPrescriptionSent
     }
   }
 
-  // Standard Timing & Frequency Patterns
   if (!detectedFreq) {
-    // Morning + Afternoon + Night (TDS / 1-1-1)
     if (/\b(sakali.*dupari.*ratri|1[\-\s\/]1[\-\s\/]1|111|tds|tid|three\s*times|thrice)\b/i.test(text)) {
       detectedFreq = isTopical ? 'सकाळी, दुपारी व रात्री लावणे' : 'सकाळी १, दुपारी १ व रात्री १ घेणे';
       text = text.replace(/\b(sakali|dupari|ratri|1[\-\s\/]1[\-\s\/]1|111|tds|tid|three\s*times|thrice|ghene|lavne|goli)\b/gi, ' ');
-    }
-    // Morning + Night (BD / 1-0-1)
-    else if (/\b(sakali.*ratri|1[\-\s\/]0[\-\s\/]1|101|bd|bid|twice|don\s*vela|2\s*times)\b/i.test(text)) {
+    } else if (/\b(sakali.*ratri|1[\-\s\/]0[\-\s\/]1|101|bd|bid|twice|don\s*vela|2\s*times)\b/i.test(text)) {
       detectedFreq = isTopical ? 'सकाळी व रात्री लावणे' : 'सकाळी १ व रात्री १ घेणे';
       text = text.replace(/\b(sakali|ratri|1[\-\s\/]0[\-\s\/]1|101|bd|bid|twice|don\s*vela|2\s*times|ghene|lavne|goli|1)\b/gi, ' ');
-    }
-    // Morning only (OD / 1-0-0)
-    else if (/\b(sakali|1[\-\s\/]0[\-\s\/]0|100|od|morning|once|ek\s*vel)\b/i.test(text)) {
+    } else if (/\b(sakali|1[\-\s\/]0[\-\s\/]0|100|od|morning|once|ek\s*vel)\b/i.test(text)) {
       if (/\b(upashipoti|empty\s*stomach|ac|bbf|upaashi)\b/i.test(text)) {
         detectedFreq = 'सकाळी उपाशीपोटी घेणे';
       } else {
         detectedFreq = isTopical ? 'सकाळी लावणे' : 'सकाळी १ घेणे';
       }
       text = text.replace(/\b(sakali|1[\-\s\/]0[\-\s\/]0|100|od|morning|once|ek\s*vel|upashipoti|empty\s*stomach|ac|bbf|upaashi|ghene|lavne|goli|1)\b/gi, ' ');
-    }
-    // Night only (0-0-1 / HS / Bedtime)
-    else if (/\b(ratri|0[\-\s\/]0[\-\s\/]1|001|hs|night|bedtime|zoptana|zhoptana)\b/i.test(text)) {
+    } else if (/\b(ratri|0[\-\s\/]0[\-\s\/]1|001|hs|night|bedtime|zoptana|zhoptana)\b/i.test(text)) {
       if (/\b(zoptana|zhoptana|bedtime|hs)\b/i.test(text)) {
         detectedFreq = isTopical ? 'रात्री झोपताना लावणे' : 'रात्री झोपताना घेणे';
       } else {
         detectedFreq = isTopical ? 'रात्री लावणे' : 'रात्री १ घेणे';
       }
       text = text.replace(/\b(ratri|0[\-\s\/]0[\-\s\/]1|001|hs|night|bedtime|zoptana|zhoptana|ghene|lavne|goli|1)\b/gi, ' ');
-    }
-    // Afternoon only (0-1-0)
-    else if (/\b(dupari|0[\-\s\/]1[\-\s\/]0|010|afternoon|noon)\b/i.test(text)) {
+    } else if (/\b(dupari|0[\-\s\/]1[\-\s\/]0|010|afternoon|noon)\b/i.test(text)) {
       detectedFreq = isTopical ? 'दुपारी लावणे' : 'दुपारी १ घेणे';
       text = text.replace(/\b(dupari|0[\-\s\/]1[\-\s\/]0|010|afternoon|noon|ghene|lavne|goli|1)\b/gi, ' ');
-    }
-    // 4 times daily (QID / 1-1-1-1)
-    else if (/\b(1[\-\s\/]1[\-\s\/]1[\-\s\/]1|1111|qid|char\s*vela|4\s*times)\b/i.test(text)) {
+    } else if (/\b(1[\-\s\/]1[\-\s\/]1[\-\s\/]1|1111|qid|char\s*vela|4\s*times)\b/i.test(text)) {
       detectedFreq = 'दिवसातून ४ वेळा घेणे';
       text = text.replace(/\b(1[\-\s\/]1[\-\s\/]1[\-\s\/]1|1111|qid|char\s*vela|4\s*times|ghene|lavne|goli)\b/gi, ' ');
-    }
-    // SOS / As needed
-    else if (/\b(sos|garaj|tras|emergency|as\s*needed)\b/i.test(text)) {
+    } else if (/\b(sos|garaj|tras|emergency|as\s*needed)\b/i.test(text)) {
       detectedFreq = 'गरज असेल तेव्हा घेणे';
       text = text.replace(/\b(sos|garaj|tras|emergency|as\s*needed|asel|tevha|ghene)\b/gi, ' ');
-    }
-    // Fasting / Empty stomach
-    else if (/\b(upashipoti|empty\s*stomach|ac|bbf|upaashi)\b/i.test(text)) {
+    } else if (/\b(upashipoti|empty\s*stomach|ac|bbf|upaashi)\b/i.test(text)) {
       detectedFreq = 'उपाशीपोटी घेणे';
       text = text.replace(/\b(upashipoti|empty\s*stomach|ac|bbf|upaashi|ghene)\b/gi, ' ');
-    }
-    // After meals / food
-    else if (/\b(jevananantar|after\s*food|after\s*meals|pc)\b/i.test(text)) {
+    } else if (/\b(jevananantar|after\s*food|after\s*meals|pc)\b/i.test(text)) {
       detectedFreq = 'जेवणानंतर घेणे';
       text = text.replace(/\b(jevananantar|after\s*food|after\s*meals|pc|ghene)\b/gi, ' ');
-    }
-    // Weekly
-    else if (/\b(weekly|athavdyatun|athavdyala)\b/i.test(text)) {
+    } else if (/\b(weekly|athavdyatun|athavdyala)\b/i.test(text)) {
       detectedFreq = 'आठवड्यातून एकदा घेणे';
       text = text.replace(/\b(weekly|athavdyatun|athavdyala|ekda|ghene)\b/gi, ' ');
     }
   }
 
-  // ── 3. CLEAN & FORMAT MEDICINE NAME ──
-  // Strip common verb/noise words left over
+  // ── 3. CLEAN & FORMAT MEDICINE NAME WITH PERFECT CLINICAL PREFIX ──
   const cleanMedicineName = text
-    .replace(/\b(ghene|lavne|lavave|take|apply|tab|tablet|cap|capsule|syp|syrup|divas|days|goli)\b/gi, ' ')
+    .replace(/\b(ghene|lavne|lavave|take|apply|divas|days)\b/gi, ' ')
     .replace(/[\s\-\:\,\(\)\/]+/g, ' ')
     .trim();
 
-  // Title-case the medicine name
-  const formattedName = cleanMedicineName
-    .split(' ')
-    .filter(Boolean)
-    .map(w => {
-      // Keep numeric strengths like 650, 500, 200, 40, 10ml, 5mg as is
-      if (/^\d+[a-z]*$/i.test(w)) return w.toUpperCase();
-      return w.charAt(0).toUpperCase() + w.slice(1);
-    })
-    .join(' ');
-
+  const formattedName = formatClinicalMedicineName(cleanMedicineName, detectedForm, isTopical);
   const hasElements = Boolean(detectedFreq || detectedDur || (formattedName && formattedName !== originalInput));
 
   return {
