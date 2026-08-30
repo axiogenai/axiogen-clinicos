@@ -81,11 +81,32 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
     }
   });
 
-  const [patients, setPatients] = useState<Patient[]>([]);
+  const [patients, setPatients] = useState<Patient[]>(() => {
+    try {
+      const cached = localStorage.getItem('clinicos_cached_patients');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
 
-  const [queue, setQueue] = useState<QueueItem[]>([]);
+  const [queue, setQueue] = useState<QueueItem[]>(() => {
+    try {
+      const cached = localStorage.getItem('clinicos_cached_queue');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
 
-  const [templates, setTemplates] = useState<CaseTemplate[]>([]);
+  const [templates, setTemplates] = useState<CaseTemplate[]>(() => {
+    try {
+      const cached = localStorage.getItem('clinicos_cached_templates');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
 
   const [clinicSettings, setClinicSettings] = useState<ClinicSettings>(() => {
     try {
@@ -152,9 +173,11 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
 
       if (dbPatients.status === 'fulfilled') {
         setPatients(dbPatients.value);
+        try { localStorage.setItem('clinicos_cached_patients', JSON.stringify(dbPatients.value)); } catch {}
       }
       if (dbQueue.status === 'fulfilled') {
         setQueue(dbQueue.value);
+        try { localStorage.setItem('clinicos_cached_queue', JSON.stringify(dbQueue.value)); } catch {}
       }
       if (dbTemplates.status === 'fulfilled') {
         const parsedTemplates = dbTemplates.value.map((t: any) => {
@@ -189,6 +212,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
           };
         });
         setTemplates(parsedTemplates);
+        try { localStorage.setItem('clinicos_cached_templates', JSON.stringify(parsedTemplates)); } catch {}
       }
       if (dbSettings.status === 'fulfilled' && dbSettings.value) {
         setClinicSettings((prev) => {

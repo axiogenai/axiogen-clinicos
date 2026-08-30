@@ -20,9 +20,13 @@ export async function apiRequest<T>(endpoint: string, options: RequestInit = {})
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 12000);
+
   const primaryUrl = `${API_BASE}${endpoint}`;
   try {
-    const response = await fetch(primaryUrl, { ...options, headers });
+    const response = await fetch(primaryUrl, { ...options, headers, signal: controller.signal });
+    clearTimeout(timeoutId);
     if (response.ok) {
       return await response.json();
     }
@@ -31,7 +35,10 @@ export async function apiRequest<T>(endpoint: string, options: RequestInit = {})
       throw new Error(errorData.error || `HTTP error ${response.status}`);
     }
   } catch (err: any) {
-    if (err.message && !err.message.includes('404') && !err.message.includes('Failed to fetch') && !err.message.includes('NetworkError')) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      console.warn(`Request to ${endpoint} timed out after 12s`);
+    } else if (err.message && !err.message.includes('404') && !err.message.includes('Failed to fetch') && !err.message.includes('NetworkError')) {
       throw err;
     }
   }
