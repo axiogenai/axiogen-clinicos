@@ -347,7 +347,7 @@ async function supabaseDirectFallback<T>(endpoint: string, options: RequestInit 
     if (endpoint.includes('/count')) {
       const { count, error } = await supabase.from('medicines').select('*', { count: 'exact', head: true });
       if (error) throw error;
-      return { count: count || 41982 } as any;
+      return { count: count ?? 0 } as any;
     }
 
     const { data, error } = await supabase.from('medicines').select('*').limit(200);
