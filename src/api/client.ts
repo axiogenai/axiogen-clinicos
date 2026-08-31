@@ -566,21 +566,22 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
     }
 
     if (method === 'POST') {
+      const nowIso = new Date().toISOString();
       const row = {
         clinic_id: body.clinicId || 1,
         doctor_id: body.doctorId || 1,
         patient_id: body.patientId,
         date: body.date || new Date().toISOString().split('T')[0],
-        diagnosis: body.diagnosis || '',
-        chief_complaints: body.chiefComplaints || body.chief_complaints || '',
-        medicines: typeof body.medicines === 'string' ? body.medicines : JSON.stringify(body.medicines || []),
-        investigations_advised: typeof body.investigationsAdvised === 'string' ? body.investigationsAdvised : JSON.stringify(body.investigationsAdvised || []),
-        counselling_done: typeof (body.counsellingDone || body.counsellingPoints) === 'string' ? (body.counsellingDone || body.counsellingPoints) : JSON.stringify(body.counsellingDone || body.counsellingPoints || []),
-        follow_up_date: body.followUpDate || null,
-        fee_charged: body.feeCharged || 0,
-        payment_status: body.paymentStatus || 'paid',
-        payment_mode: body.paymentMode || 'cash',
-        validity: body.validity || null,
+        complaint: body.chiefComplaints || body.chief_complaints || body.complaint || '',
+        past_history: body.pastHistory || '',
+        allergies: body.allergies || '',
+        medicines: Array.isArray(body.medicines) ? body.medicines : (typeof body.medicines === 'string' ? JSON.parse(body.medicines || '[]') : []),
+        investigations_advised: Array.isArray(body.investigationsAdvised) ? body.investigationsAdvised : (typeof body.investigationsAdvised === 'string' ? JSON.parse(body.investigationsAdvised || '[]') : []),
+        counselling_done: Array.isArray(body.counsellingDone || body.counsellingPoints) ? (body.counsellingDone || body.counsellingPoints) : (typeof (body.counsellingDone || body.counsellingPoints) === 'string' ? JSON.parse(body.counsellingDone || body.counsellingPoints || '[]') : []),
+        follow_up_date: body.followUpDate || '',
+        status: body.status || 'completed',
+        created_at: nowIso,
+        updated_at: nowIso,
       };
       const { data, error } = await supabase.from('case_papers').insert(row).select().single();
       if (error) throw error;
