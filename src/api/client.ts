@@ -241,10 +241,24 @@ async function supabaseDirectFallback<T>(endpoint: string, options: RequestInit 
   // 5. Queue
   if (endpoint.startsWith('/queue')) {
     if (method === 'GET') {
-      const { data, error } = await supabase.from('queues').select('*').order('created_at', { ascending: false });
+      let targetDate = '';
+      if (endpoint.includes('date=')) {
+        targetDate = endpoint.split('date=')[1]?.split('&')[0];
+      } else {
+        const now = new Date();
+        const options = { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' } as const;
+        targetDate = new Intl.DateTimeFormat('en-CA', options).format(now);
+      }
+
+      let query = supabase.from('queues').select('*');
+      if (targetDate) {
+        query = query.eq('date', targetDate);
+      }
+      const { data, error } = await query.order('created_at', { ascending: true });
       if (error) throw error;
       return (data || []).map((q: any) => ({
         queueId: q.queue_id,
+        id: q.queue_id,
         clinicId: q.clinic_id,
         patientId: q.patient_id,
         name: q.name,
@@ -337,6 +351,54 @@ async function supabaseDirectFallback<T>(endpoint: string, options: RequestInit 
       } as any;
     }
     return {} as any;
+  }
+
+  // 8. Case Papers
+  if (endpoint.startsWith('/case-papers')) {
+    if (method === 'GET') {
+      let query = supabase.from('case_papers').select('*');
+      if (endpoint.includes('patientId=')) {
+        const patientId = endpoint.split('patientId=')[1]?.split('&')[0];
+        query = query.eq('patient_id', patientId);
+      }
+      const { data, error } = await query.order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []) as any;
+    }
+
+    if (method === 'POST') {
+      const { data, error } = await supabase.from('case_papers').insert(body).select().single();
+      if (error) throw error;
+      return data as any;
+    }
+  }
+
+  // 9. Daily / Monthly Register
+  if (endpoint.startsWith('/register/daily')) {
+    let targetDate = '';
+    if (endpoint.includes('date=')) {
+      targetDate = endpoint.split('date=')[1]?.split('&')[0];
+    } else {
+      const now = new Date();
+      const options = { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' } as const;
+      targetDate = new Intl.DateTimeFormat('en-CA', options).format(now);
+    }
+    const { data, error } = await supabase.from('queues').select('*').eq('date', targetDate).order('created_at', { ascending: true });
+    if (error) throw error;
+    return (data || []).map((q: any) => ({
+      ...q,
+      id: q.queue_id,
+      queueId: q.queue_id,
+      patientId: q.patient_id,
+      timeAdded: q.time_added,
+      paymentStatus: q.payment_status || 'paid',
+      paymentMode: q.payment_mode || 'cash',
+      casePaperNo: q.case_paper_no,
+    })) as any;
+  }
+
+  if (endpoint.startsWith('/register/sync')) {
+    return { success: true } as any;
   }
 
   throw new Error(`Endpoint ${endpoint} not supported by direct failover.`);
