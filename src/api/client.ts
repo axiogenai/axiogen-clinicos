@@ -224,19 +224,22 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
     }
 
     if (method === 'POST') {
+      const nowIso = new Date().toISOString();
       const row = {
-        id: body.id,
+        id: body.id || `PT${Date.now()}`,
         clinic_id: body.clinicId || 1,
         name: body.name,
-        age: body.age,
-        gender: body.gender,
-        phone: body.phone,
-        village: body.village,
-        past_history: body.pastHistory,
-        allergies: body.allergies,
-        notes: body.notes,
-        case_paper_no: body.casePaperNo,
-        validity: body.validity,
+        age: body.age !== undefined && body.age !== '' ? parseInt(body.age, 10) : null,
+        gender: body.gender || 'Other',
+        phone: body.phone || '',
+        village: body.village || '',
+        past_history: body.pastHistory || '',
+        allergies: body.allergies || '',
+        notes: body.notes || '',
+        case_paper_no: body.casePaperNo || null,
+        validity: body.validity || null,
+        created_at: body.createdAt || nowIso,
+        updated_at: nowIso,
       };
       const { data, error } = await supabase.from('patients').upsert(row).select().single();
       if (error) throw error;
@@ -248,7 +251,7 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
       const id = parts[2];
       const updates: any = {};
       if (body.name !== undefined) updates.name = body.name;
-      if (body.age !== undefined) updates.age = body.age;
+      if (body.age !== undefined) updates.age = body.age !== '' ? parseInt(body.age, 10) : null;
       if (body.gender !== undefined) updates.gender = body.gender;
       if (body.phone !== undefined) updates.phone = body.phone;
       if (body.village !== undefined) updates.village = body.village;
@@ -278,12 +281,13 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
       const id = endpoint.split('/')[2];
       const { data: original, error: origErr } = await supabase.from('templates').select('*').eq('id', id).single();
       if (origErr || !original) throw new Error('Template not found');
+      const nowIso = new Date().toISOString();
       const copy = {
         ...original,
         id: `tpl_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
         name: `${original.name} (Copy)`,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        created_at: nowIso,
+        updated_at: nowIso,
       };
       const { data, error } = await supabase.from('templates').insert(copy).select().single();
       if (error) throw error;
@@ -294,7 +298,7 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
       const id = endpoint.split('/')[2];
       const { data: current } = await supabase.from('templates').select('is_favorite').eq('id', id).single();
       const newFav = !current?.is_favorite;
-      const { data, error } = await supabase.from('templates').update({ is_favorite: newFav }).eq('id', id).select().single();
+      const { data, error } = await supabase.from('templates').update({ is_favorite: newFav, updated_at: new Date().toISOString() }).eq('id', id).select().single();
       if (error) throw error;
       return mapTemplate(data) as any;
     }
@@ -306,17 +310,20 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
     }
 
     if (method === 'POST') {
+      const nowIso = new Date().toISOString();
       const row = {
-        id: body.id,
+        id: body.id || `tpl_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
         clinic_id: body.clinicId || 1,
         doctor_id: body.doctorId || 1,
         name: body.name,
-        category: body.category,
-        description: body.description,
+        category: body.category || 'General',
+        description: body.description || '',
         is_favorite: body.isFavorite || false,
         medicines: typeof body.medicines === 'string' ? body.medicines : JSON.stringify(body.medicines || []),
         investigations_advised: typeof body.investigationsAdvised === 'string' ? body.investigationsAdvised : JSON.stringify(body.investigationsAdvised || []),
         counselling_done: typeof (body.counsellingPoints || body.counsellingDone) === 'string' ? (body.counsellingPoints || body.counsellingDone) : JSON.stringify(body.counsellingPoints || body.counsellingDone || []),
+        created_at: nowIso,
+        updated_at: nowIso,
       };
       const { data, error } = await supabase.from('templates').upsert(row).select().single();
       if (error) throw error;
@@ -389,22 +396,25 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
     }
 
     if (method === 'POST') {
+      const nowIso = new Date().toISOString();
       const row = {
-        queue_id: body.queueId || body.id,
+        queue_id: body.queueId || body.id || `Q${Date.now()}`,
         clinic_id: body.clinicId || 1,
         patient_id: body.patientId,
         name: body.name,
-        age: body.age,
-        phone: body.phone,
-        village: body.village,
-        time_added: body.timeAdded || new Date().toLocaleTimeString(),
-        complaint: body.complaint,
-        notes: body.notes,
+        age: body.age !== undefined && body.age !== '' ? parseInt(body.age, 10) : null,
+        phone: body.phone || '',
+        village: body.village || '',
+        time_added: body.timeAdded || new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }),
+        complaint: body.complaint || '',
+        notes: body.notes || '',
         date: body.date || new Date().toISOString().split('T')[0],
         status: body.status || 'waiting',
         payment_status: body.paymentStatus || 'paid',
         payment_mode: body.paymentMode || 'cash',
-        case_paper_no: body.casePaperNo,
+        case_paper_no: body.casePaperNo || '',
+        created_at: nowIso,
+        updated_at: nowIso,
       };
       const { data, error } = await supabase.from('queues').upsert(row).select().single();
       if (error) throw error;
