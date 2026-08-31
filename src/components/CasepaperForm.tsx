@@ -382,7 +382,6 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
   const [showTemplateDropdown, setShowTemplateDropdown] = useState(false);
   const [dbMedicines, setDbMedicines] = useState<any[]>(initialLocalMedicines);
   const [filteredMedicines, setFilteredMedicines] = useState<any[]>(initialLocalMedicines);
-  const [totalMedicineCount, setTotalMedicineCount] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
@@ -540,15 +539,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
         setDbMedicines(normalized);
         setFilteredMedicines(normalized);
       }
-      try {
-        const countRes = await api.getMedicineCount();
-        setTotalMedicineCount(countRes?.count || fetched?.length || 0);
-      } catch {
-        setTotalMedicineCount(fetched?.length || 0);
-      }
-    } catch {
-      setTotalMedicineCount(initialLocalMedicines.length);
-    }
+    } catch {}
   };
 
   useEffect(() => {
@@ -1284,7 +1275,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                 Rx — Prescription
               </h3>
               <span className="text-[11px] font-bold text-[#047857] bg-[#ecfdf5] px-2.5 py-1 rounded-full border border-[#a7f3d0]">
-                {totalMedicineCount > 0 ? totalMedicineCount.toLocaleString() : dbMedicines.length} medicines
+                {casePaper.medicines.length} {casePaper.medicines.length === 1 ? 'medicine' : 'medicines'}
               </span>
             </div>
             

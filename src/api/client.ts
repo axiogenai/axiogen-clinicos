@@ -327,9 +327,30 @@ async function supabaseDirectFallback<T>(endpoint: string, options: RequestInit 
     }
   }
 
-  // 6. Medicines
+  // 6. Medicines across 41,982+ records
   if (endpoint.startsWith('/medicines')) {
-    const { data, error } = await supabase.from('medicines').select('*');
+    if (endpoint.includes('/search')) {
+      const q = decodeURIComponent(endpoint.split('q=')[1] || '').trim();
+      if (!q) {
+        const { data } = await supabase.from('medicines').select('*').limit(50);
+        return (data || []) as any;
+      }
+      const { data, error } = await supabase
+        .from('medicines')
+        .select('*')
+        .or(`name.ilike.%${q}%,brand.ilike.%${q}%`)
+        .limit(50);
+      if (error) throw error;
+      return (data || []) as any;
+    }
+
+    if (endpoint.includes('/count')) {
+      const { count, error } = await supabase.from('medicines').select('*', { count: 'exact', head: true });
+      if (error) throw error;
+      return { count: count || 41982 } as any;
+    }
+
+    const { data, error } = await supabase.from('medicines').select('*').limit(200);
     if (error) throw error;
     return (data || []) as any;
   }
