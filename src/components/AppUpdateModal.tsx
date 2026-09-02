@@ -127,22 +127,24 @@ export const AppUpdateModal: React.FC = () => {
   );
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0f1115]/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-150">
-      <div className={`bg-white border rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl relative overflow-hidden ${
+    <div className="fixed inset-0 z-50 bg-[#0f1115]/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
+      <div className={`bg-white border rounded-2xl sm:rounded-3xl max-w-md w-full max-h-[92vh] sm:max-h-[88vh] flex flex-col p-4 sm:p-6 shadow-2xl relative overflow-hidden ${
         isPaid ? 'border-amber-300' : 'border-neutral-200'
       }`}>
-        <div className="flex items-start justify-between gap-3 mb-4 relative z-10">
-          <div className="flex items-center gap-3">
-            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white shrink-0 ${
+        
+        {/* Header - Fixed Top */}
+        <div className="flex items-start justify-between gap-2.5 sm:gap-3 mb-3 sm:mb-4 shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl flex items-center justify-center text-white shrink-0 ${
               isPaid
                 ? 'bg-amber-500'
                 : 'bg-emerald-700'
             }`}>
-              {isPaid ? <Lock className="w-5 h-5 text-white" /> : <ShieldCheck className="w-6 h-6 text-white" />}
+              {isPaid ? <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-white" /> : <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-white" />}
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
+                <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border truncate ${
                   isPaid
                     ? 'text-amber-800 bg-amber-50 border-amber-300'
                     : 'text-emerald-800 bg-emerald-50 border-emerald-200'
@@ -150,12 +152,12 @@ export const AppUpdateModal: React.FC = () => {
                   {badge} {updateData.version}
                 </span>
                 {isPaid && updateData.priceAmount && (
-                  <span className="text-xs font-bold font-mono text-amber-900 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-200">
+                  <span className="text-[10px] sm:text-xs font-bold font-mono text-amber-900 bg-amber-100 px-1.5 py-0.5 rounded-md border border-amber-200">
                     ₹{updateData.priceAmount}
                   </span>
                 )}
               </div>
-              <h3 className="text-base font-bold text-neutral-900 mt-1">
+              <h3 className="text-sm sm:text-base font-bold text-neutral-900 mt-1 truncate">
                 {updateData.title || (isPaid ? 'Premium Features Available' : 'Maintenance Update Ready')}
               </h3>
             </div>
@@ -163,68 +165,72 @@ export const AppUpdateModal: React.FC = () => {
 
           <button
             onClick={handleDismiss}
-            className="p-1 text-neutral-400 hover:text-neutral-900 rounded-lg hover:bg-neutral-100 transition-colors"
+            aria-label="Close modal"
+            className="p-1.5 sm:p-1 text-neutral-400 hover:text-neutral-900 rounded-lg hover:bg-neutral-100 transition-colors shrink-0"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4 sm:w-4 sm:h-4" />
           </button>
         </div>
 
-        {/* Improvements List */}
-        {updateData.changelog && updateData.changelog.length > 0 && (
-          <div className="bg-neutral-50 border border-neutral-200 rounded-2xl p-4 mb-4 space-y-2">
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">
-              {isPaid ? 'Included in this release:' : "What's New in this Maintenance Update:"}
-            </h4>
-            <div className="space-y-1.5">
-              {updateData.changelog.map((item, idx) => (
-                <div key={idx} className="flex items-start gap-2 text-xs text-neutral-700">
-                  <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${
-                    isPaid ? 'text-amber-600' : 'text-emerald-700'
-                  }`} />
-                  <span>{item}</span>
-                </div>
-              ))}
+        {/* Scrollable Middle Content */}
+        <div className="overflow-y-auto pr-1 -mr-1 flex-1 space-y-3 sm:space-y-3.5 min-h-0">
+          
+          {/* Improvements List */}
+          {updateData.changelog && updateData.changelog.length > 0 && (
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl sm:rounded-2xl p-3 sm:p-4 space-y-1.5 sm:space-y-2">
+              <h4 className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-neutral-500">
+                {isPaid ? 'Included in this release:' : "What's New in this Maintenance Update:"}
+              </h4>
+              <div className="space-y-1.5">
+                {updateData.changelog.map((item, idx) => (
+                  <div key={idx} className="flex items-start gap-2 text-xs text-neutral-700 leading-snug">
+                    <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${
+                      isPaid ? 'text-amber-600' : 'text-emerald-700'
+                    }`} />
+                    <span className="break-words">{item}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <p className="text-xs text-neutral-500 leading-relaxed mb-4">
-          {description}
-        </p>
+          <p className="text-[11px] sm:text-xs text-neutral-500 leading-relaxed">
+            {description}
+          </p>
+        </div>
 
-        {isPaid ? (
-          <div className="space-y-3">
+        {/* Action Button - Fixed Bottom */}
+        <div className="pt-3 sm:pt-4 border-t border-neutral-100 shrink-0">
+          {isPaid ? (
             <button
               onClick={handleWhatsAppUnlock}
-              className="w-full py-3 bg-neutral-900 hover:bg-black text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full min-h-[44px] py-2.5 sm:py-3 bg-neutral-900 hover:bg-black text-white rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
             >
-              <MessageSquare className="w-4 h-4" />
-              <span>{buttonText} (₹{updateData.priceAmount || '4,999'})</span>
-              <ArrowRight className="w-4 h-4 ml-1" />
+              <MessageSquare className="w-4 h-4 shrink-0" />
+              <span className="truncate">{buttonText} (₹{updateData.priceAmount || '4,999'})</span>
+              <ArrowRight className="w-4 h-4 shrink-0 ml-0.5" />
             </button>
-          </div>
-        ) : (
-          <div className="space-y-3">
+          ) : (
             <button
               onClick={executeHardRefresh}
               disabled={isUpdating}
-              className="w-full py-3 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              className="w-full min-h-[44px] py-2.5 sm:py-3 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 active:scale-[0.99]"
             >
               {isUpdating ? (
                 <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Updating & Hard-Refreshing...</span>
+                  <RefreshCw className="w-4 h-4 animate-spin shrink-0" />
+                  <span>Updating &amp; Hard-Refreshing...</span>
                 </>
               ) : (
                 <>
-                  <RefreshCw className="w-4 h-4" />
-                  <span>{buttonText}</span>
-                  <ArrowRight className="w-4 h-4 ml-1" />
+                  <RefreshCw className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{buttonText}</span>
+                  <ArrowRight className="w-4 h-4 shrink-0 ml-0.5" />
                 </>
               )}
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
