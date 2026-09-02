@@ -76,6 +76,33 @@ function DoctorDashboardView() {
         const savedList = await api.getCasePapers(patient.id);
         if (savedList && savedList.length > 0) {
           const latest = savedList[0];
+          let parsedMeds = [];
+          try {
+            parsedMeds = Array.isArray(latest.medicines)
+              ? latest.medicines
+              : (typeof latest.medicines === 'string' ? JSON.parse(latest.medicines || '[]') : []);
+          } catch {
+            parsedMeds = [];
+          }
+
+          let parsedInv = [];
+          try {
+            parsedInv = Array.isArray(latest.investigationsAdvised)
+              ? latest.investigationsAdvised
+              : (typeof latest.investigationsAdvised === 'string' ? JSON.parse(latest.investigationsAdvised || '[]') : []);
+          } catch {
+            parsedInv = [];
+          }
+
+          let parsedCoun = [];
+          try {
+            parsedCoun = Array.isArray(latest.counsellingDone)
+              ? latest.counsellingDone
+              : (typeof latest.counsellingDone === 'string' ? JSON.parse(latest.counsellingDone || '[]') : []);
+          } catch {
+            parsedCoun = [];
+          }
+
           savedCasePaper = {
             patientId: patient.id,
             date: latest.date || new Date().toISOString().split('T')[0],
@@ -83,9 +110,9 @@ function DoctorDashboardView() {
             complaint: latest.complaint || queueItem.complaint,
             pastHistory: latest.pastHistory || patient.pastHistory || '',
             allergies: latest.allergies || patient.allergies || '',
-            medicines: latest.medicines || [],
-            investigationsAdvised: latest.investigationsAdvised || [],
-            counsellingDone: latest.counsellingDone || [],
+            medicines: parsedMeds,
+            investigationsAdvised: parsedInv,
+            counsellingDone: parsedCoun,
             followUpDate: latest.followUpDate || '',
           };
         }
@@ -93,6 +120,15 @@ function DoctorDashboardView() {
     }
 
     if (savedCasePaper) {
+      let savedMeds = [];
+      try {
+        savedMeds = Array.isArray(savedCasePaper.medicines)
+          ? savedCasePaper.medicines
+          : (typeof savedCasePaper.medicines === 'string' ? JSON.parse(savedCasePaper.medicines || '[]') : []);
+      } catch {
+        savedMeds = [];
+      }
+
       setCasePaper({
         patientId: patient.id,
         date: new Date().toISOString().split('T')[0],
@@ -100,9 +136,9 @@ function DoctorDashboardView() {
         complaint: savedCasePaper.complaint || queueItem.complaint,
         pastHistory: savedCasePaper.pastHistory || patient.pastHistory || '',
         allergies: savedCasePaper.allergies || patient.allergies || '',
-        medicines: savedCasePaper.medicines || [],
-        investigationsAdvised: savedCasePaper.investigationsAdvised || [],
-        counsellingDone: savedCasePaper.counsellingDone || [],
+        medicines: savedMeds,
+        investigationsAdvised: Array.isArray(savedCasePaper.investigationsAdvised) ? savedCasePaper.investigationsAdvised : [],
+        counsellingDone: Array.isArray(savedCasePaper.counsellingDone) ? savedCasePaper.counsellingDone : [],
         followUpDate: savedCasePaper.followUpDate || '',
       });
     } else {

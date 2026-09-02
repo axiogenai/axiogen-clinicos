@@ -299,6 +299,20 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
   });
 
   const prevPatientIdRef = useRef<string>(patient.id);
+  const activeCasePaperRef = useRef<CasePaper>(casePaper);
+
+  useEffect(() => {
+    activeCasePaperRef.current = casePaper;
+  }, [casePaper]);
+
+  const updateCasePaperState = (updater: Partial<CasePaper> | ((prev: CasePaper) => CasePaper)) => {
+    const nextState = typeof updater === 'function'
+      ? updater(activeCasePaperRef.current)
+      : { ...activeCasePaperRef.current, ...updater };
+    activeCasePaperRef.current = nextState;
+    onUpdateCasePaper(nextState);
+  };
+
   useEffect(() => {
     if (patient.id && patient.id !== prevPatientIdRef.current) {
       prevPatientIdRef.current = patient.id;
@@ -314,8 +328,8 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
       phone: currentPatient.phone || '',
       village: currentPatient.village || '',
       casePaperNo: currentPatient.casePaperNo || '',
-      pastHistory: casePaper.pastHistory || currentPatient.pastHistory || '',
-      allergies: casePaper.allergies || currentPatient.allergies || '',
+      pastHistory: activeCasePaperRef.current.pastHistory || currentPatient.pastHistory || '',
+      allergies: activeCasePaperRef.current.allergies || currentPatient.allergies || '',
     });
     setShowEditPatientModal(true);
   };
@@ -354,10 +368,9 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
         onUpdatePatient(updatedPatient);
       }
 
-      // Sync updated past history or allergies to active case paper
-      if (payload.pastHistory !== casePaper.pastHistory || payload.allergies !== casePaper.allergies) {
-        onUpdateCasePaper({
-          ...casePaper,
+      // Sync updated past history or allergies to active case paper without losing medicines
+      if (payload.pastHistory !== activeCasePaperRef.current.pastHistory || payload.allergies !== activeCasePaperRef.current.allergies) {
+        updateCasePaperState({
           pastHistory: payload.pastHistory,
           allergies: payload.allergies,
         });
@@ -432,7 +445,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
   const selectFollowUpDays = (days: number) => {
     if (days === 0) {
       setCustomDaysInput('');
-      onUpdateCasePaper({ ...casePaper, followUpDate: '' });
+      updateCasePaperState({ followUpDate: '' });
       return;
     }
     setCustomDaysInput(`${days} Days`);
@@ -441,14 +454,14 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     const yyyy = today.getFullYear();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     const dd = String(today.getDate()).padStart(2, '0');
-    onUpdateCasePaper({ ...casePaper, followUpDate: `${yyyy}-${mm}-${dd}` });
+    updateCasePaperState({ followUpDate: `${yyyy}-${mm}-${dd}` });
   };
 
   const handleDirectDaysInput = (raw: string) => {
     setCustomDaysInput(raw);
     const trimmed = raw.trim().toLowerCase();
     if (!trimmed) {
-      onUpdateCasePaper({ ...casePaper, followUpDate: '' });
+      updateCasePaperState({ followUpDate: '' });
       return;
     }
     let days = 0;
@@ -473,17 +486,17 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
       const yyyy = today.getFullYear();
       const mm = String(today.getMonth() + 1).padStart(2, '0');
       const dd = String(today.getDate()).padStart(2, '0');
-      onUpdateCasePaper({ ...casePaper, followUpDate: `${yyyy}-${mm}-${dd}` });
+      updateCasePaperState({ followUpDate: `${yyyy}-${mm}-${dd}` });
     }
   };
 
   const handleCalendarDateChange = (dateValue: string) => {
     if (!dateValue) {
       setCustomDaysInput('');
-      onUpdateCasePaper({ ...casePaper, followUpDate: '' });
+      updateCasePaperState({ followUpDate: '' });
       return;
     }
-    onUpdateCasePaper({ ...casePaper, followUpDate: dateValue });
+    updateCasePaperState({ followUpDate: dateValue });
     try {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -657,12 +670,20 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
       };
     });
 
-    onUpdateCasePaper({
-      ...casePaper,
-      templateId,
-      medicines: newMedicines,
-      investigationsAdvised: template.investigationsAdvised || casePaper.investigationsAdvised,
-      counsellingDone: template.counsellingPoints || casePaper.counsellingDone,
+    updateCasePaperState(prev => {
+      const currentMeds = prev.medicines || [];
+      // Combine template medicines with existing medicines without deleting previously added medicines
+      const mergedMedicines = currentMeds.length > 0
+        ? [...currentMeds, ...newMedicines.filter(nm => !currentMeds.some(cm => cm.name.toLowerCase().trim() === nm.name.toLowerCase().trim()))]
+        : newMedicines;
+
+      return {
+        ...prev,
+        templateId,
+        medicines: mergedMedicines,
+        investigationsAdvised: template.investigationsAdvised || prev.investigationsAdvised,
+        counsellingDone: template.counsellingPoints || prev.counsellingDone,
+      };
     });
   };
 
@@ -716,12 +737,11 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
       count: autoCount
     };
 
-    // INSTANTLY append to current casePaper medicines
-    const updatedMedicines = [...(casePaper.medicines || []), newMedicine];
-    onUpdateCasePaper({
-      ...casePaper,
-      medicines: updatedMedicines,
-    });
+    // INSTANTLY append to latest casePaper medicines
+    updateCasePaperState(prev => ({
+      ...prev,
+      medicines: [...(prev.medicines || []), newMedicine],
+    }));
 
     setSearchQuery('');
     setShowSearchDropdown(false);
@@ -733,44 +753,53 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
   };
 
   const removeMedicine = (index: number) => {
-    const updated = casePaper.medicines.filter((_, i) => i !== index);
-    onUpdateCasePaper({ ...casePaper, medicines: updated });
+    updateCasePaperState(prev => ({
+      ...prev,
+      medicines: (prev.medicines || []).filter((_, i) => i !== index),
+    }));
   };
 
   const updateMedicineField = (index: number, field: keyof CasePaperMedicine, value: string) => {
-    const updated = casePaper.medicines.map((m, i) => {
-      if (i === index) {
-        const nextMed = { ...m, [field]: value };
-        if (field === 'count') {
-          nextMed.isManualCount = true;
-          nextMed.count = value;
-        } else if (field === 'frequency' || field === 'duration') {
-          if (!nextMed.isManualCount) {
-            nextMed.count = calculateMedicineCount(nextMed);
+    updateCasePaperState(prev => ({
+      ...prev,
+      medicines: (prev.medicines || []).map((m, i) => {
+        if (i === index) {
+          const nextMed = { ...m, [field]: value };
+          if (field === 'count') {
+            nextMed.isManualCount = true;
+            nextMed.count = value;
+          } else if (field === 'frequency' || field === 'duration') {
+            if (!nextMed.isManualCount) {
+              nextMed.count = calculateMedicineCount(nextMed);
+            }
           }
+          return nextMed;
         }
-        return nextMed;
-      }
-      return m;
-    });
-    onUpdateCasePaper({ ...casePaper, medicines: updated });
+        return m;
+      }),
+    }));
   };
 
   const toggleInvestigation = (item: string) => {
-    const current = casePaper.investigationsAdvised || [];
-    const exists = current.includes(item);
-    const updated = exists ? current.filter(i => i !== item) : [...current, item];
-    onUpdateCasePaper({ ...casePaper, investigationsAdvised: updated });
+    updateCasePaperState(prev => {
+      const current = prev.investigationsAdvised || [];
+      const exists = current.includes(item);
+      const updated = exists ? current.filter(i => i !== item) : [...current, item];
+      return { ...prev, investigationsAdvised: updated };
+    });
   };
 
   const toggleCounselling = (item: string) => {
-    const current = casePaper.counsellingDone || [];
-    const exists = current.includes(item);
-    const updated = exists ? current.filter(i => i !== item) : [...current, item];
-    onUpdateCasePaper({ ...casePaper, counsellingDone: updated });
+    updateCasePaperState(prev => {
+      const current = prev.counsellingDone || [];
+      const exists = current.includes(item);
+      const updated = exists ? current.filter(i => i !== item) : [...current, item];
+      return { ...prev, counsellingDone: updated };
+    });
   };
 
   const buildCasePaperPayload = () => {
+    const cp = activeCasePaperRef.current;
     const targetQueueItem = queue.find(q =>
       (queueId && q.queueId === queueId) ||
       q.patientId === currentPatient.id ||
@@ -782,15 +811,15 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
       payload: {
         patientId: currentPatient.id,
         queueId: effectiveQueueId,
-        date: casePaper.date,
-        templateId: casePaper.templateId || '',
-        complaint: casePaper.complaint,
-        pastHistory: casePaper.pastHistory,
-        allergies: casePaper.allergies,
-        medicines: casePaper.medicines,
-        investigationsAdvised: casePaper.investigationsAdvised,
-        counsellingDone: casePaper.counsellingDone,
-        followUpDate: casePaper.followUpDate,
+        date: cp.date,
+        templateId: cp.templateId || '',
+        complaint: cp.complaint,
+        pastHistory: cp.pastHistory,
+        allergies: cp.allergies,
+        medicines: cp.medicines || [],
+        investigationsAdvised: cp.investigationsAdvised || [],
+        counsellingDone: cp.counsellingDone || [],
+        followUpDate: cp.followUpDate,
         status: 'completed'
       },
       effectiveQueueId
@@ -964,7 +993,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
               <input
                 type="date"
                 value={casePaper.date || new Date().toISOString().split('T')[0]}
-                onChange={(e) => onUpdateCasePaper({ ...casePaper, date: e.target.value })}
+                onChange={(e) => updateCasePaperState({ date: e.target.value })}
                 className="text-xs font-bold text-[#1a1c1a] bg-transparent border-0 p-0 focus:ring-0 cursor-pointer"
               />
             </div>
@@ -988,7 +1017,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                 <label className="form-label font-bold text-[#1a1c1a]">1. Past History (DM/HTN/Thyroid/Autoimmune)</label>
                 <textarea 
                   value={casePaper.pastHistory}
-                  onChange={(e) => onUpdateCasePaper({ ...casePaper, pastHistory: e.target.value })}
+                  onChange={(e) => updateCasePaperState({ pastHistory: e.target.value })}
                   className="form-input font-medium"
                   placeholder="Diabetes Mellitus type 2"
                   rows={2}
@@ -999,7 +1028,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                 <label className="form-label font-bold text-red-700">2. Drug History / Allergy History</label>
                 <textarea 
                   value={casePaper.allergies}
-                  onChange={(e) => onUpdateCasePaper({ ...casePaper, allergies: e.target.value })}
+                  onChange={(e) => updateCasePaperState({ allergies: e.target.value })}
                   className="form-input border-red-200 bg-[#fff5f5] focus:border-red-400 text-red-800 font-medium"
                   placeholder="Enter drug allergies or None..."
                   rows={2}
@@ -1013,7 +1042,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                   onChange={(e) => {
                     const val = e.target.value;
                     const items = val.split(',').map(s => s.trim()).filter(Boolean);
-                    onUpdateCasePaper({ ...casePaper, investigationsAdvised: items });
+                    updateCasePaperState({ investigationsAdvised: items });
                   }}
                   className="form-input text-[#1e3a8a] font-medium"
                   placeholder="Advised: CBC, LFT, BSL(R)"
@@ -1025,7 +1054,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                 <label className="form-label font-bold text-[#1a1c1a]">4. Provisional / Final Diagnosis</label>
                 <textarea 
                   value={casePaper.complaint}
-                  onChange={(e) => onUpdateCasePaper({ ...casePaper, complaint: e.target.value })}
+                  onChange={(e) => updateCasePaperState({ complaint: e.target.value })}
                   className="form-input font-medium"
                   placeholder="Severe Ringworm Infection on thigh & arms since 2 weeks"
                   rows={2}
@@ -1170,7 +1199,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                     <button
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => { onUpdateCasePaper({ ...casePaper, templateId: '' }); setTemplateSearchQuery(''); }}
+                      onClick={() => { updateCasePaperState({ templateId: '' }); setTemplateSearchQuery(''); }}
                       className="ml-0.5 hover:text-[#065f46]"
                     ><X className="w-3 h-3" /></button>
                   </div>
@@ -1851,7 +1880,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                       type="button"
                       onClick={() => {
                         setCustomDaysInput('');
-                        onUpdateCasePaper({ ...casePaper, followUpDate: '' });
+                        updateCasePaperState({ followUpDate: '' });
                       }}
                       className="p-0.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full font-bold ml-1 transition-colors cursor-pointer"
                       title="Clear follow-up date"
