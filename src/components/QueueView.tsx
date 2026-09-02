@@ -71,6 +71,8 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
   const consulting = queue.filter(q => q.status === 'in-consultation').length;
   const completed = queue.filter(q => q.status === 'completed').length;
 
+  const [queueSearchQuery, setQueueSearchQuery] = useState('');
+
   // Doctor View: In Room (in-consultation) at top, then Waiting patients in FIFO order, then Completed at bottom
   const displayQueue = useMemo(() => {
     return [...queue].sort((a, b) => {
@@ -87,6 +89,32 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
       return (a.queueId || '').localeCompare(b.queueId || '');
     });
   }, [queue]);
+
+  const filteredQueue = useMemo(() => {
+    const q = queueSearchQuery.trim().toLowerCase();
+    if (!q) return displayQueue;
+
+    const qDigits = q.replace(/\D/g, '');
+
+    return displayQueue.filter(item => {
+      const patient = getPatient(item.patientId);
+      const name = (item.name || patient?.name || '').toLowerCase();
+      const phone = (item.phone || patient?.phone || '').replace(/\D/g, '');
+      const village = (item.village || patient?.village || '').toLowerCase();
+      const casePaper = (item.casePaperNo || patient?.casePaperNo || '').toLowerCase();
+      const complaint = (item.complaint || '').toLowerCase();
+      const status = (item.status || '').toLowerCase();
+
+      return (
+        name.includes(q) ||
+        (qDigits && phone.includes(qDigits)) ||
+        village.includes(q) ||
+        casePaper.includes(q) ||
+        complaint.includes(q) ||
+        status.includes(q)
+      );
+    });
+  }, [displayQueue, queueSearchQuery, patients]);
 
   const searchedPatients = useMemo(() => {
     return filterAndSortPatients(patients, patientSearchQuery);
@@ -356,20 +384,44 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
 
       {/* Queue Table */}
       <div className="bg-[#faf9f6] rounded-2xl shadow-sm border border-[#e4e2e1] overflow-hidden">
-        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#e4e2e1] flex flex-col xs:flex-row justify-between items-start xs:items-center gap-2 bg-[#f8f6f0]">
-          <h2 className="text-sm sm:text-base font-serif font-bold text-[#1a1c1a] flex items-center gap-2 min-w-0">
-            <Clock className="w-4 h-4 text-[#047857] shrink-0" />
-            <span className="truncate">Today's Consultation Queue</span>
-          </h2>
-          <span className="bg-[#ecfdf5] text-[#047857] py-1 px-3 rounded-full text-[10px] sm:text-[11px] font-bold flex items-center gap-1.5 border border-[#a7f3d0] shrink-0">
-            <Users className="w-3 h-3 text-[#065f46]" />
-            {queue.length} Patients
-          </span>
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#e4e2e1] flex flex-col md:flex-row justify-between items-start md:items-center gap-3 bg-[#f8f6f0]">
+          <div className="flex items-center gap-3 min-w-0">
+            <h2 className="text-sm sm:text-base font-serif font-bold text-[#1a1c1a] flex items-center gap-2 min-w-0">
+              <Clock className="w-4 h-4 text-[#047857] shrink-0" />
+              <span className="truncate">Today's Consultation Queue</span>
+            </h2>
+            <span className="bg-[#ecfdf5] text-[#047857] py-1 px-3 rounded-full text-[10px] sm:text-[11px] font-bold flex items-center gap-1.5 border border-[#a7f3d0] shrink-0">
+              <Users className="w-3 h-3 text-[#065f46]" />
+              {queueSearchQuery.trim() ? `${filteredQueue.length} of ${queue.length} Patients` : `${queue.length} Patients`}
+            </span>
+          </div>
+
+          {/* Instant Search Bar in Queue Header */}
+          <div className="relative w-full md:w-80">
+            <Search className="w-3.5 h-3.5 text-[#7c766d] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search queue (Name, Phone, Village, #Case)..."
+              value={queueSearchQuery}
+              onChange={(e) => setQueueSearchQuery(e.target.value)}
+              className="w-full bg-white border border-[#cdc6ba] focus:border-[#047857] focus:ring-1 focus:ring-[#047857] rounded-xl text-xs py-2 pl-8 pr-7 placeholder:text-[#9c9589] font-medium transition-all shadow-xs"
+            />
+            {queueSearchQuery && (
+              <button
+                type="button"
+                onClick={() => setQueueSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9c9589] hover:text-[#1a1c1a] p-0.5 rounded-md"
+                title="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
         </div>
         
         {/* Mobile View (Stacked Cards — No Horizontal Scrollbar) */}
         <div className="block md:hidden divide-y divide-[#e4e2e1]">
-          {displayQueue.map((item, index) => {
+          {filteredQueue.map((item, index) => {
             const patient = getPatient(item.patientId) || {
               id: item.patientId || item.queueId,
               name: item.name || 'Patient',
@@ -466,6 +518,19 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
             );
           })}
 
+          {filteredQueue.length === 0 && queue.length > 0 && (
+            <div className="px-6 py-10 text-center bg-white">
+              <p className="text-[#4b463e] font-semibold text-xs">No patients in queue matching "{queueSearchQuery}"</p>
+              <button
+                type="button"
+                onClick={() => setQueueSearchQuery('')}
+                className="mt-2 text-xs font-bold text-[#047857] hover:underline"
+              >
+                Clear Search
+              </button>
+            </div>
+          )}
+
           {queue.length === 0 && (
             <div className="px-6 py-12 text-center">
               <div className="flex flex-col items-center justify-center gap-3">
@@ -498,7 +563,7 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
             </thead>
 
             <tbody>
-              {displayQueue.map((item, index) => {
+              {filteredQueue.map((item, index) => {
                 const patient = getPatient(item.patientId) || {
                   id: item.patientId || item.queueId,
                   name: item.name || 'Patient',
@@ -607,9 +672,24 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                 );
               })}
               
+              {filteredQueue.length === 0 && queue.length > 0 && (
+                <tr>
+                  <td colSpan={8} className="px-6 py-12 text-center bg-white">
+                    <p className="text-[#4b463e] font-semibold text-xs">No patients in queue matching "<strong>{queueSearchQuery}</strong>"</p>
+                    <button
+                      type="button"
+                      onClick={() => setQueueSearchQuery('')}
+                      className="mt-2 text-xs font-bold text-[#047857] hover:underline"
+                    >
+                      Clear Search
+                    </button>
+                  </td>
+                </tr>
+              )}
+
               {queue.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-16 text-center">
+                  <td colSpan={8} className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center justify-center gap-3">
                       <div className="w-14 h-14 rounded-2xl bg-[#f2eee3] border border-[#e4e2e1] flex items-center justify-center">
                         <Users className="w-7 h-7 text-[#cdc6ba]" />
