@@ -609,17 +609,70 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
     const year = url.searchParams.get('year') || new Date().getFullYear();
     const month = String(url.searchParams.get('month') || (new Date().getMonth() + 1)).padStart(2, '0');
     const monthPrefix = `${year}-${month}`;
-    const { data, error } = await supabase.from('queues').select('*').gte('date', `${monthPrefix}-01`).lte('date', `${monthPrefix}-31`).order('date', { ascending: true });
+    const { data, error } = await supabase
+      .from('queues')
+      .select('*')
+      .gte('date', `${monthPrefix}-01`)
+      .lte('date', `${monthPrefix}-31`)
+      .order('date', { ascending: true });
     if (error) throw error;
-    return { records: (data || []).map(mapQueueItem), year, month } as any;
+
+    const records = (data || []).map((q: any, idx: number) => ({
+      id: q.id || q.queue_id || idx + 1,
+      date: q.date,
+      opdNo: String(idx + 1).padStart(11, '0'),
+      patientName: q.name,
+      patientId: q.patient_id,
+      age: q.age,
+      gender: q.gender || 'M',
+      phone: q.phone,
+      village: q.village,
+      complaint: q.complaint || 'General Checkup',
+      diagnosis: q.notes || '',
+      status: q.status || 'COMPLETED',
+    }));
+
+    const totalPatients = records.length;
+    const completed = records.filter((r: any) => r.status === 'completed' || r.status === 'done').length;
+    const waiting = records.filter((r: any) => r.status === 'waiting' || r.status === 'in-room').length;
+
+    return {
+      records,
+      summary: { totalPatients, completed, waiting },
+      year,
+      month,
+    } as any;
   }
 
   if (endpoint.startsWith('/register/yearly')) {
     const url = new URL(`http://localhost${endpoint}`);
-    const year = url.searchParams.get('year') || new Date().getFullYear();
-    const { data, error } = await supabase.from('queues').select('*').gte('date', `${year}-01-01`).lte('date', `${year}-12-31`).order('date', { ascending: true });
+    const year = Number(url.searchParams.get('year') || new Date().getFullYear());
+    const { data, error } = await supabase
+      .from('queues')
+      .select('*')
+      .gte('date', `${year}-01-01`)
+      .lte('date', `${year}-12-31`)
+      .order('date', { ascending: true });
     if (error) throw error;
-    return { records: (data || []).map(mapQueueItem), year } as any;
+
+    const rows = data || [];
+    const monthlyBreakdown = Array.from({ length: 12 }, (_, i) => {
+      const monthNum = i + 1;
+      const monthPrefix = `${year}-${String(monthNum).padStart(2, '0')}`;
+      const monthRows = rows.filter(r => (r.date || '').startsWith(monthPrefix));
+      return {
+        month: monthNum,
+        totalPatients: monthRows.length,
+        completed: monthRows.filter(r => r.status === 'completed' || r.status === 'done').length,
+        waiting: monthRows.filter(r => r.status === 'waiting' || r.status === 'in-room').length,
+      };
+    });
+
+    return {
+      totalPatients: rows.length,
+      monthlyBreakdown,
+      year,
+    } as any;
   }
 
   if (endpoint.startsWith('/register/sync')) {

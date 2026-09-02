@@ -988,7 +988,7 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
                 </span>
               </h3>
               <p className="text-xs text-[#7c766d] mt-0.5">
-                Archived day-by-day OPD records saved permanently on Oracle VM server database.
+                Archived day-by-day OPD records saved permanently in clinic database.
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -1025,7 +1025,7 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
 
           {isLoadingArchive ? (
             <div className="p-12 text-center text-xs font-semibold text-[#7c766d]">
-              Loading archived monthly OPD register from Oracle database...
+              Loading archived monthly OPD register...
             </div>
           ) : monthlyData?.records?.length > 0 ? (
             <div className="overflow-x-auto">
@@ -1133,7 +1133,7 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
 
           {isLoadingArchive ? (
             <div className="p-12 text-center text-xs font-semibold text-[#7c766d]">
-              Loading yearly summary from Oracle database...
+              Loading yearly summary...
             </div>
           ) : yearlyData?.monthlyBreakdown ? (
             <div className="p-6">
