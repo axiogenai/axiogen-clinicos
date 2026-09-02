@@ -1051,7 +1051,7 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
                       <td className="p-3 pl-6 font-mono font-bold text-[#656056]">{idx + 1}</td>
                       <td className="p-3 font-mono font-semibold text-[#1a1c1a]">{r.date}</td>
                       <td className="p-3 font-mono text-[#047857] font-bold">{String(idx + 1).padStart(11, "0")}</td>
-                      <td className="p-3 font-bold text-[#1a1c1a]">{r.patientName}</td>
+                      <td className="p-3 font-bold text-[#1a1c1a]">{r.patientName || r.name || 'Unknown Patient'}</td>
                       <td className="p-3 text-[#656056]">{r.age || '-'} / {r.gender || 'M'}</td>
                       <td className="p-3 font-mono text-[#4b463e]">{r.phone || '-'}</td>
                       <td className="p-3 text-[#656056]">{r.village || '-'}</td>
@@ -1067,10 +1067,11 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
                           type="button"
                           title="Permanently delete patient and record everywhere"
                           onClick={() => {
+                            const pName = r.patientName || r.name || 'Unknown Patient';
                             setConfirmModal({
                               isOpen: true,
                               title: 'Delete Patient & OPD Record',
-                              message: `Permanently delete '${r.patientName}' from all database registers, patient search, and queue?`,
+                              message: `Permanently delete '${pName}' from all database registers, patient search, and queue?`,
                               confirmText: 'Delete Everywhere',
                               isDestructive: true,
                               onConfirm: async () => {
@@ -1081,14 +1082,14 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
                                   } else if (r.phone) {
                                     deletePatient(r.phone);
                                   } else {
-                                    deletePatient(r.patientName);
+                                    deletePatient(pName);
                                   }
                                   setMonthlyData((prev: any) => prev ? {
                                     ...prev,
                                     records: prev.records.filter((rec: any) => rec.id !== r.id),
                                     summary: { ...prev.summary, totalPatients: Math.max(0, (prev.summary?.totalPatients || 1) - 1) }
                                   } : prev);
-                                  setToast({ type: 'success', message: `Permanently deleted '${r.patientName}' from everywhere.` });
+                                  setToast({ type: 'success', message: `Permanently deleted '${pName}' from everywhere.` });
                                 } catch {
                                   setToast({ type: 'error', message: 'Failed to delete entry.' });
                                 }
