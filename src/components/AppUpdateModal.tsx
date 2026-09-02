@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { ArrowUpCircle, RefreshCw, X, CheckCircle2, ArrowRight, Lock, MessageSquare, ShieldCheck } from 'lucide-react';
+import { RefreshCw, X, CheckCircle2, ArrowRight, Lock, MessageSquare, ShieldCheck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export interface UpdatePayload {
