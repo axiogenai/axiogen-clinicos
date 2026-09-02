@@ -1,5 +1,5 @@
-﻿import React, { useEffect, useState, useRef } from 'react';
-import { Sparkles, RefreshCw, X, CheckCircle2, ArrowRight } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { ArrowUpCircle, RefreshCw, X, CheckCircle2, ArrowRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export interface UpdatePayload {
@@ -114,7 +114,7 @@ export const AppUpdateModal: React.FC = () => {
         <div className="flex items-start justify-between gap-3 mb-4 relative z-10">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#064e3b] to-[#047857] flex items-center justify-center text-white shadow-lg shadow-emerald-950/20">
-              <Sparkles className="w-6 h-6 animate-pulse text-[#a7f3d0]" />
+              <ArrowUpCircle className="w-6 h-6 text-[#a7f3d0]" />
             </div>
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-[#047857] bg-[#ecfdf5] px-2 py-0.5 rounded-full border border-[#a7f3d0]">
