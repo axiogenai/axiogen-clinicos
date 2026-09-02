@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { ArrowUpCircle, RefreshCw, X, CheckCircle2, ArrowRight, Lock, MessageSquare } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -11,6 +11,10 @@ export interface UpdatePayload {
   pricingType?: 'free' | 'paid';
   priceAmount?: string;
   whatsappContactNumber?: string;
+  badgeLabel?: string;
+  descriptionText?: string;
+  buttonCtaText?: string;
+  customWhatsAppMessage?: string;
   autoRefreshDelaySeconds?: number;
   timestamp: number;
 }
@@ -38,7 +42,7 @@ export const AppUpdateModal: React.FC = () => {
   const handleWhatsAppUnlock = () => {
     if (!updateData) return;
     const phone = updateData.whatsappContactNumber || '919022646272';
-    const message = `Hello Axiogen Team, I want to unlock the new ${updateData.version} update ("${updateData.title}") for ₹${updateData.priceAmount || '4,999'} for Shingare ClinicOS. Please provide payment details and activate our license.`;
+    const message = updateData.customWhatsAppMessage || `Hello Axiogen Team, I want to unlock the new ${updateData.version} update ("${updateData.title}") for ₹${updateData.priceAmount || '4,999'} for Shingare ClinicOS. Please provide payment details and activate our license.`;
     const encoded = encodeURIComponent(message);
     window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank');
   };
@@ -117,6 +121,13 @@ export const AppUpdateModal: React.FC = () => {
   if (!updateData) return null;
 
   const isPaid = updateData.pricingType === 'paid';
+  const badge = updateData.badgeLabel || (isPaid ? '💎 Premium Feature Release' : '🚀 New Version');
+  const buttonText = updateData.buttonCtaText || (isPaid ? '💬 Unlock via WhatsApp' : '⚡ Update & Hard Refresh Software Now');
+  const description = updateData.descriptionText || (
+    isPaid 
+      ? 'This is a premium add-on module. Unlock full access for your clinic by contacting the Axiogen development team.'
+      : 'Click below to apply the latest clinical updates and refresh your browser. Your ongoing work is securely saved.'
+  );
 
   return (
     <div className="fixed inset-0 z-50 bg-[#1a1c1a]/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -144,7 +155,7 @@ export const AppUpdateModal: React.FC = () => {
                     ? 'text-amber-800 bg-amber-50 border-amber-300'
                     : 'text-[#047857] bg-[#ecfdf5] border-[#a7f3d0]'
                 }`}>
-                  {isPaid ? `💎 Premium Feature Release ${updateData.version}` : `🚀 New Version ${updateData.version}`}
+                  {badge} {updateData.version}
                 </span>
                 {isPaid && updateData.priceAmount && (
                   <span className="text-xs font-bold font-mono text-amber-900 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-200">
@@ -168,7 +179,7 @@ export const AppUpdateModal: React.FC = () => {
 
         {/* Improvements List */}
         {updateData.changelog && updateData.changelog.length > 0 && (
-          <div className="bg-[#faf9f6] border border-[#e4e2e1] rounded-2xl p-4 mb-5 space-y-2">
+          <div className="bg-[#faf9f6] border border-[#e4e2e1] rounded-2xl p-4 mb-4 space-y-2">
             <h4 className="text-[11px] font-bold uppercase tracking-wider text-[#7c766d]">
               {isPaid ? 'What you get with this upgrade:' : "What's New in this update:"}
             </h4>
@@ -185,28 +196,23 @@ export const AppUpdateModal: React.FC = () => {
           </div>
         )}
 
+        <p className="text-xs text-[#7c766d] leading-relaxed mb-4">
+          {description}
+        </p>
+
         {isPaid ? (
           <div className="space-y-3">
-            <p className="text-xs text-[#7c766d] leading-relaxed">
-              This is a premium add-on module. Unlock full access for your clinic by contacting the Axiogen development team.
-            </p>
-
             <button
               onClick={handleWhatsAppUnlock}
               className="w-full py-3.5 bg-gradient-to-r from-amber-600 via-orange-500 to-amber-600 hover:from-amber-700 hover:to-orange-600 text-white rounded-2xl text-xs font-bold transition-all shadow-xl shadow-amber-950/20 flex items-center justify-center gap-2 cursor-pointer"
             >
               <MessageSquare className="w-4 h-4" />
-              <span>💬 Unlock via WhatsApp (₹{updateData.priceAmount || '4,999'})</span>
+              <span>{buttonText} (₹{updateData.priceAmount || '4,999'})</span>
               <ArrowRight className="w-4 h-4 ml-1" />
             </button>
           </div>
         ) : (
           <div className="space-y-3">
-            <p className="text-xs text-[#7c766d] leading-relaxed">
-              Click below to apply the latest clinical updates and refresh your browser. Your ongoing work is securely saved.
-            </p>
-
-            {/* 1-Click Hard Refresh Button */}
             <button
               onClick={executeHardRefresh}
               disabled={isUpdating}
@@ -220,7 +226,7 @@ export const AppUpdateModal: React.FC = () => {
               ) : (
                 <>
                   <RefreshCw className="w-4 h-4" />
-                  <span>⚡ Update & Hard Refresh Software Now</span>
+                  <span>{buttonText}</span>
                   <ArrowRight className="w-4 h-4 ml-1" />
                 </>
               )}
