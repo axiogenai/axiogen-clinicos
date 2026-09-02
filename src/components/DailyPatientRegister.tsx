@@ -516,6 +516,33 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
         const list = await api.getCasePapers(matchingPatient.id);
         if (list && list.length > 0) {
           const latest = list[0];
+          let parsedMeds = [];
+          try {
+            parsedMeds = Array.isArray(latest.medicines)
+              ? latest.medicines
+              : (typeof latest.medicines === 'string' ? JSON.parse(latest.medicines || '[]') : []);
+          } catch {
+            parsedMeds = [];
+          }
+
+          let parsedInv = [];
+          try {
+            parsedInv = Array.isArray(latest.investigationsAdvised)
+              ? latest.investigationsAdvised
+              : (typeof latest.investigationsAdvised === 'string' ? JSON.parse(latest.investigationsAdvised || '[]') : []);
+          } catch {
+            parsedInv = [];
+          }
+
+          let parsedCoun = [];
+          try {
+            parsedCoun = Array.isArray(latest.counsellingDone)
+              ? latest.counsellingDone
+              : (typeof latest.counsellingDone === 'string' ? JSON.parse(latest.counsellingDone || '[]') : []);
+          } catch {
+            parsedCoun = [];
+          }
+
           savedCasePaper = {
             patientId: matchingPatient.id,
             date: latest.date || selectedDate,
@@ -523,9 +550,9 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
             complaint: latest.complaint || item.complaint,
             pastHistory: latest.pastHistory || matchingPatient.pastHistory || '',
             allergies: latest.allergies || matchingPatient.allergies || '',
-            medicines: latest.medicines || [],
-            investigationsAdvised: latest.investigationsAdvised || [],
-            counsellingDone: latest.counsellingDone || [],
+            medicines: parsedMeds,
+            investigationsAdvised: parsedInv,
+            counsellingDone: parsedCoun,
             followUpDate: latest.followUpDate || '',
           };
         }
@@ -545,6 +572,12 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
         counsellingDone: [],
         followUpDate: '',
       };
+    } else if (savedCasePaper.medicines && typeof savedCasePaper.medicines === 'string') {
+      try {
+        savedCasePaper.medicines = JSON.parse(savedCasePaper.medicines);
+      } catch {
+        savedCasePaper.medicines = [];
+      }
     }
 
     setActiveEmrModal({
@@ -582,6 +615,33 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
         const list = await api.getCasePapers(matchingPatient.id);
         if (list && list.length > 0) {
           const latest = list[0];
+          let parsedMeds = [];
+          try {
+            parsedMeds = Array.isArray(latest.medicines)
+              ? latest.medicines
+              : (typeof latest.medicines === 'string' ? JSON.parse(latest.medicines || '[]') : []);
+          } catch {
+            parsedMeds = [];
+          }
+
+          let parsedInv = [];
+          try {
+            parsedInv = Array.isArray(latest.investigationsAdvised)
+              ? latest.investigationsAdvised
+              : (typeof latest.investigationsAdvised === 'string' ? JSON.parse(latest.investigationsAdvised || '[]') : []);
+          } catch {
+            parsedInv = [];
+          }
+
+          let parsedCoun = [];
+          try {
+            parsedCoun = Array.isArray(latest.counsellingDone)
+              ? latest.counsellingDone
+              : (typeof latest.counsellingDone === 'string' ? JSON.parse(latest.counsellingDone || '[]') : []);
+          } catch {
+            parsedCoun = [];
+          }
+
           savedCasePaper = {
             patientId: matchingPatient.id,
             date: latest.date || selectedDate,
@@ -589,13 +649,21 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
             complaint: latest.complaint || item.complaint,
             pastHistory: latest.pastHistory || matchingPatient.pastHistory || '',
             allergies: latest.allergies || matchingPatient.allergies || '',
-            medicines: latest.medicines || [],
-            investigationsAdvised: latest.investigationsAdvised || [],
-            counsellingDone: latest.counsellingDone || [],
+            medicines: parsedMeds,
+            investigationsAdvised: parsedInv,
+            counsellingDone: parsedCoun,
             followUpDate: latest.followUpDate || '',
           };
         }
       } catch {}
+    }
+
+    if (savedCasePaper && savedCasePaper.medicines && typeof savedCasePaper.medicines === 'string') {
+      try {
+        savedCasePaper.medicines = JSON.parse(savedCasePaper.medicines);
+      } catch {
+        savedCasePaper.medicines = [];
+      }
     }
 
     if (!savedCasePaper) {
