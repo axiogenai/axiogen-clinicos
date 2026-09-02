@@ -14,7 +14,7 @@ import ConfirmModal from './ConfirmModal';
 import { calculateMedicineCount } from '../utils/countCalculator';
 import { formatFollowUpDate } from '../utils/dateFormatter';
 import { translateFrequencyToMarathi } from '../utils/marathiTranslator';
-import { parsePrescriptionSentence, parseSentenceWithGroqAI, formatClinicalMedicineName } from '../utils/sentenceParser';
+import { parsePrescriptionSentence, formatClinicalMedicineName } from '../utils/sentenceParser';
 
 interface CasepaperFormProps {
   patient: Patient;
@@ -668,43 +668,59 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
 
   const addMedicine = (medicineId: string, customRawSentence?: string) => {
     const sentenceToParse = (customRawSentence !== undefined ? customRawSentence : searchQuery).trim();
-    
-    // If the input has multiple words or contains frequency/verb/duration keywords, run dynamic Groq AI parse
-    const words = sentenceToParse.split(/\s+/);
-    const hasSentenceIndicators = words.length >= 3 || /\b(sakali|ratri|dupari|lavne|ghene|after|before|bbf|pc|ac|od|bd|bid|tds|tid|hs|divas|days|weeks|months|\d+)\b/i.test(sentenceToParse);
-    
-    if (hasSentenceIndicators && words.length >= 2) {
-      addSentenceWithGroqAI(sentenceToParse);
-      return;
-    }
+    if (!sentenceToParse && !medicineId) return;
 
+    // 1. INSTANT LOCAL CLINICAL PARSE (0ms) - extracts medicine name, form, frequency, duration, count
     const parsed = parsePrescriptionSentence(sentenceToParse);
-    const med = filteredMedicines.find(m => m.id === medicineId) || dbMedicines.find(m => m.id === medicineId);
+    let matchedMed = filteredMedicines.find(m => m.id === medicineId) || dbMedicines.find(m => m.id === medicineId);
 
-    let rawName = med ? med.name.trim() : (parsed.formattedMedicineName || sentenceToParse || 'Medicine');
-    if (med && med.strength && !rawName.toLowerCase().includes(med.strength.toLowerCase())) {
-      rawName = `${rawName} ${med.strength}`;
+    const inputLower = sentenceToParse.toLowerCase();
+    const wantsOintment = inputLower.includes('ointment') || inputLower.includes('oint') || inputLower.includes('oliment') || inputLower.includes('oliments');
+    const wantsCream = inputLower.includes('cream') || inputLower.includes('crm');
+    const wantsGel = inputLower.includes('gel');
+    const wantsLotion = inputLower.includes('lotion') || inputLower.includes('lot');
+
+    if (!matchedMed && parsed.cleanedMedicineQuery) {
+      const q = parsed.cleanedMedicineQuery.toLowerCase().trim();
+      matchedMed = dbMedicines.find(m => {
+        const nameLower = m.name.toLowerCase();
+        const brandLower = (m.brand || '').toLowerCase();
+        const queryMatch = nameLower.includes(q) || brandLower.includes(q);
+        if (!queryMatch) return false;
+        if (wantsOintment && (nameLower.includes('cream') && !nameLower.includes('ointment'))) return false;
+        if (wantsCream && (nameLower.includes('ointment') && !nameLower.includes('cream'))) return false;
+        if (wantsGel && (!nameLower.includes('gel') && (nameLower.includes('cream') || nameLower.includes('ointment')))) return false;
+        if (wantsLotion && (!nameLower.includes('lotion') && (nameLower.includes('cream') || nameLower.includes('ointment')))) return false;
+        return true;
+      });
     }
-    const fullName = formatClinicalMedicineName(rawName, med?.form);
 
-    const freq = parsed.frequency || (med ? med.defaultFrequency || '' : '');
-    const dur = parsed.duration || (med ? med.defaultDuration || '7 Days' : '7 Days');
+    let rawName = matchedMed ? matchedMed.name.trim() : (parsed.formattedMedicineName || sentenceToParse || 'Medicine');
+    if (matchedMed && matchedMed.strength && !rawName.toLowerCase().includes(matchedMed.strength.toLowerCase())) {
+      rawName = `${rawName} ${matchedMed.strength}`;
+    }
+    const fullName = formatClinicalMedicineName(rawName, matchedMed?.form);
+
+    const freq = parsed.frequency || (matchedMed ? matchedMed.defaultFrequency || '' : '');
+    const dur = parsed.duration || (matchedMed ? matchedMed.defaultDuration || '7 Days' : '7 Days');
     const autoCount = calculateMedicineCount({ name: fullName, frequency: freq, duration: dur });
     if (freq) {
       addCustomFrequency(freq);
     }
 
     const newMedicine: CasePaperMedicine = {
-      medicineId: med ? med.id : `custom_${Date.now()}`,
+      medicineId: matchedMed ? matchedMed.id : `custom_${Date.now()}`,
       name: fullName,
       frequency: freq,
       duration: dur,
       count: autoCount
     };
 
+    // INSTANTLY append to current casePaper medicines
+    const updatedMedicines = [...(casePaper.medicines || []), newMedicine];
     onUpdateCasePaper({
       ...casePaper,
-      medicines: [...casePaper.medicines, newMedicine],
+      medicines: updatedMedicines,
     });
 
     setSearchQuery('');
@@ -712,118 +728,8 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     setHighlightedIndex(-1);
   };
 
-  const addSentenceWithGroqAI = async (rawSentence: string) => {
-    const sentenceToParse = rawSentence.trim();
-    if (!sentenceToParse) return;
-
-    // 1. Add a placeholder row immediately (raw text as name, loading indicator)
-    const placeholderId = `groq_pending_${Date.now()}`;
-    const placeholderName = sentenceToParse
-      .split(' ')
-      .map(w => w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : '')
-      .join(' ');
-
-    const placeholderMedicine: CasePaperMedicine = {
-      medicineId: placeholderId,
-      name: placeholderName,
-      frequency: '⏳ AI parsing...',
-      duration: '',
-      count: 0
-    };
-
-    const medsWithPlaceholder = [...casePaper.medicines, placeholderMedicine];
-    onUpdateCasePaper({
-      ...casePaper,
-      medicines: medsWithPlaceholder,
-    });
-
-    setSearchQuery('');
-    setShowSearchDropdown(false);
-    setHighlightedIndex(-1);
-
-    // 2. Call Groq AI (100% dynamic, no hardcoded regex)
-    let finalMedicines = medsWithPlaceholder;
-    try {
-      const groqParsed = await parseSentenceWithGroqAI(sentenceToParse);
-
-      if (groqParsed) {
-        const groqClean = (groqParsed.cleanedMedicineQuery || sentenceToParse).toLowerCase().trim();
-        const inputLower = sentenceToParse.toLowerCase();
-        const wantsOintment = inputLower.includes('ointment') || inputLower.includes('oint') || inputLower.includes('oliment') || inputLower.includes('oliments');
-        const wantsCream = inputLower.includes('cream') || inputLower.includes('crm');
-        const wantsGel = inputLower.includes('gel');
-        const wantsLotion = inputLower.includes('lotion') || inputLower.includes('lot');
-
-        let matchedMed = dbMedicines.find(m => {
-          const nameLower = m.name.toLowerCase();
-          const brandLower = (m.brand || '').toLowerCase();
-          const queryMatch = nameLower.includes(groqClean) || brandLower.includes(groqClean);
-          if (!queryMatch) return false;
-          if (wantsOintment && (nameLower.includes('cream') && !nameLower.includes('ointment'))) return false;
-          if (wantsCream && (nameLower.includes('ointment') && !nameLower.includes('cream'))) return false;
-          if (wantsGel && (!nameLower.includes('gel') && (nameLower.includes('cream') || nameLower.includes('ointment')))) return false;
-          if (wantsLotion && (!nameLower.includes('lotion') && (nameLower.includes('cream') || nameLower.includes('ointment')))) return false;
-          return true;
-        });
-
-        if (!matchedMed) {
-          matchedMed = dbMedicines.find(m =>
-            m.name.toLowerCase().includes(groqClean) ||
-            (m.brand && m.brand.toLowerCase().includes(groqClean))
-          );
-          if (matchedMed && wantsOintment && matchedMed.name.toLowerCase().includes('cream') && !matchedMed.name.toLowerCase().includes('ointment')) {
-            matchedMed = undefined;
-          }
-        }
-
-        let finalName = matchedMed ? matchedMed.name.trim() : (groqParsed.formattedMedicineName || sentenceToParse);
-        if (matchedMed && matchedMed.strength && !finalName.toLowerCase().includes(matchedMed.strength.toLowerCase())) {
-          finalName = `${finalName} ${matchedMed.strength}`;
-        }
-
-        const finalFreq = groqParsed.frequency || (matchedMed?.defaultFrequency || '');
-        const finalDur = groqParsed.duration || (matchedMed?.defaultDuration || '7 Days');
-        const finalCount = calculateMedicineCount({ name: finalName, frequency: finalFreq, duration: finalDur });
-        if (finalFreq) {
-          addCustomFrequency(finalFreq);
-        }
-        if (finalFreq) {
-          addCustomFrequency(finalFreq);
-        }
-
-        finalMedicines = medsWithPlaceholder.map(m =>
-          m.medicineId === placeholderId
-            ? {
-                ...m,
-                medicineId: matchedMed ? matchedMed.id : placeholderId,
-                name: finalName,
-                frequency: finalFreq,
-                duration: finalDur,
-                count: finalCount
-              }
-            : m
-        );
-      } else {
-        // Groq AI returned null — clear loading, keep raw name
-        finalMedicines = medsWithPlaceholder.map(m =>
-          m.medicineId === placeholderId
-            ? { ...m, frequency: '', duration: '7 Days', count: 0 }
-            : m
-        );
-      }
-    } catch (err) {
-      console.warn('Groq AI parse failed:', err);
-      finalMedicines = medsWithPlaceholder.map(m =>
-        m.medicineId === placeholderId
-          ? { ...m, frequency: '', duration: '7 Days', count: 0 }
-          : m
-      );
-    }
-
-    onUpdateCasePaper({
-      ...casePaper,
-      medicines: finalMedicines,
-    });
+  const addSentenceWithGroqAI = (rawSentence: string) => {
+    addMedicine('', rawSentence);
   };
 
   const removeMedicine = (index: number) => {
