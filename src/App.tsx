@@ -16,6 +16,7 @@ import Toast from './components/Toast';
 import WhatsAppGatewayModal from './components/WhatsAppGatewayModal';
 import DoctorPasscodeModal from './components/DoctorPasscodeModal';
 import ComingSoonLandingPage from './components/ComingSoonLandingPage';
+import { AppUpdateModal } from './components/AppUpdateModal';
 
 import logoHd from './assets/logo-hd.png';
 
@@ -469,6 +470,9 @@ function MainApp() {
           onClose={() => setToast(null)}
         />
       )}
+
+      {/* Realtime OTA Remote Software Update Modal */}
+      <AppUpdateModal />
 
       {/* ── Footer ── */}
       <footer className="w-full mt-auto border-t border-[#e4e2e1] bg-[#faf9f6]">
