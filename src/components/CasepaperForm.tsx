@@ -297,9 +297,13 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     allergies: casePaper.allergies || patient.allergies || '',
   });
 
+  const prevPatientIdRef = useRef<string>(patient.id);
   useEffect(() => {
-    setCurrentPatient(patient);
-  }, [patient]);
+    if (patient.id && patient.id !== prevPatientIdRef.current) {
+      prevPatientIdRef.current = patient.id;
+      setCurrentPatient(patient);
+    }
+  }, [patient.id]);
 
   const openPatientEditModal = () => {
     setPatientEditForm({
@@ -859,14 +863,14 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
   const buildCasePaperPayload = () => {
     const targetQueueItem = queue.find(q =>
       (queueId && q.queueId === queueId) ||
-      q.patientId === patient.id ||
-      q.name?.toLowerCase() === patient.name?.toLowerCase()
+      q.patientId === currentPatient.id ||
+      q.name?.toLowerCase() === currentPatient.name?.toLowerCase()
     );
     const effectiveQueueId = queueId || targetQueueItem?.queueId;
 
     return {
       payload: {
-        patientId: patient.id,
+        patientId: currentPatient.id,
         queueId: effectiveQueueId,
         date: casePaper.date,
         templateId: casePaper.templateId || '',
@@ -884,7 +888,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
   };
 
   const executeWithValidation = async (action: () => void | Promise<void>) => {
-    if (!patient || !patient.name) {
+    if (!currentPatient || !currentPatient.name) {
       setToast({ type: 'error', message: 'Invalid patient selected. Cannot save consultation.' });
       return;
     }
@@ -916,7 +920,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
       const { payload, effectiveQueueId } = buildCasePaperPayload();
 
       try {
-        localStorage.setItem(`clinicos_saved_casepaper_${patient.id}`, JSON.stringify(payload));
+        localStorage.setItem(`clinicos_saved_casepaper_${currentPatient.id}`, JSON.stringify(payload));
       } catch {}
 
       await api.createCasePaper(payload);
@@ -925,26 +929,25 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
         updateQueueStatus(effectiveQueueId, 'completed');
         api.updateQueueStatus(effectiveQueueId, 'completed').catch(() => {});
       }
-      if (patient.id) {
-        api.updateQueueStatus(patient.id, 'completed').catch(() => {});
+      if (currentPatient.id) {
+        api.updateQueueStatus(currentPatient.id, 'completed').catch(() => {});
       }
-      if (patient.name) {
-        api.updateQueueStatus(patient.name, 'completed').catch(() => {});
+      if (currentPatient.name) {
+        api.updateQueueStatus(currentPatient.name, 'completed').catch(() => {});
       }
 
       setToast({
         type: 'success',
         title: 'Consultation Complete',
-        message: `Clinical casepaper for ${patient.name} saved to patient record`,
+        message: `Clinical casepaper for ${currentPatient.name} saved to patient record`,
       });
       onBack();
     } catch {
       setToast({
         type: 'success',
         title: 'Consultation Saved',
-        message: `Clinical casepaper for ${patient.name} updated`,
+        message: `Clinical casepaper for ${currentPatient.name} updated`,
       });
-      onBack();
       onBack();
     }
   });
@@ -955,15 +958,15 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
 
     try {
       const { payload, effectiveQueueId } = buildCasePaperPayload();
-      try { localStorage.setItem(`clinicos_saved_casepaper_${patient.id}`, JSON.stringify(payload)); } catch {}
+      try { localStorage.setItem(`clinicos_saved_casepaper_${currentPatient.id}`, JSON.stringify(payload)); } catch {}
       onUpdateCasePaper(payload);
       api.createCasePaper(payload).catch(() => {});
       if (effectiveQueueId) {
         updateQueueStatus(effectiveQueueId, 'completed');
         api.updateQueueStatus(effectiveQueueId, 'completed').catch(() => {});
       }
-      if (patient.id) api.updateQueueStatus(patient.id, 'completed').catch(() => {});
-      if (patient.name) api.updateQueueStatus(patient.name, 'completed').catch(() => {});
+      if (currentPatient.id) api.updateQueueStatus(currentPatient.id, 'completed').catch(() => {});
+      if (currentPatient.name) api.updateQueueStatus(currentPatient.name, 'completed').catch(() => {});
     } catch (err) {
       console.error('Save error:', err);
     }
@@ -1998,7 +2001,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
       {/* Print Preview Overlay - renders on top of everything */}
       {showPrintOverlay && (
         <ReprintPreview
-          patient={patient}
+          patient={currentPatient}
           casePaper={casePaper}
           onBack={() => setShowPrintOverlay(false)}
           onReturnToQueue={() => {
@@ -2011,7 +2014,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
       {/* Patient EMR History Modal */}
       {showEMRModal && (
         <PatientEMRHistoryModal
-          patient={patient}
+          patient={currentPatient}
           onClose={() => setShowEMRModal(false)}
           onLoadPrescription={(pastCasePaper) => {
             const medicines = Array.isArray(pastCasePaper.medicines)
