@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { ArrowUpCircle, RefreshCw, X, CheckCircle2, ArrowRight } from 'lucide-react';
+﻿import React, { useEffect, useState, useRef } from 'react';
+import { ArrowUpCircle, RefreshCw, X, CheckCircle2, ArrowRight, Lock, MessageSquare } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export interface UpdatePayload {
@@ -8,6 +8,9 @@ export interface UpdatePayload {
   title: string;
   changelog: string[];
   mode: 'prompt' | 'force_refresh' | 'announcement';
+  pricingType?: 'free' | 'paid';
+  priceAmount?: string;
+  whatsappContactNumber?: string;
   autoRefreshDelaySeconds?: number;
   timestamp: number;
 }
@@ -30,6 +33,14 @@ export const AppUpdateModal: React.FC = () => {
     } catch {}
     // Hard refresh bypassing browser cache
     window.location.reload();
+  };
+
+  const handleWhatsAppUnlock = () => {
+    if (!updateData) return;
+    const phone = updateData.whatsappContactNumber || '919022646272';
+    const message = `Hello Axiogen Team, I want to unlock the new ${updateData.version} update ("${updateData.title}") for ₹${updateData.priceAmount || '4,999'} for Shingare ClinicOS. Please provide payment details and activate our license.`;
+    const encoded = encodeURIComponent(message);
+    window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank');
   };
 
   const processIncomingRelease = (payload: any) => {
@@ -78,7 +89,7 @@ export const AppUpdateModal: React.FC = () => {
       }
     }).subscribe();
 
-    // 2. Poll Database fallback every 5 seconds (guarantees update even across firewalls / sleep mode)
+    // 2. Poll Database fallback every 5 seconds (guarantees update arrival)
     const checkDbRelease = async () => {
       try {
         const { data } = await supabase.from('clinics').select('pharmacy_info, updated_at').eq('id', 1).single();
@@ -105,23 +116,44 @@ export const AppUpdateModal: React.FC = () => {
 
   if (!updateData) return null;
 
+  const isPaid = updateData.pricingType === 'paid';
+
   return (
-    <div className="fixed inset-0 z-50 bg-[#1a1c1a]/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white border border-[#a7f3d0] rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl relative overflow-hidden">
-        {/* Glow Background */}
-        <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-400/20 rounded-full blur-2xl pointer-events-none" />
+    <div className="fixed inset-0 z-50 bg-[#1a1c1a]/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className={`bg-white border rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl relative overflow-hidden ${
+        isPaid ? 'border-amber-300' : 'border-[#a7f3d0]'
+      }`}>
+        {/* Glow Header */}
+        <div className={`absolute -top-10 -right-10 w-40 h-40 rounded-full blur-2xl pointer-events-none ${
+          isPaid ? 'bg-amber-400/20' : 'bg-emerald-400/20'
+        }`} />
         
         <div className="flex items-start justify-between gap-3 mb-4 relative z-10">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#064e3b] to-[#047857] flex items-center justify-center text-white shadow-lg shadow-emerald-950/20">
-              <ArrowUpCircle className="w-6 h-6 text-[#a7f3d0]" />
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg ${
+              isPaid
+                ? 'bg-gradient-to-br from-amber-600 to-orange-500 shadow-amber-950/20'
+                : 'bg-gradient-to-br from-[#064e3b] to-[#047857] shadow-emerald-950/20'
+            }`}>
+              {isPaid ? <Lock className="w-6 h-6 text-amber-100" /> : <ArrowUpCircle className="w-6 h-6 text-[#a7f3d0]" />}
             </div>
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#047857] bg-[#ecfdf5] px-2 py-0.5 rounded-full border border-[#a7f3d0]">
-                🚀 New Version {updateData.version}
-              </span>
-              <h3 className="text-base font-serif font-bold text-[#1a1c1a] mt-0.5">
-                {updateData.title || 'Software Update Ready'}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                  isPaid
+                    ? 'text-amber-800 bg-amber-50 border-amber-300'
+                    : 'text-[#047857] bg-[#ecfdf5] border-[#a7f3d0]'
+                }`}>
+                  {isPaid ? `💎 Premium Feature Release ${updateData.version}` : `🚀 New Version ${updateData.version}`}
+                </span>
+                {isPaid && updateData.priceAmount && (
+                  <span className="text-xs font-bold font-mono text-amber-900 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-200">
+                    ₹{updateData.priceAmount}
+                  </span>
+                )}
+              </div>
+              <h3 className="text-base font-serif font-bold text-[#1a1c1a] mt-1">
+                {updateData.title || (isPaid ? 'Premium Features Available' : 'Software Update Ready')}
               </h3>
             </div>
           </div>
@@ -138,12 +170,14 @@ export const AppUpdateModal: React.FC = () => {
         {updateData.changelog && updateData.changelog.length > 0 && (
           <div className="bg-[#faf9f6] border border-[#e4e2e1] rounded-2xl p-4 mb-5 space-y-2">
             <h4 className="text-[11px] font-bold uppercase tracking-wider text-[#7c766d]">
-              What's New in this update:
+              {isPaid ? 'What you get with this upgrade:' : "What's New in this update:"}
             </h4>
             <div className="space-y-1.5">
               {updateData.changelog.map((item, idx) => (
                 <div key={idx} className="flex items-start gap-2 text-xs text-[#4b463e]">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#047857] shrink-0 mt-0.5" />
+                  <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${
+                    isPaid ? 'text-amber-600' : 'text-[#047857]'
+                  }`} />
                   <span>{item}</span>
                 </div>
               ))}
@@ -151,29 +185,48 @@ export const AppUpdateModal: React.FC = () => {
           </div>
         )}
 
-        <p className="text-xs text-[#7c766d] mb-5 leading-relaxed">
-          Click below to apply the latest clinical updates and refresh your browser. Your ongoing work is securely saved.
-        </p>
+        {isPaid ? (
+          <div className="space-y-3">
+            <p className="text-xs text-[#7c766d] leading-relaxed">
+              This is a premium add-on module. Unlock full access for your clinic by contacting the Axiogen development team.
+            </p>
 
-        {/* 1-Click Hard Refresh Button */}
-        <button
-          onClick={executeHardRefresh}
-          disabled={isUpdating}
-          className="w-full py-3.5 bg-gradient-to-r from-[#064e3b] to-[#047857] hover:from-[#022c22] hover:to-[#064e3b] text-[#ecfdf5] rounded-2xl text-xs font-bold transition-all shadow-xl shadow-emerald-950/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-        >
-          {isUpdating ? (
-            <>
-              <RefreshCw className="w-4 h-4 animate-spin" />
-              <span>Updating ClinicOS & Hard-Refreshing...</span>
-            </>
-          ) : (
-            <>
-              <RefreshCw className="w-4 h-4" />
-              <span>⚡ Update & Hard Refresh Software Now</span>
+            <button
+              onClick={handleWhatsAppUnlock}
+              className="w-full py-3.5 bg-gradient-to-r from-amber-600 via-orange-500 to-amber-600 hover:from-amber-700 hover:to-orange-600 text-white rounded-2xl text-xs font-bold transition-all shadow-xl shadow-amber-950/20 flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>💬 Unlock via WhatsApp (₹{updateData.priceAmount || '4,999'})</span>
               <ArrowRight className="w-4 h-4 ml-1" />
-            </>
-          )}
-        </button>
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-xs text-[#7c766d] leading-relaxed">
+              Click below to apply the latest clinical updates and refresh your browser. Your ongoing work is securely saved.
+            </p>
+
+            {/* 1-Click Hard Refresh Button */}
+            <button
+              onClick={executeHardRefresh}
+              disabled={isUpdating}
+              className="w-full py-3.5 bg-gradient-to-r from-[#064e3b] to-[#047857] hover:from-[#022c22] hover:to-[#064e3b] text-[#ecfdf5] rounded-2xl text-xs font-bold transition-all shadow-xl shadow-emerald-950/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              {isUpdating ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Updating ClinicOS & Hard-Refreshing...</span>
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4" />
+                  <span>⚡ Update & Hard Refresh Software Now</span>
+                  <ArrowRight className="w-4 h-4 ml-1" />
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
