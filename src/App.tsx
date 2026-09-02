@@ -200,6 +200,7 @@ function DoctorDashboardView() {
           queueId={selectedQueueId}
           casePaper={casePaper}
           onUpdateCasePaper={handleUpdateCasePaper}
+          onUpdatePatient={(updated) => setSelectedPatient(updated)}
           onBack={() => setView('queue')}
         />
       )}

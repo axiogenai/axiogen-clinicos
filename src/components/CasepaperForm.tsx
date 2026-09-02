@@ -21,6 +21,7 @@ interface CasepaperFormProps {
   queueId?: string | null;
   casePaper: CasePaper;
   onUpdateCasePaper: (cp: CasePaper) => void;
+  onUpdatePatient?: (p: Patient) => void;
   onBack: () => void;
 }
 
@@ -276,7 +277,7 @@ const COUNSELLING = [
   'Written consent obtained'
 ];
 
-export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCasePaper, onBack }: CasepaperFormProps) {
+export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCasePaper, onUpdatePatient, onBack }: CasepaperFormProps) {
   const { templates, queue, clinicSettings, addCustomFrequency, updateQueueStatus, setToast, updatePatientDetails, refreshPatients } = useClinic();
   const allFrequencies = useMemo(() => {
     const custom = clinicSettings?.customFrequencies || [];
@@ -349,6 +350,9 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
         ...payload,
       };
       setCurrentPatient(updatedPatient);
+      if (typeof onUpdatePatient === 'function') {
+        onUpdatePatient(updatedPatient);
+      }
 
       // Sync updated past history or allergies to active case paper
       if (payload.pastHistory !== casePaper.pastHistory || payload.allergies !== casePaper.allergies) {
