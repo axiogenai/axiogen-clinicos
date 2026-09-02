@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState, useRef } from 'react';
 import { Sparkles, RefreshCw, X, CheckCircle2, ArrowRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -15,6 +15,7 @@ export interface UpdatePayload {
 export const AppUpdateModal: React.FC = () => {
   const [updateData, setUpdateData] = useState<UpdatePayload | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const lastHandledTimestampRef = useRef<number>(0);
 
   const executeHardRefresh = async () => {
     setIsUpdating(true);
@@ -23,42 +24,82 @@ export const AppUpdateModal: React.FC = () => {
         const cacheKeys = await caches.keys();
         await Promise.all(cacheKeys.map(k => caches.delete(k)));
       }
-      localStorage.setItem('clinicos_last_ota_refresh', String(Date.now()));
+      if (updateData?.timestamp) {
+        localStorage.setItem('clinicos_last_applied_ota_ts', String(updateData.timestamp));
+      }
     } catch {}
-    // Hard refresh bypassing cache
+    // Hard refresh bypassing browser cache
     window.location.reload();
   };
 
+  const processIncomingRelease = (payload: any) => {
+    if (!payload || !payload.version || !payload.timestamp) return;
+
+    // Check if user already dismissed or applied this exact release timestamp
+    const lastApplied = Number(localStorage.getItem('clinicos_last_applied_ota_ts') || '0');
+    const dismissed = Number(localStorage.getItem('clinicos_dismissed_ota_ts') || '0');
+
+    if (payload.timestamp <= lastApplied || payload.timestamp <= dismissed) {
+      return;
+    }
+
+    if (payload.timestamp <= lastHandledTimestampRef.current) {
+      return;
+    }
+
+    lastHandledTimestampRef.current = payload.timestamp;
+
+    if (payload.mode === 'force_refresh') {
+      executeHardRefresh();
+    } else {
+      setUpdateData(payload);
+    }
+  };
+
+  const handleDismiss = () => {
+    if (updateData?.timestamp) {
+      localStorage.setItem('clinicos_dismissed_ota_ts', String(updateData.timestamp));
+    }
+    setUpdateData(null);
+  };
+
   useEffect(() => {
-    // Listen for dedicated project OTA broadcast channel
+    // 1. Listen for Realtime WebSockets Broadcast
     const channel = supabase.channel('axiogen_ota_axiogen-clinicos');
     channel.on('broadcast', { event: 'force_hard_refresh' }, (response: any) => {
-      const payload = response?.payload;
-      if (payload) {
-        if (payload.mode === 'force_refresh') {
-          executeHardRefresh();
-        } else {
-          setUpdateData(payload);
-        }
+      processIncomingRelease(response?.payload);
+    }).subscribe();
+
+    const globalChannel = supabase.channel('axiogen_ota_global');
+    globalChannel.on('broadcast', { event: 'app_release_broadcast' }, (response: any) => {
+      const p = response?.payload;
+      if (p && (p.projectId === 'axiogen-clinicos' || p.projectId === 'all')) {
+        processIncomingRelease(p);
       }
     }).subscribe();
 
-    // Also listen to global broadcast channel
-    const globalChannel = supabase.channel('axiogen_ota_global');
-    globalChannel.on('broadcast', { event: 'app_release_broadcast' }, (response: any) => {
-      const payload = response?.payload;
-      if (payload && (payload.projectId === 'axiogen-clinicos' || payload.projectId === 'all')) {
-        if (payload.mode === 'force_refresh') {
-          executeHardRefresh();
-        } else {
-          setUpdateData(payload);
+    // 2. Poll Database fallback every 5 seconds (guarantees update even across firewalls / sleep mode)
+    const checkDbRelease = async () => {
+      try {
+        const { data } = await supabase.from('clinics').select('pharmacy_info, updated_at').eq('id', 1).single();
+        if (data?.pharmacy_info) {
+          try {
+            const parsed = typeof data.pharmacy_info === 'string' ? JSON.parse(data.pharmacy_info) : data.pharmacy_info;
+            if (parsed && parsed.version) {
+              processIncomingRelease(parsed);
+            }
+          } catch {}
         }
-      }
-    }).subscribe();
+      } catch {}
+    };
+
+    checkDbRelease();
+    const interval = setInterval(checkDbRelease, 5000);
 
     return () => {
       supabase.removeChannel(channel);
       supabase.removeChannel(globalChannel);
+      clearInterval(interval);
     };
   }, []);
 
@@ -67,7 +108,7 @@ export const AppUpdateModal: React.FC = () => {
   return (
     <div className="fixed inset-0 z-50 bg-[#1a1c1a]/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
       <div className="bg-white border border-[#a7f3d0] rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl relative overflow-hidden">
-        {/* Glow Header */}
+        {/* Glow Background */}
         <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-400/20 rounded-full blur-2xl pointer-events-none" />
         
         <div className="flex items-start justify-between gap-3 mb-4 relative z-10">
@@ -86,7 +127,7 @@ export const AppUpdateModal: React.FC = () => {
           </div>
 
           <button
-            onClick={() => setUpdateData(null)}
+            onClick={handleDismiss}
             className="p-1 text-[#7c766d] hover:text-[#1a1c1a] rounded-lg hover:bg-[#f2eee3] transition-colors"
           >
             <X className="w-4 h-4" />
