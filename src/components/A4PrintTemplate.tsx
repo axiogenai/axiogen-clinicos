@@ -1276,7 +1276,7 @@ export default function A4PrintTemplate({
             </div>
           </>
         )}
-        {pharmacyInfo && (
+        {pharmacyInfo && !pharmacyInfo.trim().startsWith('{') && !pharmacyInfo.includes('projectId') && (
           <div
             style={{
               textAlign: 'center',

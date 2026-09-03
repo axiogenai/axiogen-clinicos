@@ -924,7 +924,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
             )}
           </>
         )}
-        {pharmacyInfo && (
+        {pharmacyInfo && !pharmacyInfo.trim().startsWith('{') && !pharmacyInfo.includes('projectId') && (
           <div style={{ textAlign: 'center', fontWeight: 700, fontSize: '10.5px', paddingTop: printOnStationery ? '10px' : '2px', borderTop: printOnStationery ? 'none' : '1px solid #333', marginTop: '2px' }}>
             {pharmacyInfo}
           </div>

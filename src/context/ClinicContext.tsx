@@ -206,7 +206,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
             openingHours: dbSettings.value.openingHours || prev.openingHours,
             closedDay: dbSettings.value.closedDay || prev.closedDay,
             headerBgColor: dbSettings.value.headerBgColor || prev.headerBgColor,
-            pharmacyInfo: dbSettings.value.pharmacyInfo ?? prev.pharmacyInfo,
+            pharmacyInfo: (typeof dbSettings.value.pharmacyInfo === 'string' && !dbSettings.value.pharmacyInfo.startsWith('{') && !dbSettings.value.pharmacyInfo.includes('projectId')) ? dbSettings.value.pharmacyInfo : (prev.pharmacyInfo && !prev.pharmacyInfo.startsWith('{') ? prev.pharmacyInfo : ''),
             customFrequencies: mergedFrequencies,
           };
         });

@@ -91,27 +91,9 @@ export const AppUpdateModal: React.FC = () => {
       }
     }).subscribe();
 
-    const checkDbRelease = async () => {
-      try {
-        const { data } = await supabase.from('clinics').select('pharmacy_info, updated_at').eq('id', 1).single();
-        if (data?.pharmacy_info) {
-          try {
-            const parsed = typeof data.pharmacy_info === 'string' ? JSON.parse(data.pharmacy_info) : data.pharmacy_info;
-            if (parsed && parsed.version) {
-              processIncomingRelease(parsed);
-            }
-          } catch {}
-        }
-      } catch {}
-    };
-
-    checkDbRelease();
-    const interval = setInterval(checkDbRelease, 5000);
-
     return () => {
       supabase.removeChannel(channel);
       supabase.removeChannel(globalChannel);
-      clearInterval(interval);
     };
   }, []);
 
