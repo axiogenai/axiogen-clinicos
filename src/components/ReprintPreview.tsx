@@ -85,7 +85,7 @@ export default function ReprintPreview({
     }
 
     doc.open();
-    doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8">${styles}<style>@page{size:${paperW_mm} ${paperH_mm};margin:0}html,body{margin:0;padding:0;width:${paperW_mm};height:${paperH_mm};background:#fff;overflow:hidden}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}.rx-paper-root{width:${paperW_mm}!important;min-width:${paperW_mm}!important;max-width:${paperW_mm}!important;height:${paperH_mm}!important;min-height:${paperH_mm}!important;max-height:${paperH_mm}!important;margin:0!important;padding:0!important;overflow:hidden!important;box-sizing:border-box!important}</style></head><body><div class="rx-paper-root print-page" style="width:${paperW_mm};height:${paperH_mm};overflow:hidden;box-sizing:border-box;margin:0;padding:0;background:#fff">${html}</div></body></html>`);
+    doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8">${styles}<style>@page{size: A4 portrait;margin:0}html,body{margin:0;padding:0;width:210mm;height:297mm;background:#fff;overflow:hidden}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}.rx-paper-root{width:210mm!important;min-width:210mm!important;max-width:210mm!important;height:297mm!important;min-height:297mm!important;max-height:297mm!important;margin:0!important;padding:0!important;overflow:hidden!important;box-sizing:border-box!important}</style></head><body>${html}</body></html>`);
     doc.close();
 
     let finished = false;

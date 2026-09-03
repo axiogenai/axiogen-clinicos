@@ -28,6 +28,7 @@ export const getPatientLabels = (lang: PrintLanguage = 'marathi') => {
         followUp: 'Follow up - ',
         patientSignature: 'Patient Signature - ',
       };
+    case 'hindi':
       return { 
         name: 'मरीज का नाम :', 
         date: 'दिनांक :', 
@@ -100,7 +101,7 @@ export const translateDuration = (dur?: string, lang: PrintLanguage = 'marathi')
 export const getPrintMedicineName = (med: any): string => {
   let name = (med.name || '').trim();
   const strength = (med.dosage || med.strength || '').trim();
-  const isJunkPackSize = /^\d+\s*[\'"`;&]?\s*s?$/i.test(strength) || /[\d\`\'\,\-\;\:]+\s*(s|tab|tabs|cap|caps|strip|strips|kit|kits|vial|amp|nos|unit)\b/i.test(strength) || /^\d+$/i.test(strength);
+  const isJunkPackSize = /^\d+\s*['"`;&]?\s*s?$/i.test(strength) || /[\d\`'\,\-\;\:]+\s*(s|tab|tabs|cap|caps|strip|strips|kit|kits|vial|amp|nos|unit)/i.test(strength) || /^\d+$/i.test(strength);
   if (strength && !isJunkPackSize && !name.toLowerCase().includes(strength.toLowerCase())) {
     name = `${name} ${strength}`;
   }
@@ -178,21 +179,22 @@ export default function A4PrintTemplate({
 
   const formatDate = (dateString?: string, isFollowUp = false) => {
     if (!dateString) return '__________';
-    return isFollowUp 
-      ? formatFollowUpDate(dateString, language)
-      : formatLocalizedDate(dateString, language);
+    if (isFollowUp) {
+      return formatFollowUpDate(dateString, language);
+    }
+    return formatLocalizedDate(dateString, language);
   };
 
   const {
     clinicNameHi,
     clinicNameEn,
-    doctors,
-    address,
     phone,
+    address,
     openingHours,
     closedDay,
     headerBgColor,
     pharmacyInfo,
+    doctors = [],
     sections = {
       showPastHistory: true,
       showDrugHistory: true,
@@ -264,18 +266,18 @@ export default function A4PrintTemplate({
       }}
     >
       {/* ══════════════════════════════════════════════════════════ */}
-      {/* 1. TOP CLINIC HEADER (Left: 8mm, Right: 8mm, Top: 11mm)    */}
+      {/* 1. TOP CLINIC HEADER (Left: 8mm, Right: 8mm, Top: 3.5mm)   */}
       {/* ══════════════════════════════════════════════════════════ */}
       <header
         className="clinic-print-header"
         style={{
           width: '100%',
           boxSizing: 'border-box',
-          paddingTop: '11mm',
+          paddingTop: '3.5mm',
           paddingLeft: '8mm',
           paddingRight: '8mm',
           visibility: hideHeader || printOnStationery ? 'hidden' : 'visible',
-          marginBottom: '2.5mm',
+          marginBottom: '2mm',
         }}
       >
         {/* Brand Banner: Logo + Main Hindi Title + Sub-brand */}
@@ -284,8 +286,8 @@ export default function A4PrintTemplate({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '14px',
-            marginBottom: '3px',
+            gap: '12px',
+            marginBottom: '2px',
           }}
         >
           {clinicSettings.logoUrl ? (
@@ -293,7 +295,7 @@ export default function A4PrintTemplate({
               src={clinicSettings.logoUrl}
               alt="Logo"
               style={{
-                height: '48px',
+                height: '44px',
                 width: 'auto',
                 objectFit: 'contain',
                 mixBlendMode: 'multiply',
@@ -305,7 +307,7 @@ export default function A4PrintTemplate({
               src="/logo-symbol.png"
               alt="Logo"
               style={{
-                height: '48px',
+                height: '44px',
                 width: 'auto',
                 objectFit: 'contain',
                 display: 'block',
@@ -315,8 +317,8 @@ export default function A4PrintTemplate({
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span
               style={{
-                fontSize: '44px',
-                fontWeight: 700,
+                fontSize: '40px',
+                fontWeight: 800,
                 color: '#93231f',
                 fontFamily: "'DV-TTYogesh', 'Shivaji', 'Amita', 'Karma', serif",
                 lineHeight: 1,
@@ -326,12 +328,12 @@ export default function A4PrintTemplate({
             </span>
             <span
               style={{
-                fontSize: '22px',
+                fontSize: '21px',
                 fontWeight: 700,
                 color: '#3b2c63',
                 fontFamily: "'Mukta', 'Poppins', sans-serif",
                 lineHeight: 1,
-                paddingTop: '3px',
+                paddingTop: '2px',
               }}
             >
               {clinicNameEn && !clinicNameEn.toLowerCase().includes('clinic')
@@ -347,38 +349,38 @@ export default function A4PrintTemplate({
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'flex-start',
-            padding: '0 4px',
-            marginBottom: '4px',
+            marginBottom: '3px',
             fontSize: '10.5px',
             lineHeight: 1.15,
           }}
         >
-          {/* Doctor 1 (Left) */}
-          <div style={{ textAlign: 'left', width: '34%' }}>
+          {/* Doctor 1 (Left Column) */}
+          <div style={{ textAlign: 'left', width: '34%', paddingRight: '2mm', boxSizing: 'border-box' }}>
             <div
               style={{
                 color: '#29558c',
                 fontWeight: 800,
                 fontSize: '18px',
                 fontFamily: "'Mukta', sans-serif",
-                lineHeight: 1.1,
+                lineHeight: 1.15,
                 marginBottom: '1px',
+                letterSpacing: '0.2px',
               }}
             >
               {doc1.name}
             </div>
             {doc1.title && (
-              <div style={{ fontSize: '11px', fontWeight: 700, color: '#111', lineHeight: 1.2 }}>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: '#222', lineHeight: 1.2 }}>
                 {doc1.title}
               </div>
             )}
             {doc1.subTitle && (
-              <div style={{ fontSize: '8.8px', fontWeight: 600, color: '#333', lineHeight: 1.15, marginTop: '1px', whiteSpace: 'nowrap', letterSpacing: '-0.1px' }}>
+              <div style={{ fontSize: '8.5px', fontWeight: 600, color: '#444', lineHeight: 1.15, marginTop: '1px', whiteSpace: 'nowrap', letterSpacing: '-0.1px' }}>
                 {doc1.subTitle}
               </div>
             )}
             {doc1.regNo && (
-              <div style={{ fontSize: '10.5px', fontWeight: 700, marginTop: '1px', color: '#111' }}>
+              <div style={{ fontSize: '9.5px', fontWeight: 700, marginTop: '1px', color: '#111' }}>
                 {doc1.regNo}
               </div>
             )}
@@ -386,7 +388,7 @@ export default function A4PrintTemplate({
               <div
                 style={{
                   fontFamily: "'Mukta', sans-serif",
-                  fontSize: '12px',
+                  fontSize: '11px',
                   fontWeight: 800,
                   marginTop: '1px',
                   color: '#111',
@@ -397,25 +399,27 @@ export default function A4PrintTemplate({
             )}
           </div>
 
-          {/* Timings (Center) */}
+          {/* Timings (Center Column) */}
           <div
             style={{
               width: '32%',
               textAlign: 'center',
               fontFamily: "Arial, 'Helvetica Neue', sans-serif",
               fontWeight: 500,
-              fontSize: '11px',
+              fontSize: '10.5px',
               color: '#222',
-              lineHeight: 1.2,
+              lineHeight: 1.25,
+              padding: '0 2px',
+              boxSizing: 'border-box',
             }}
           >
             <div>✤ वेळ : {openingHours || 'सकाळी १० ते सायं. ६ पर्यंत'}</div>
             <div>✤ {closedDay || 'दर रविवारी बंद राहिल.'}</div>
             <div
               style={{
-                fontWeight: 700,
-                marginTop: '2px',
-                fontSize: '13px',
+                fontWeight: 800,
+                marginTop: '1px',
+                fontSize: '12.5px',
                 color: '#111',
               }}
             >
@@ -423,32 +427,33 @@ export default function A4PrintTemplate({
             </div>
           </div>
 
-          {/* Doctor 2 (Right) */}
-          <div style={{ textAlign: 'right', width: '34%' }}>
+          {/* Doctor 2 (Right Column) */}
+          <div style={{ textAlign: 'right', width: '34%', paddingLeft: '2mm', boxSizing: 'border-box' }}>
             <div
               style={{
                 color: '#29558c',
                 fontWeight: 800,
                 fontSize: '18px',
                 fontFamily: "'Mukta', sans-serif",
-                lineHeight: 1.1,
+                lineHeight: 1.15,
                 marginBottom: '1px',
+                letterSpacing: '0.2px',
               }}
             >
               {doc2.name}
             </div>
             {doc2.title && (
-              <div style={{ fontSize: '11px', fontWeight: 700, color: '#111', lineHeight: 1.2 }}>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: '#222', lineHeight: 1.2 }}>
                 {doc2.title}
               </div>
             )}
             {doc2.subTitle && (
-              <div style={{ fontSize: '9px', fontWeight: 600, color: '#333', lineHeight: 1.15, marginTop: '1px', whiteSpace: 'nowrap' }}>
+              <div style={{ fontSize: '8.5px', fontWeight: 600, color: '#444', lineHeight: 1.15, marginTop: '1px', whiteSpace: 'nowrap' }}>
                 {doc2.subTitle}
               </div>
             )}
             {doc2.regNo && (
-              <div style={{ fontSize: '10.5px', fontWeight: 700, marginTop: '1px', color: '#111' }}>
+              <div style={{ fontSize: '9.5px', fontWeight: 700, marginTop: '1px', color: '#111' }}>
                 {doc2.regNo}
               </div>
             )}
@@ -456,7 +461,7 @@ export default function A4PrintTemplate({
               <div
                 style={{
                   fontFamily: "'Mukta', sans-serif",
-                  fontSize: '12px',
+                  fontSize: '11px',
                   fontWeight: 800,
                   marginTop: '1px',
                   color: '#111',
@@ -474,32 +479,30 @@ export default function A4PrintTemplate({
             background: headerBgColor || '#89b740',
             color: '#111',
             textAlign: 'center',
-            padding: '3px 0',
+            padding: '2.5px 0',
             fontFamily: "'Mukta', sans-serif",
-            fontSize: '12px',
+            fontSize: '11.5px',
             fontWeight: 600,
-            borderRadius: '2px',
+            lineHeight: 1.2,
+            letterSpacing: '0.1px',
           }}
         >
-          {address ||
-            'एस.टी.स्टँड जवळ, राजाराम चित्र मंदिर समोर, कल्याणी बझार वरती गाळा नं. 6, पेठ वडगांव'}
+          {address || 'एस.टी. स्टँड जवळ, राजाराम चित्र मंदिर समोर, कल्याणी बझार वस्ती गाळा नं. 6, पेठ वडगांव'}
         </div>
       </header>
 
       {/* ══════════════════════════════════════════════════════════ */}
-      {/* 2. PROPERLY ALIGNED PATIENT DEMOGRAPHICS SECTION (~20mm H) */}
+      {/* 2. PATIENT DEMOGRAPHICS (Left: 8mm, Right: 8mm) (~18mm H)   */}
       {/* ══════════════════════════════════════════════════════════ */}
       <section
         style={{
           width: '100%',
           boxSizing: 'border-box',
-          padding: '3.5mm 8mm 3mm 8mm',
-          borderTop: printOnStationery ? 'none' : '2px solid #a53b3b',
-          borderBottom: printOnStationery ? 'none' : '2px solid #a53b3b',
-          fontFamily: "'Mukta', sans-serif",
+          paddingLeft: '8mm',
+          paddingRight: '8mm',
           fontSize: '13px',
           fontWeight: 600,
-          marginBottom: '2.5mm',
+          marginBottom: '2mm',
         }}
       >
         {printOnStationery ? (
@@ -526,9 +529,9 @@ export default function A4PrintTemplate({
             </div>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', width: '100%' }}>
             {/* Row 1: Name & Date */}
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '16px', width: '100%', minHeight: '22px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '16px', width: '100%', minHeight: '20px' }}>
               <div
                 style={{
                   display: 'flex',
@@ -538,7 +541,7 @@ export default function A4PrintTemplate({
                   minWidth: 0,
                 }}
               >
-                <span style={{ whiteSpace: 'nowrap', fontSize: '13.5px', fontWeight: 600, color: '#222', lineHeight: '1.2' }}>
+                <span style={{ whiteSpace: 'nowrap', fontSize: '13px', fontWeight: 600, color: '#222', lineHeight: '1.2' }}>
                   {labels.name}
                 </span>
                 <span
@@ -548,7 +551,7 @@ export default function A4PrintTemplate({
                     paddingLeft: '6px',
                     paddingBottom: '1px',
                     fontWeight: 700,
-                    fontSize: '14px',
+                    fontSize: '13.5px',
                     color: '#000',
                     lineHeight: '1.2',
                     minHeight: '18px',
@@ -557,7 +560,7 @@ export default function A4PrintTemplate({
                     textOverflow: 'ellipsis',
                   }}
                 >
-                  {patient.name || '\u00A0'}
+                  {patient.name || ' '}
                 </span>
               </div>
               <div
@@ -569,7 +572,7 @@ export default function A4PrintTemplate({
                   minWidth: 0,
                 }}
               >
-                <span style={{ whiteSpace: 'nowrap', fontSize: '13.5px', fontWeight: 600, color: '#222', lineHeight: '1.2' }}>
+                <span style={{ whiteSpace: 'nowrap', fontSize: '13px', fontWeight: 600, color: '#222', lineHeight: '1.2' }}>
                   {labels.date}
                 </span>
                 <span
@@ -579,7 +582,7 @@ export default function A4PrintTemplate({
                     paddingLeft: '6px',
                     paddingBottom: '1px',
                     fontWeight: 700,
-                    fontSize: '13.5px',
+                    fontSize: '13px',
                     color: '#000',
                     lineHeight: '1.2',
                     minHeight: '18px',
@@ -592,7 +595,7 @@ export default function A4PrintTemplate({
             </div>
 
             {/* Row 2: Village & Age/Sex */}
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '16px', width: '100%', minHeight: '22px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '16px', width: '100%', minHeight: '20px' }}>
               <div
                 style={{
                   display: 'flex',
@@ -602,7 +605,7 @@ export default function A4PrintTemplate({
                   minWidth: 0,
                 }}
               >
-                <span style={{ whiteSpace: 'nowrap', fontSize: '13.5px', fontWeight: 600, color: '#222', lineHeight: '1.2' }}>
+                <span style={{ whiteSpace: 'nowrap', fontSize: '13px', fontWeight: 600, color: '#222', lineHeight: '1.2' }}>
                   {labels.village}
                 </span>
                 <span
@@ -612,7 +615,7 @@ export default function A4PrintTemplate({
                     paddingLeft: '6px',
                     paddingBottom: '1px',
                     fontWeight: 700,
-                    fontSize: '14px',
+                    fontSize: '13.5px',
                     color: '#000',
                     lineHeight: '1.2',
                     minHeight: '18px',
@@ -621,7 +624,7 @@ export default function A4PrintTemplate({
                     textOverflow: 'ellipsis',
                   }}
                 >
-                  {patient.village || '\u00A0'}
+                  {patient.village || ' '}
                 </span>
               </div>
               <div
@@ -633,7 +636,7 @@ export default function A4PrintTemplate({
                   minWidth: 0,
                 }}
               >
-                <span style={{ whiteSpace: 'nowrap', fontSize: '13.5px', fontWeight: 600, color: '#222', lineHeight: '1.2' }}>
+                <span style={{ whiteSpace: 'nowrap', fontSize: '13px', fontWeight: 600, color: '#222', lineHeight: '1.2' }}>
                   {labels.age}
                 </span>
                 <span
@@ -643,7 +646,7 @@ export default function A4PrintTemplate({
                     paddingLeft: '6px',
                     paddingBottom: '1px',
                     fontWeight: 700,
-                    fontSize: '13.5px',
+                    fontSize: '13px',
                     color: '#000',
                     lineHeight: '1.2',
                     minHeight: '18px',
@@ -671,16 +674,16 @@ export default function A4PrintTemplate({
           borderTop: printOnStationery ? 'none' : '3px double #a53b3b',
         }}
       >
-        {/* ── Left Sidebar (marginLeft: 8mm, width: 50mm, evenly distributed across 100% height) ── */}
+        {/* ── Left Sidebar (marginLeft: 8mm, width: 48mm, evenly distributed across 100% height) ── */}
         <aside
           style={{
             marginLeft: '8mm',
-            width: '50mm',
-            minWidth: '50mm',
-            maxWidth: '50mm',
+            width: '48mm',
+            minWidth: '48mm',
+            maxWidth: '48mm',
             height: '100%',
             borderRight: printOnStationery ? 'none' : '3px double #a53b3b',
-            padding: '2mm 3mm 2mm 0',
+            padding: '2mm 2.5mm 2mm 0',
             boxSizing: 'border-box',
             display: 'flex',
             flexDirection: 'column',
@@ -774,38 +777,38 @@ export default function A4PrintTemplate({
               </div>
               <div
                 style={{
-                  display: 'flex',
-                  gap: '6px',
-                  marginTop: '1px',
-                  fontWeight: 600,
-                  fontSize: '10.5px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  marginTop: '2px',
                   color: '#111',
+                  lineHeight: 1.25,
                 }}
               >
-                <span>■ CBC</span>
-                <span>■ LFT</span>
-                <span>■ BSL®</span>
+                {casePaper.investigationsAdvised && casePaper.investigationsAdvised.length > 0 ? (
+                  casePaper.investigationsAdvised.map((inv: any, idx: number) => {
+                    const text = typeof inv === 'string' ? inv : inv.name || inv.investigation || '';
+                    return (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <span style={{ fontSize: '10px' }}>■</span> {text}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <span style={{ fontSize: '10px' }}>■</span> CBC <span style={{ fontSize: '10px' }}>■</span> LFT <span style={{ fontSize: '10px' }}>■</span> BSL®
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <span style={{ fontSize: '10px' }}>■</span> Serum Creatinine
+                    </div>
+                  </>
+                )}
               </div>
-              <div style={{ fontWeight: 600, fontSize: '10.5px', color: '#111', marginTop: '1px' }}>
-                <span>■ Serum Creatinine</span>
-              </div>
-              {casePaper.investigationsAdvised && (Array.isArray(casePaper.investigationsAdvised) ? casePaper.investigationsAdvised.length > 0 : !!casePaper.investigationsAdvised) && (
-                <div
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    color: '#1e3a8a',
-                    marginTop: '1px',
-                  }}
-                >
-                  Advised: {Array.isArray(casePaper.investigationsAdvised) ? casePaper.investigationsAdvised.join(', ') : casePaper.investigationsAdvised}
-                </div>
-              )}
               <div style={{ borderBottom: '1px solid #222', width: '100%', marginTop: '2px' }} />
             </div>
           )}
 
-          {/* 4. Provisional/Final Diagnosis */}
+          {/* 4. Provisional Diagnosis */}
           <div>
             <div
               style={{
@@ -825,11 +828,11 @@ export default function A4PrintTemplate({
                 fontSize: '12px',
                 fontWeight: 700,
                 color: '#111',
-                marginTop: '1px',
+                marginTop: '2px',
                 minHeight: '14px',
               }}
             >
-              {cleanClinicalText(casePaper.complaint)}
+              {cleanClinicalText((casePaper as any).diagnosis || (casePaper as any).notes || casePaper.complaint)}
             </div>
             <div style={{ borderBottom: '1px solid #222', width: '100%', marginTop: '2px' }} />
           </div>
@@ -839,364 +842,364 @@ export default function A4PrintTemplate({
             <div>
               <div
                 style={{
-                  border: '1px solid #7c2222',
+                  border: '1px solid #2563eb',
                   padding: '2px 6px',
                   fontSize: '10.5px',
                   fontWeight: 700,
-                  lineHeight: 1.15,
-                  color: '#1e3a8a',
-                  background: '#fff',
+                  color: '#1e40af',
+                  background: '#eff6ff',
                   display: 'inline-block',
                 }}
               >
-                Patient Counselling
-                <br />
-                Documentation
+                Patient Counselling Documentation
               </div>
-              <div style={{ marginTop: '2px' }}>
-                {[
-                  'Verbal consent taken',
-                  'Diagnosis Explained',
-                  'Risk&side effects explained',
-                  'Monitoring Plan Explained',
-                ].map((item, i) => {
-                  const isChecked = Array.isArray(casePaper.counsellingDone)
-                    ? casePaper.counsellingDone.length === 0 || casePaper.counsellingDone.includes(item)
-                    : true;
-                  return (
-                    <div
-                      key={i}
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '1px',
-                        fontSize: '10.5px',
-                      }}
-                    >
-                      <span>{item}</span>
-                      <span
-                        style={{
-                          border: '1px solid #333',
-                          width: '12px',
-                          height: '12px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '10px',
-                          fontWeight: 700,
-                        }}
-                      >
-                        {isChecked ? '✓' : ''}
-                      </span>
-                    </div>
-                  );
-                })}
+              <div style={{ fontSize: '10.5px', marginTop: '2px', lineHeight: 1.3, color: '#333' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>Verbal consent taken</span>
+                  <span style={{ fontWeight: 700, color: '#047857' }}>☑</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>Diagnosis Explained</span>
+                  <span style={{ fontWeight: 700, color: '#047857' }}>☑</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>Risk&amp;side effects explained</span>
+                  <span style={{ fontWeight: 700, color: '#047857' }}>☑</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>Monitoring Plan Explained</span>
+                  <span style={{ fontWeight: 700, color: '#047857' }}>☑</span>
+                </div>
               </div>
               <div style={{ borderBottom: '1px solid #222', width: '100%', marginTop: '2px' }} />
             </div>
           )}
 
-          {/* 6. Warning Explained */}
+          {/* 6. Warning Explained Box */}
           {sections.showWarnings !== false && (
             <div>
               <div
                 style={{
-                  border: '1px solid #7c2222',
-                  padding: '2px 6px',
-                  fontSize: '10.5px',
+                  border: '1px solid #991b1b',
+                  padding: '1.5px 5px',
+                  fontSize: '10px',
                   fontWeight: 700,
-                  color: '#444',
-                  background: '#fff',
+                  color: '#991b1b',
+                  background: '#fef2f2',
                   display: 'inline-block',
                 }}
               >
                 Warning Explained-
               </div>
-              <div style={{ fontSize: '9.5px', lineHeight: 1.2, marginTop: '2px', color: '#111' }}>
-                Fever/Mouth Ulcer/ Breathlessness
-                <br />
-                Yellowish Eyes-Stop drug & Report immediately.
+              <div
+                style={{
+                  fontSize: '9.5px',
+                  color: '#444',
+                  marginTop: '1.5px',
+                  lineHeight: 1.15,
+                }}
+              >
+                Fever/Mouth Ulcer/ Breathlessness/ Yellowish Eyes-Stop drug &amp; Report immediately.
               </div>
             </div>
           )}
 
-          {/* 7. Drug Verbal Consent Circular Stamp - Flawlessly Centered */}
-          <div
-            style={{
-              border: '1.5px solid #111',
-              borderRadius: '50%',
-              width: '144px',
-              height: '144px',
-              minHeight: '144px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              textAlign: 'center',
-              margin: '0 auto',
-              padding: '12px 10px',
-              boxSizing: 'border-box',
-              overflow: 'hidden',
-            }}
-          >
-            <div style={{ fontSize: '7.8px', fontWeight: 800, color: '#000', marginBottom: '2.5px', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-              DRUG VERBAL CONSENT
-            </div>
-            <div style={{ fontSize: '6.8px', lineHeight: 1.22, color: '#111', fontWeight: 600 }}>
-              <div>Dx &amp; indication explained.</div>
-              <div>Risks: Hepatotoxicity, Severe</div>
-              <div>anemia, Hemolysis, Dapsone</div>
-              <div>syndrome, Infection risk.</div>
-              <div>Severe cutaneous adverse</div>
-              <div>reactions (SJS/TEN).</div>
-              <div>Teratogenicity discussed.</div>
-              <div>Monitoring &amp; alternatives.</div>
-              <div>Pt verbalized understanding</div>
-              <div>&amp; consented.</div>
+          {/* 7. DRUG VERBAL CONSENT Round Stamp */}
+          <div style={{ display: 'flex', justifyContent: 'center', margin: '1mm 0 0 0' }}>
+            <div
+              style={{
+                width: '38mm',
+                height: '38mm',
+                borderRadius: '50%',
+                border: '1.5px dashed #444',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                padding: '2px',
+                boxSizing: 'border-box',
+                background: '#fff',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '8.5px',
+                  fontWeight: 800,
+                  color: '#111',
+                  letterSpacing: '0.2px',
+                  lineHeight: 1,
+                  marginBottom: '1px',
+                }}
+              >
+                DRUG VERBAL CONSENT
+              </div>
+              <div
+                style={{
+                  fontSize: '6px',
+                  color: '#333',
+                  lineHeight: 1.08,
+                  fontWeight: 600,
+                  padding: '0 2px',
+                }}
+              >
+                Dx &amp; Indication explained.
+                <br />
+                Risks: Hepatotoxicity, Severe
+                <br />
+                anemia, Hemolysis, Dapsone
+                <br />
+                syndrome, Infection risk,
+                <br />
+                Severe cutaneous adverse
+                <br />
+                reactions (SJS/TEN),
+                <br />
+                Teratogenicity discussed.
+                <br />
+                Monitoring &amp; alternatives.
+                <br />
+                Pt verbalised understanding
+                <br />
+                &amp; consented.
+              </div>
             </div>
           </div>
         </aside>
 
-        {/* ── Right Main Rx Area (marginRight: 8mm, wide and spacious) ── */}
+        {/* ── Right Main Area: Rx Symbol + Dynamic Medicine Table + Follow-up ── */}
         <main
           style={{
             flex: 1,
-            marginRight: '8mm',
-            padding: '2mm 0 2mm 6mm',
-            boxSizing: 'border-box',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            position: 'relative',
+            paddingLeft: '3.5mm',
+            paddingRight: '8mm',
+            paddingTop: '1mm',
+            paddingBottom: '1mm',
+            boxSizing: 'border-box',
             overflow: 'hidden',
           }}
         >
+          {/* Top Rx & Medical Symbol */}
           <div>
-            {/* Rx Symbol & Caduceus Icon */}
             <div
               style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '4px',
-                height: '9mm',
-                visibility: printOnStationery ? 'hidden' : 'visible',
+                marginBottom: '1mm',
+                paddingRight: '2mm',
               }}
             >
-              <div
+              <span
                 style={{
                   fontSize: '28px',
-                  fontFamily: "'EB Garamond', Georgia, serif",
+                  fontFamily: "'Playfair Display', 'Times New Roman', serif",
                   fontWeight: 800,
                   fontStyle: 'italic',
                   color: '#111',
+                  lineHeight: 1,
+                  visibility: printOnStationery ? 'hidden' : 'visible',
                 }}
               >
-                Rx
-              </div>
-              {!printOnStationery && (
-                <svg width="34" height="38" viewBox="0 0 100 110" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="47.5" y="14" width="5" height="88" rx="2.5" fill="#2d773f" />
-                  <circle cx="50" cy="12" r="5" fill="#2d773f" />
-                  <path d="M 46 22 C 32 10, 15 15, 8 21 C 22 26, 36 27, 46 30 Z" fill="#2d773f" />
-                  <path d="M 45 27 C 32 20, 20 22, 12 27 C 24 30, 36 30, 45 32 Z" fill="#2d773f" />
-                  <path d="M 54 22 C 68 10, 85 15, 92 21 C 78 26, 64 27, 54 30 Z" fill="#2d773f" />
-                  <path d="M 55 27 C 68 20, 80 22, 88 27 C 76 30, 64 30, 55 32 Z" fill="#2d773f" />
-                  <ellipse cx="50" cy="38" rx="18" ry="7.5" stroke="#2d773f" strokeWidth="4.5" fill="none" />
-                  <ellipse cx="50" cy="54" rx="15" ry="7" stroke="#2d773f" strokeWidth="4.5" fill="none" />
-                  <ellipse cx="50" cy="69" rx="12" ry="6" stroke="#2d773f" strokeWidth="4" fill="none" />
-                  <ellipse cx="50" cy="82" rx="9" ry="5" stroke="#2d773f" strokeWidth="3.5" fill="none" />
-                  <ellipse cx="50" cy="93" rx="6" ry="3.5" stroke="#2d773f" strokeWidth="3" fill="none" />
-                </svg>
-              )}
+                ℞
+              </span>
+              <span
+                style={{
+                  fontSize: '20px',
+                  color: '#047857',
+                  lineHeight: 1,
+                  visibility: printOnStationery ? 'hidden' : 'visible',
+                }}
+              >
+                ⚕
+              </span>
             </div>
 
-            {/* Medicine Table - DYNAMIC FROM casePaper.medicines (No hardcoded medicines!) */}
-            <div style={{ marginTop: printOnStationery ? '4mm' : '0' }}>
-              <table
-                style={{
-                  width: '100%',
-                  borderCollapse: 'collapse',
-                  border: '1.5px solid #444',
-                  fontSize: '12.5px',
-                  lineHeight: 1.35,
-                }}
-              >
-                <thead>
-                  <tr
+            {/* Dynamic Medicine Table */}
+            <table
+              style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                border: '1px solid #111',
+                fontSize: '12px',
+              }}
+            >
+              <thead>
+                <tr
+                  style={{
+                    backgroundColor: '#fff',
+                    borderBottom: '1px solid #111',
+                    fontSize: '11.5px',
+                    fontWeight: 700,
+                    textAlign: 'left',
+                  }}
+                >
+                  <th
                     style={{
-                      background: '#f8f8f8',
-                      borderBottom: '1.5px solid #444',
-                      fontWeight: 700,
+                      width: '32px',
+                      padding: '3px 2px',
+                      textAlign: 'center',
+                      borderRight: '1px solid #111',
+                      color: '#000',
                     }}
                   >
-                    <th
-                      style={{
-                        border: '1px solid #555',
-                        padding: '6px 2px',
-                        textAlign: 'center',
-                        width: '28px',
-                        fontSize: '11px',
-                      }}
-                    >
-                      {headers.srNo || 'Sr. No.'}
-                    </th>
-                    <th
-                      style={{
-                        border: '1px solid #555',
-                        padding: '6px 7px',
-                        textAlign: 'left',
-                        width: '32%',
-                        fontSize: '12px',
-                      }}
-                    >
-                      {headers.medName}
-                    </th>
-                    <th
-                      style={{
-                        border: '1px solid #555',
-                        padding: '6px 7px',
-                        textAlign: 'left',
-                        width: '46%',
-                        fontSize: '12px',
-                      }}
-                    >
-                      {headers.freq}
-                    </th>
-                    <th
-                      style={{
-                        border: '1px solid #555',
-                        padding: '6px 5px',
-                        textAlign: 'left',
-                        width: '56px',
-                        fontSize: '12px',
-                      }}
-                    >
-                      {headers.duration}
-                    </th>
-                    <th
-                      style={{
-                        border: '1px solid #555',
-                        padding: '6px 2px',
-                        textAlign: 'center',
-                        width: '38px',
-                        color: '#93231f',
-                        fontSize: '12.5px',
-                      }}
-                    >
-                      {headers.count}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {casePaper.medicines && casePaper.medicines.length > 0 ? (
-                    casePaper.medicines.map((med, index) => {
-                      const displayName = getPrintMedicineName(med);
-                      const count = calculateMedicineCount(med);
-                      return (
-                        <tr
-                          key={index}
+                    {headers.srNo}
+                  </th>
+                  <th
+                    style={{
+                      padding: '3px 6px',
+                      borderRight: '1px solid #111',
+                      color: '#000',
+                    }}
+                  >
+                    {headers.medName}
+                  </th>
+                  <th
+                    style={{
+                      padding: '3px 6px',
+                      borderRight: '1px solid #111',
+                      color: '#000',
+                    }}
+                  >
+                    {headers.freq}
+                  </th>
+                  <th
+                    style={{
+                      width: '68px',
+                      padding: '3px 4px',
+                      textAlign: 'center',
+                      borderRight: '1px solid #111',
+                      color: '#000',
+                    }}
+                  >
+                    {headers.duration}
+                  </th>
+                  <th
+                    style={{
+                      width: '36px',
+                      padding: '3px 2px',
+                      textAlign: 'center',
+                      color: '#991b1b',
+                    }}
+                  >
+                    {headers.count}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {casePaper.medicines && casePaper.medicines.length > 0 ? (
+                  casePaper.medicines.map((med, idx) => {
+                    const durationStr = med.duration ? translateDuration(med.duration, language) : '-';
+                    const medName = getPrintMedicineName(med);
+                    const isLast = idx === casePaper.medicines.length - 1;
+                    const calculatedCount = calculateMedicineCount(med);
+
+                    return (
+                      <tr
+                        key={idx}
+                        style={{
+                          borderBottom: isLast ? 'none' : '1px solid #111',
+                          verticalAlign: 'top',
+                          lineHeight: 1.25,
+                        }}
+                      >
+                        <td
                           style={{
-                            borderBottom: '1px solid #666',
-                            minHeight: '32px',
-                            height: '32px',
+                            padding: '4px 2px',
+                            textAlign: 'center',
+                            borderRight: '1px solid #111',
+                            fontWeight: 700,
+                            fontSize: '11.5px',
                           }}
                         >
-                          <td
-                            style={{
-                              border: '1px solid #666',
-                              padding: '6px 2px',
-                              textAlign: 'center',
-                              fontFamily: 'monospace',
-                              fontSize: '11.5px',
-                              color: '#333',
-                            }}
-                          >
-                            {index + 1}
-                          </td>
-                          <td
-                            style={{
-                              border: '1px solid #666',
-                              padding: '6px 7px',
-                              fontWeight: 700,
-                              color: '#111',
-                              fontSize: '13px',
-                            }}
-                          >
-                            {displayName}
-                          </td>
-                          <td
-                            style={{
-                              border: '1px solid #666',
-                              padding: '6px 7px',
-                              fontWeight: 600,
-                              color: '#222',
-                              fontSize: '12.5px',
-                            }}
-                          >
-                            {renderFrequencyCell(
-                              med.frequency,
-                              med.name,
-                              language,
-                              med.instructions || med.notes
-                            )}
-                          </td>
-                          <td
-                            style={{
-                              border: '1px solid #666',
-                              padding: '6px 5px',
-                              color: '#333',
-                              fontSize: '12px',
-                            }}
-                          >
-                            {translateDuration(med.duration, language)}
-                          </td>
-                          <td
-                            style={{
-                              border: '1px solid #666',
-                              padding: '6px 2px',
-                              textAlign: 'center',
-                              fontWeight: 700,
-                              color: '#047857',
-                              fontSize: '13px',
-                            }}
-                          >
-                            {count}
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td colSpan={5} style={{ height: '140px', border: '1px solid #666' }} />
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {casePaper.counsellingDone && casePaper.counsellingDone.length > 0 && (
-              <div style={{ marginTop: '6px', fontSize: '10.5px', fontWeight: 600 }}>
-                <div style={{ fontWeight: 700, marginBottom: '1px' }}>Special Advice:</div>
-                <div>{casePaper.counsellingDone.join(' • ')}</div>
-              </div>
-            )}
+                          {idx + 1}
+                        </td>
+                        <td
+                          style={{
+                            padding: '4px 6px',
+                            borderRight: '1px solid #111',
+                            fontWeight: 800,
+                            fontSize: '13px',
+                            color: '#000',
+                          }}
+                        >
+                          {medName}
+                        </td>
+                        <td
+                          style={{
+                            padding: '4px 6px',
+                            borderRight: '1px solid #111',
+                            fontSize: '12px',
+                            color: '#111',
+                          }}
+                        >
+                          {renderFrequencyCell(
+                            med.frequency,
+                            med.name,
+                            language,
+                            med.instructions || med.notes
+                          )}
+                        </td>
+                        <td
+                          style={{
+                            padding: '4px 4px',
+                            textAlign: 'center',
+                            borderRight: '1px solid #111',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {durationStr}
+                        </td>
+                        <td
+                          style={{
+                            padding: '4px 2px',
+                            textAlign: 'center',
+                            fontWeight: 800,
+                            fontSize: '13px',
+                            color: '#000',
+                          }}
+                        >
+                          {calculatedCount}
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      style={{
+                        padding: '16px',
+                        textAlign: 'center',
+                        color: '#666',
+                        fontStyle: 'italic',
+                      }}
+                    >
+                      No medicines prescribed
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
 
-          {/* Signature & Follow-up Line */}
+          {/* Bottom Row: Patient Signature & Follow-up */}
           <div
             style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
+              borderTop: printOnStationery ? 'none' : '1px dashed #666',
+              paddingTop: '2mm',
+              marginTop: '2mm',
+              fontSize: '13px',
               fontWeight: 600,
-              fontSize: '12px',
-              color: '#222',
-              marginTop: 'auto',
-              paddingTop: '5px',
-              paddingBottom: '2px',
-              borderTop: printOnStationery ? 'none' : '1px dashed #999',
+              color: '#111',
             }}
           >
             <span style={{ visibility: printOnStationery ? 'hidden' : 'visible' }}>
@@ -1220,14 +1223,14 @@ export default function A4PrintTemplate({
       </div>
 
       {/* ══════════════════════════════════════════════════════════ */}
-      {/* 4. FOOTER SECTION (Left: 8mm, Right: 8mm) (~26mm H)        */}
+      {/* 4. FOOTER SECTION (Left: 8mm, Right: 8mm, Bottom: 3mm)      */}
       {/* ══════════════════════════════════════════════════════════ */}
       <footer
         style={{
           width: '100%',
           borderTop: printOnStationery ? 'none' : '2px solid #a53b3b',
-          paddingTop: '2.5mm',
-          paddingBottom: '6mm',
+          paddingTop: '2mm',
+          paddingBottom: '3.5mm',
           paddingLeft: '8mm',
           paddingRight: '8mm',
           fontSize: '9.5px',
@@ -1242,10 +1245,10 @@ export default function A4PrintTemplate({
             <div style={{ display: 'flex', gap: '8px', marginBottom: '2px' }}>
               <div style={{ flex: '0 0 62%' }}>
                 <div style={{ marginBottom: '1px' }}>
-                  ☑ Methotrexate- weekly dosing explained & overdose risk etc. Explained.
+                  ☑ Methotrexate- weekly dosing explained &amp; overdose risk etc. Explained.
                 </div>
                 <div style={{ marginBottom: '1px' }}>
-                  ☑ JAK inhibitors - DVT/PE warning explained & leukopenia etc. Explained.
+                  ☑ JAK inhibitors - DVT/PE warning explained &amp; leukopenia etc. Explained.
                 </div>
                 <div style={{ marginBottom: '1px' }}>
                   ☑ DAPSONE - DAPSONE syndrome, organ toxicity, Jaundice risk etc. Explained
@@ -1255,7 +1258,7 @@ export default function A4PrintTemplate({
                 <div style={{ display: 'flex', alignItems: 'flex-start' }}>
                   <span>☑ </span>
                   <span style={{ lineHeight: 1.15 }}>
-                    Azathioprine-related myelosuppression &<br />
+                    Azathioprine-related myelosuppression &amp;<br />
                     hair fall etc. Explained
                   </span>
                 </div>

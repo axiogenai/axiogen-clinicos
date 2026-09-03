@@ -291,17 +291,17 @@ select, select.form-input {
   vertical-align: middle;
 }
 
-/* ── Print: handled via iframe in ReprintPreview ── */
+/* ── Print: Perfect A4 210mm x 297mm Precision ── */
 @media print {
   @page {
-    size: 220mm 270mm;
+    size: A4 portrait;
     margin: 0;
   }
   html, body {
     margin: 0 !important;
     padding: 0 !important;
-    width: 220mm !important;
-    height: 270mm !important;
+    width: 210mm !important;
+    height: 297mm !important;
     overflow: hidden !important;
     background: #ffffff !important;
   }
@@ -316,8 +316,8 @@ select, select.form-input {
   }
   .print-page {
     transform: none !important;
-    width: 220mm !important;
-    height: 270mm !important;
+    width: 210mm !important;
+    height: 297mm !important;
     margin: 0 !important;
     padding: 0 !important;
     position: absolute !important;
@@ -326,12 +326,12 @@ select, select.form-input {
     background: #ffffff !important;
   }
   .rx-paper-root {
-    width: 220mm !important;
-    min-width: 220mm !important;
-    max-width: 220mm !important;
-    height: 270mm !important;
-    min-height: 270mm !important;
-    max-height: 270mm !important;
+    width: 210mm !important;
+    min-width: 210mm !important;
+    max-width: 210mm !important;
+    height: 297mm !important;
+    min-height: 297mm !important;
+    max-height: 297mm !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
