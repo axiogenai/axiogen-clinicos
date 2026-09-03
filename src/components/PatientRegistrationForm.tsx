@@ -4,7 +4,6 @@ import {
   Phone, 
   MapPin, 
   AlertCircle, 
-  AlertTriangle, 
   ArrowRight, 
   Plus, 
   CreditCard, 
