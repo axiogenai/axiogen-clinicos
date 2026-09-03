@@ -273,7 +273,7 @@ export default function A4PrintTemplate({
         style={{
           width: '100%',
           boxSizing: 'border-box',
-          paddingTop: '3.5mm',
+          paddingTop: '20mm',
           paddingLeft: '8mm',
           paddingRight: '8mm',
           visibility: hideHeader || printOnStationery ? 'hidden' : 'visible',
@@ -1230,7 +1230,7 @@ export default function A4PrintTemplate({
           width: '100%',
           borderTop: printOnStationery ? 'none' : '2px solid #a53b3b',
           paddingTop: '2mm',
-          paddingBottom: '3.5mm',
+          paddingBottom: '20mm',
           paddingLeft: '8mm',
           paddingRight: '8mm',
           fontSize: '9.5px',
