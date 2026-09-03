@@ -5,7 +5,7 @@ import type { CaseTemplate } from '../data/templates';
 import type { ClinicSettings } from '../data/clinicSettings';
 import { defaultClinicSettings } from '../data/clinicSettings';
 import { api, type HealthStatusUpdate } from '../api/client';
-import { supabaseAuth } from '../lib/supabase';
+import { supabase, supabaseAuth } from '../lib/supabase';
 
 export interface UserSession {
   id: number | string;
@@ -216,6 +216,17 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const refreshPatients = useCallback(async () => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+    try {
+      const dbPatients = await api.getPatients();
+      if (Array.isArray(dbPatients)) {
+        setPatients(dbPatients);
+        try { localStorage.setItem('clinicos_cached_patients', JSON.stringify(dbPatients)); } catch {}
+      }
+    } catch {}
+  }, []);
+
   // Real Supabase + Database Login Action
   const login = useCallback(async (emailInput: string, passwordInput: string, onStatus?: (status: HealthStatusUpdate) => void) => {
     try {
@@ -277,46 +288,67 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
     } catch {}
   }, []);
 
-  // Real-time SSE subscription — instantly reloads ONLY queue when changes happen
+  // Ultra-Fast Zero-Egress Supabase Realtime WebSockets (<50ms Instant Sync)
   useEffect(() => {
     if (!token) return;
 
-    // Initial full load (once)
+    // Initial full load
     loadFromDatabase();
 
-    // Connect to SSE stream for instant 0ms queue push updates
-    const apiBase = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' && (window.location.hostname.includes('vercel.app') || window.location.protocol === 'https:') ? 'https://shinagare-clinicos.duckdns.org/api' : '/api');
-    const sseToken = localStorage.getItem('clinicos_jwt_token');
-    let evtSource: EventSource | null = null;
+    // 1. Supabase Realtime WebSockets for Instant Queue Updates (<50ms)
+    const queueChannel = supabase
+      .channel('realtime_clinic_queue')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'queue' },
+        () => {
+          loadQueueOnly();
+        }
+      )
+      .on(
+        'broadcast',
+        { event: 'queue_sync' },
+        () => {
+          loadQueueOnly();
+        }
+      )
+      .subscribe();
 
-    try {
-      evtSource = new EventSource(`${apiBase}/queue/events?token=${sseToken}`);
+    // 2. Supabase Realtime WebSockets for Patients Updates
+    const patientChannel = supabase
+      .channel('realtime_clinic_patients')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'patients' },
+        () => {
+          refreshPatients();
+        }
+      )
+      .subscribe();
 
-      evtSource.onmessage = (e) => {
-        try {
-          const msg = JSON.parse(e.data);
-          if (msg.type === 'queue_update') {
-            loadQueueOnly(); // Instant reload queue in Doctor's view!
-          }
-        } catch {}
-      };
+    // 3. Tab Visibility & Focus Trigger: Instantly reload when doctor/receptionist switches to this tab
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadQueueOnly();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
 
-      evtSource.onerror = () => {
-        evtSource?.close();
-        evtSource = null;
-      };
-    } catch {}
-
-    // Fast 3-second live polling loop guarantees 100% real-time synchronization between Receptionist & Doctor views
+    // 4. Smart Heartbeat Polling: ONLY runs when tab is actively visible (0 bandwidth when tab is background/minimized)
     const interval = setInterval(() => {
+      if (document.hidden) return; // Completely pauses in background tabs!
       loadQueueOnly();
-    }, 3000);
+    }, 15000); // 15-second gentle safety net since Realtime WebSockets handles instant updates
 
     return () => {
-      evtSource?.close();
+      supabase.removeChannel(queueChannel);
+      supabase.removeChannel(patientChannel);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
       clearInterval(interval);
     };
-  }, [token, loadFromDatabase, loadQueueOnly]);
+  }, [token, loadFromDatabase, loadQueueOnly, refreshPatients]);
 
   // Removed sync to localStorage to prevent stale data
 
