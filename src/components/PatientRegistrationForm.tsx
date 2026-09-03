@@ -102,28 +102,32 @@ export default function PatientRegistrationForm({
     return filterAndSortPatients(patients, q).slice(0, 15);
   }, [patients, searchQuery]);
 
-  // Real-time Duplicate Mobile Check for New Patient mode
-  const duplicatePatient = useMemo(() => {
-    if (activeTab === 'existing' || chosenPatient) return null;
+  // Real-time Family Members Check for New Patient mode
+  const matchedFamilyMembers = useMemo(() => {
+    if (activeTab === 'existing' || chosenPatient) return [];
     const clean = formData.phone.replace(/\D/g, '');
     if (clean.length === 10) {
-      return patients.find(p => p.phone === clean);
+      return patients.filter(p => (p.phone || '').replace(/\D/g, '') === clean);
     }
-    return null;
+    return [];
   }, [formData.phone, patients, activeTab, chosenPatient]);
 
   // Check if chosen patient or target is already in today's active queue
   const isAlreadyInQueue = useMemo(() => {
-    const targetPatientId = chosenPatient?.id || duplicatePatient?.id;
-    const cleanPhone = (activeTab === 'existing' && chosenPatient ? chosenPatient.phone : formData.phone).replace(/\D/g, '');
-
-    return queue.some(q => {
-      if (q.status === 'completed') return false;
-      if (targetPatientId && q.patientId === targetPatientId) return true;
-      if (cleanPhone && cleanPhone.length === 10 && q.phone === cleanPhone) return true;
-      return false;
-    });
-  }, [chosenPatient, duplicatePatient, formData.phone, queue, activeTab]);
+    if (activeTab === 'existing' && chosenPatient) {
+      return queue.some(q => q.status !== 'completed' && q.patientId === chosenPatient.id);
+    }
+    const cleanPhone = formData.phone.replace(/\D/g, '');
+    const trimmedName = formData.name.trim().toLowerCase();
+    if (trimmedName && cleanPhone.length === 10) {
+      return queue.some(
+        q => q.status !== 'completed' && 
+             (q.name || '').trim().toLowerCase() === trimmedName && 
+             (q.phone || '').replace(/\D/g, '') === cleanPhone
+      );
+    }
+    return false;
+  }, [chosenPatient, formData.name, formData.phone, queue, activeTab]);
 
   const handleRenewValidity = async (patientId: string) => {
     setRenewingId(patientId);
@@ -181,8 +185,12 @@ export default function PatientRegistrationForm({
         newErrors.village = 'Village/Town should only contain letters and spaces';
       }
 
-      if (duplicatePatient) {
-        newErrors.phone = `A patient with mobile ${formData.phone} is already registered (${duplicatePatient.name})`;
+      // Check if patient with EXACT SAME name and phone already registered
+      const exactDuplicate = matchedFamilyMembers.find(
+        p => p.name.trim().toLowerCase() === trimmedName.toLowerCase()
+      );
+      if (exactDuplicate) {
+        newErrors.name = `Patient "${exactDuplicate.name}" is already registered with this mobile number. Select them from Existing Patients or use a different name for a family member.`;
       }
     } else {
       if (!chosenPatient) {
@@ -526,27 +534,39 @@ export default function PatientRegistrationForm({
               <span className="text-[11px] text-[#7c766d]">Press <strong>Enter</strong> to jump to next field</span>
             </div>
 
-            {/* Duplicate Mobile Alert */}
-            {duplicatePatient && (
-              <div className="p-3.5 bg-[#fffbeb] border border-[#fde68a] rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-[#92400e] shadow-xs">
-                <div className="flex items-center gap-2.5">
-                  <AlertTriangle className="w-4.5 h-4.5 text-[#b45309] shrink-0" />
-                  <div>
-                    <span className="font-bold text-[#b45309]">Existing Patient Match:</span> Patient <strong className="text-[#78350f]">{duplicatePatient.name}</strong> ({duplicatePatient.age} YRS · {duplicatePatient.village || 'N/A'}) is already registered with mobile <strong className="text-[#78350f]">{duplicatePatient.phone}</strong>.
+            {/* Family Members Shared Phone Alert / Helper */}
+            {matchedFamilyMembers.length > 0 && (
+              <div className="p-3.5 bg-[#eff6ff] border border-[#bfdbfe] rounded-xl space-y-2 text-xs text-[#1e40af] shadow-xs animate-in fade-in duration-150">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 font-bold text-[#1e3a8a]">
+                    <Users className="w-4 h-4 text-[#2563eb] shrink-0" />
+                    <span>Family / Shared Mobile Detected ({matchedFamilyMembers.length} member{matchedFamilyMembers.length > 1 ? 's' : ''}):</span>
                   </div>
+                  <span className="text-[10px] text-[#2563eb] font-semibold bg-[#dbeafe] px-2 py-0.5 rounded-full">
+                    Family members can share the same number
+                  </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setChosenPatient(duplicatePatient);
-                    setActiveTab('existing');
-                    if (onSelectExistingPatient) onSelectExistingPatient(duplicatePatient);
-                  }}
-                  className="px-3.5 py-1.5 bg-[#b45309] hover:bg-[#92400e] text-white font-bold rounded-lg shrink-0 flex items-center gap-1.5 transition-all shadow-xs active:scale-95 cursor-pointer"
-                >
-                  <span>Select & Add to Queue</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+                <p className="text-[11px] text-[#1e40af] leading-relaxed">
+                  Is this consultation for an existing family member? Click their name below to select, or continue entering details below to register a new family member:
+                </p>
+                <div className="flex items-center gap-2 flex-wrap pt-0.5">
+                  {matchedFamilyMembers.map(member => (
+                    <button
+                      key={member.id}
+                      type="button"
+                      onClick={() => {
+                        setChosenPatient(member);
+                        setActiveTab('existing');
+                        if (onSelectExistingPatient) onSelectExistingPatient(member);
+                      }}
+                      className="px-2.5 py-1 bg-white hover:bg-[#dbeafe] text-[#1e3a8a] border border-[#93c5fd] rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                    >
+                      <span>{member.name}</span>
+                      <span className="text-[10px] text-[#64748b]">({member.age ? `${member.age}Y` : ''} {member.gender})</span>
+                      <ArrowRight className="w-3 h-3 text-[#2563eb]" />
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 

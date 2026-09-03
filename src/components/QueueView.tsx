@@ -26,12 +26,18 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
   const [renewingId, setRenewingId] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
-  // Duplicate phone check
-  const duplicatePatient = useMemo(() => {
+  // Family members sharing same phone check
+  const familyMembersWithPhone = useMemo(() => {
     const clean = regForm.phone.replace(/\D/g, '');
-    if (clean.length === 10) return allPatients.find(p => p.phone === clean) || null;
-    return null;
+    if (clean.length === 10) return allPatients.filter(p => (p.phone || '').replace(/\D/g, '') === clean);
+    return [];
   }, [regForm.phone, allPatients]);
+
+  const exactMatchingPatient = useMemo(() => {
+    const trimmed = regForm.name.trim().toLowerCase();
+    if (!trimmed) return null;
+    return familyMembersWithPhone.find(p => p.name.trim().toLowerCase() === trimmed) || null;
+  }, [familyMembersWithPhone, regForm.name]);
 
   const handleRegSubmit = async (consultNow: boolean) => {
     const errors: Record<string, string> = {};
@@ -52,7 +58,7 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
         village: (regForm.village || '').trim(),
         complaint: (regForm.complaint || '').trim(),
       };
-      const result = await registerAndEnqueue(patientData, duplicatePatient || undefined);
+      const result = await registerAndEnqueue(patientData, exactMatchingPatient || undefined);
       setRegForm(EMPTY_FORM);
       setRegErrors({});
       setShowRegisterModal(false);
@@ -748,11 +754,28 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
             </div>
 
             <div className="p-6 space-y-4 overflow-y-auto">
-              {/* Duplicate Warning */}
-              {duplicatePatient && (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
-                  <span className="font-bold">⚠️ Existing patient found:</span> {duplicatePatient.name} · {duplicatePatient.age}y · {duplicatePatient.phone}<br />
-                  <span className="text-amber-700">Proceeding will add them to queue using existing record.</span>
+              {/* Family Members Shared Phone Alert / Helper */}
+              {familyMembersWithPhone.length > 0 && (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900 space-y-1.5">
+                  <div className="flex items-center gap-1.5 font-bold text-blue-800">
+                    <Users className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span>Family / Shared Number ({familyMembersWithPhone.length} registered):</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                    {familyMembersWithPhone.map(m => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setRegForm(f => ({ ...f, name: m.name, age: String(m.age || ''), gender: m.gender || 'M', village: m.village || '' }))}
+                        className="px-2 py-0.5 bg-white hover:bg-blue-100 text-blue-800 border border-blue-300 rounded text-[11px] font-semibold cursor-pointer transition-colors shadow-xs"
+                      >
+                        {m.name} ({m.age ? `${m.age}Y` : ''} {m.gender})
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-blue-600">
+                    Click name to use existing record, or enter new name below to register a new family member.
+                  </p>
                 </div>
               )}
 

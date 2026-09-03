@@ -1343,7 +1343,7 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
                         onConfirm: () => {
                           removeFromQueue((item as any).rawQueueId || item.opdNo || item.name);
                           setFetchedQueue(prev => prev.filter(q => q.queueId !== (item as any).rawQueueId && q.queueId !== item.opdNo && q.name !== item.name));
-                          const targetPatient = patients.find(p => p.name === item.name || p.phone === item.phone);
+                          const targetPatient = patients.find(p => p.id === (item as any).patientId || (p.name.trim().toLowerCase() === item.name.trim().toLowerCase() && p.phone === item.phone) || p.name === item.name);
                           if (targetPatient) {
                             deletePatient(targetPatient.id);
                           }
@@ -1489,7 +1489,7 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
                             onConfirm: () => {
                               removeFromQueue((item as any).rawQueueId || item.opdNo || item.name);
                               setFetchedQueue(prev => prev.filter(q => q.queueId !== (item as any).rawQueueId && q.queueId !== item.opdNo && q.name !== item.name));
-                              const targetPatient = patients.find(p => p.name === item.name || p.phone === item.phone);
+                              const targetPatient = patients.find(p => p.id === (item as any).patientId || (p.name.trim().toLowerCase() === item.name.trim().toLowerCase() && p.phone === item.phone) || p.name === item.name);
                               if (targetPatient) {
                                 deletePatient(targetPatient.id);
                               }

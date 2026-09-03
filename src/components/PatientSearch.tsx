@@ -19,13 +19,11 @@ export function filterAndSortPatients(patients: Patient[], rawQuery: string): Pa
   const query = rawQuery.trim().toLowerCase();
   if (!query) return [];
 
-  // Deduplicate incoming patient list by phone or id/name
+  // Deduplicate incoming patient list by unique patient ID or name+phone combination
   const seen = new Set<string>();
   const uniquePatients: Patient[] = [];
   for (const p of patients) {
-    const key = (p.phone && p.phone.replace(/\D/g, '').length === 10) 
-      ? `phone_${p.phone.replace(/\D/g, '')}` 
-      : `name_${(p.name || '').trim().toLowerCase()}_${p.village || ''}`;
+    const key = p.id ? `id_${p.id}` : `name_${(p.name || '').trim().toLowerCase()}_${(p.phone || '').replace(/\D/g, '')}`;
     if (!seen.has(key)) {
       seen.add(key);
       uniquePatients.push(p);
