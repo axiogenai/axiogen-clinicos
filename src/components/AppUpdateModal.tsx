@@ -78,6 +78,7 @@ export const AppUpdateModal: React.FC = () => {
   };
 
   useEffect(() => {
+    // 1. Realtime WebSockets listener
     const channel = supabase.channel('axiogen_ota_axiogen-clinicos');
     channel.on('broadcast', { event: 'force_hard_refresh' }, (response: any) => {
       processIncomingRelease(response?.payload);
@@ -91,9 +92,26 @@ export const AppUpdateModal: React.FC = () => {
       }
     }).subscribe();
 
+    // 2. Cloud Database polling fallback (reads sections.ota_release safely)
+    const checkDbRelease = async () => {
+      try {
+        const { data } = await supabase.from('clinics').select('sections').eq('id', 1).single();
+        if (data?.sections) {
+          const sectionsObj = typeof data.sections === 'string' ? JSON.parse(data.sections) : data.sections;
+          if (sectionsObj && sectionsObj.ota_release && sectionsObj.ota_release.version) {
+            processIncomingRelease(sectionsObj.ota_release);
+          }
+        }
+      } catch {}
+    };
+
+    checkDbRelease();
+    const interval = setInterval(checkDbRelease, 4000);
+
     return () => {
       supabase.removeChannel(channel);
       supabase.removeChannel(globalChannel);
+      clearInterval(interval);
     };
   }, []);
 
