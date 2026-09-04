@@ -729,7 +729,7 @@ export default function A4PrintTemplate({
 
           {/* 2. Drug History */}
           {sections.showDrugHistory !== false && (
-            <div>
+            <div style={{ marginTop: '2px' }}>
               <div
                 style={{
                   border: '1px solid #7c2222',
@@ -759,86 +759,93 @@ export default function A4PrintTemplate({
 
           {/* 3. Investigations Advised (Complete Clinical Lab Panel from template) */}
           {sections.showInvestigations !== false && (
-            <div>
+            <div style={{ marginTop: '3px' }}>
               <div
                 style={{
                   border: '1px solid #7c2222',
-                  padding: '1.5px 5px',
+                  padding: '2px 6px',
                   fontSize: '11px',
                   fontWeight: 700,
-                  color: '#111',
+                  color: '#1e40af',
                   background: '#fff',
                   display: 'inline-block',
                 }}
               >
                 Investigations Advised
               </div>
-              <div style={{ fontSize: '9.5px', fontWeight: 700, marginTop: '2px', color: '#000', lineHeight: 1.25 }}>
-                <div style={{ display: 'flex', gap: '6px' }}>
+              <div style={{ fontSize: '9.5px', fontWeight: 700, marginTop: '4px', marginBottom: '5px', color: '#000', lineHeight: 1.3 }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
                   <span>■ CBC</span>
                   <span>■ LFT</span>
                   <span>■ BSLⓇ</span>
                 </div>
-                <div style={{ marginTop: '1px' }}>
+                <div style={{ marginTop: '2px' }}>
                   <span>■ Serum Creatinine</span>
                 </div>
               </div>
 
               {/* Lab Tracking Form from user template photo */}
-              <div style={{ fontSize: '9px', marginTop: '2px', color: '#000', lineHeight: 1.25 }}>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', marginBottom: '2.5px' }}>
-                  <span style={{ fontSize: '9px', fontWeight: 600, color: '#000' }}>Done on</span>
-                  <span style={{ flex: 1, borderBottom: '1px solid #333', height: '9px' }}></span>
+              <div style={{ fontSize: '9px', marginTop: '4px', color: '#000', lineHeight: 1.3 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '9.5px', fontWeight: 700, color: '#000' }}>Done on</span>
+                  <span style={{ flex: 1, borderBottom: '1px solid #333', height: '10px' }}></span>
                 </div>
 
                 {/* CBC- Hb- WBC- Platelet Count- */}
-                <div style={{ marginBottom: '2.5px' }}>
+                <div style={{ marginBottom: '6px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ border: '1px solid #7c2222', padding: '0px 3px', color: '#000', fontWeight: 700, fontSize: '8.5px' }}>
+                    <span style={{ border: '1px solid #7c2222', padding: '1px 4px', color: '#000', fontWeight: 700, fontSize: '8.5px' }}>
                       CBC-
                     </span>
-                    <span style={{ color: '#7c2222', fontWeight: 700, fontSize: '8.5px' }}>Hb-</span>
-                    <span style={{ color: '#000', fontWeight: 700, fontSize: '8.5px', marginLeft: 'auto' }}>WBC-</span>
+                    <span style={{ color: '#991b1b', fontWeight: 700, fontSize: '8.5px' }}>Hb-</span>
+                    <span style={{ flex: 1, borderBottom: '1px solid #333', height: '10px', minWidth: '15px' }}></span>
+                    <span style={{ color: '#000', fontWeight: 700, fontSize: '8.5px' }}>WBC-</span>
+                    <span style={{ flex: 1, borderBottom: '1px solid #333', height: '10px', minWidth: '15px' }}></span>
                   </div>
-                  <div style={{ color: '#000', fontWeight: 700, fontSize: '8.5px', marginTop: '1.5px' }}>
-                    Platelet Count-
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', marginTop: '3px' }}>
+                    <span style={{ color: '#000', fontWeight: 700, fontSize: '8.5px' }}>
+                      Platelet Count-
+                    </span>
+                    <span style={{ flex: 1, borderBottom: '1px solid #333', height: '10px' }}></span>
                   </div>
                 </div>
 
                 {/* LFT- and two lines */}
-                <div style={{ marginBottom: '2.5px' }}>
-                  <span style={{ border: '1px solid #7c2222', padding: '0px 3px', color: '#7c2222', fontWeight: 700, fontSize: '8.5px' }}>
+                <div style={{ marginBottom: '6px' }}>
+                  <span style={{ border: '1px solid #7c2222', padding: '1px 4px', color: '#7c2222', fontWeight: 700, fontSize: '8.5px' }}>
                     LFT-
                   </span>
-                  <div style={{ borderBottom: '1px solid #333', width: '100%', marginTop: '4px' }}></div>
-                  <div style={{ borderBottom: '1px solid #333', width: '100%', marginTop: '5px' }}></div>
+                  <div style={{ borderBottom: '1px solid #333', width: '100%', marginTop: '7px' }}></div>
+                  <div style={{ borderBottom: '1px solid #333', width: '100%', marginTop: '8px' }}></div>
                 </div>
 
                 {/* BSL(R) - */}
-                <div style={{ marginBottom: '2.5px' }}>
-                  <span style={{ border: '1px solid #7c2222', padding: '0px 3px', color: '#000', fontWeight: 700, fontSize: '8.5px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', marginBottom: '6px' }}>
+                  <span style={{ border: '1px solid #7c2222', padding: '1px 4px', color: '#000', fontWeight: 700, fontSize: '8.5px' }}>
                     BSLⓇ -
                   </span>
+                  <span style={{ flex: 1, borderBottom: '1px solid #333', height: '10px' }}></span>
                 </div>
 
                 {/* Serum Creatinine- */}
-                <div style={{ marginBottom: '2.5px' }}>
-                  <span style={{ border: '1px solid #7c2222', padding: '0px 3px', color: '#000', fontWeight: 700, fontSize: '8.5px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', marginBottom: '6px' }}>
+                  <span style={{ border: '1px solid #7c2222', padding: '1px 4px', color: '#000', fontWeight: 700, fontSize: '8.5px' }}>
                     Serum Creatinine-
                   </span>
+                  <span style={{ flex: 1, borderBottom: '1px solid #333', height: '10px' }}></span>
                 </div>
 
                 {/* Next LAB Due Date */}
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', marginTop: '2px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', marginTop: '5px' }}>
                   <span style={{ fontWeight: 700, fontSize: '8.5px', color: '#000', whiteSpace: 'nowrap' }}>Next LAB Due Date :</span>
-                  <span style={{ flex: 1, borderBottom: '1px solid #333', height: '9px' }}></span>
+                  <span style={{ flex: 1, borderBottom: '1px solid #333', height: '10px' }}></span>
                 </div>
               </div>
             </div>
           )}
 
           {/* 4. Provisional Diagnosis */}
-          <div>
+          <div style={{ marginTop: '3px' }}>
             <div
               style={{
                 border: '1px solid #7c2222',
@@ -852,168 +859,187 @@ export default function A4PrintTemplate({
             >
               Provisional/Final Diagnosis
             </div>
-            <div
-              style={{
-                fontSize: '11.5px',
-                fontWeight: 700,
-                color: '#111',
-                marginTop: '1.5px',
-                minHeight: '12px',
-              }}
-            >
-              {cleanClinicalText((casePaper as any).diagnosis || (casePaper as any).notes || casePaper.complaint)}
-            </div>
+            {cleanClinicalText((casePaper as any).diagnosis || (casePaper as any).notes || casePaper.complaint) ? (
+              <div
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  color: '#111',
+                  marginTop: '2px',
+                  minHeight: '12px',
+                }}
+              >
+                {cleanClinicalText((casePaper as any).diagnosis || (casePaper as any).notes || casePaper.complaint)}
+              </div>
+            ) : (
+              <div style={{ marginTop: '2px' }}>
+                <div style={{ borderBottom: '1px solid #333', width: '100%', marginTop: '7px' }}></div>
+                <div style={{ borderBottom: '1px solid #333', width: '100%', marginTop: '7px' }}></div>
+              </div>
+            )}
           </div>
 
-          {/* 5. Patient Counselling Documentation */}
-          {sections.showCounselling !== false && (
-            <div>
-              <div
-                style={{
-                  border: '1px solid #2563eb',
-                  padding: '1.5px 5px',
-                  fontSize: '10.5px',
-                  fontWeight: 700,
-                  color: '#1e40af',
-                  background: '#eff6ff',
-                  display: 'inline-block',
-                }}
-              >
-                Patient Counselling Documentation
-              </div>
-              <div style={{ fontSize: '10.5px', marginTop: '2px', lineHeight: 1.25, color: '#000' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>Verbal consent taken</span>
-                  <span style={{ fontWeight: 700, color: '#047857' }}>☑</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>Diagnosis Explained</span>
-                  <span style={{ fontWeight: 700, color: '#047857' }}>☑</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>Risk&amp;side effects explained</span>
-                  <span style={{ fontWeight: 700, color: '#047857' }}>☑</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>Monitoring Plan Explained</span>
-                  <span style={{ fontWeight: 700, color: '#047857' }}>☑</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 6. Warning Explained Box */}
-          {sections.showWarnings !== false && (
-            <div>
-              <div
-                style={{
-                  border: '1px solid #991b1b',
-                  padding: '1.5px 5px',
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  color: '#991b1b',
-                  background: '#fef2f2',
-                  display: 'inline-block',
-                }}
-              >
-                Warning Explained-
-              </div>
-              <div
-                style={{
-                  fontSize: '9.5px',
-                  color: '#000',
-                  fontWeight: 600,
-                  marginTop: '1.5px',
-                  lineHeight: 1.15,
-                }}
-              >
-                Fever/Mouth Ulcer/ Breathlessness/ Yellowish Eyes-Stop drug &amp; Report immediately.
-              </div>
-            </div>
-          )}
-
-          {/* 7. DRUG VERBAL CONSENT Double Concentric Circle Stamp */}
-          <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: '1mm' }}>
-            <div
-              style={{
-                width: '46mm',
-                height: '46mm',
-                borderRadius: '50%',
-                border: '2px solid #000',
-                padding: '2px',
-                boxSizing: 'border-box',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: '#fff',
-              }}
-            >
-              <div
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: '50%',
-                  border: '1px solid #000',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  textAlign: 'center',
-                  padding: '2mm 1.5mm',
-                  boxSizing: 'border-box',
-                  color: '#000',
-                  fontFamily: "'Inter', -apple-system, sans-serif",
-                }}
-              >
+          {/* Bottom Group: Shifted cleanly down right above the stamp */}
+          <div
+            style={{
+              marginTop: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '2.5mm',
+              paddingTop: '2mm',
+              borderTop: '1px solid #c48b8b',
+            }}
+          >
+            {/* 5. Patient Counselling Documentation */}
+            {sections.showCounselling !== false && (
+              <div>
                 <div
                   style={{
-                    fontSize: '11px',
-                    fontWeight: 900,
-                    color: '#000',
-                    lineHeight: 1.1,
-                    letterSpacing: '0.6px',
+                    border: '1px solid #2563eb',
+                    padding: '1.5px 5px',
+                    fontSize: '10.5px',
+                    fontWeight: 700,
+                    color: '#1e40af',
+                    background: '#eff6ff',
+                    display: 'inline-block',
                   }}
                 >
-                  DRUG
+                  Patient Counselling Documentation
+                </div>
+                <div style={{ fontSize: '10px', marginTop: '2px', lineHeight: 1.25, color: '#000' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>Verbal consent taken</span>
+                    <span style={{ fontWeight: 700, color: '#047857' }}>☑</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>Diagnosis Explained</span>
+                    <span style={{ fontWeight: 700, color: '#047857' }}>☑</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>Risk&amp;side effects explained</span>
+                    <span style={{ fontWeight: 700, color: '#047857' }}>☑</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>Monitoring Plan Explained</span>
+                    <span style={{ fontWeight: 700, color: '#047857' }}>☑</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 6. Warning Explained Box */}
+            {sections.showWarnings !== false && (
+              <div>
+                <div
+                  style={{
+                    border: '1px solid #991b1b',
+                    padding: '1.5px 5px',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    color: '#991b1b',
+                    background: '#fef2f2',
+                    display: 'inline-block',
+                  }}
+                >
+                  Warning Explained-
                 </div>
                 <div
                   style={{
                     fontSize: '9.5px',
-                    fontWeight: 900,
                     color: '#000',
-                    lineHeight: 1.1,
-                    letterSpacing: '0.4px',
-                    marginBottom: '1.5px',
+                    fontWeight: 700,
+                    marginTop: '1.5px',
+                    lineHeight: 1.15,
                   }}
                 >
-                  VERBAL CONSENT
+                  Fever/Mouth Ulcer/ Breathlessness/ Yellowish Eyes-Stop drug &amp; Report immediately.
                 </div>
+              </div>
+            )}
+
+            {/* 7. DRUG VERBAL CONSENT Double Concentric Circle Stamp */}
+            <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: '1mm' }}>
+              <div
+                style={{
+                  width: '46mm',
+                  height: '46mm',
+                  borderRadius: '50%',
+                  border: '2px solid #000',
+                  padding: '2px',
+                  boxSizing: 'border-box',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: '#fff',
+                }}
+              >
                 <div
                   style={{
-                    fontSize: '7.4px',
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: '50%',
+                    border: '1px solid #000',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    padding: '2mm 1.5mm',
+                    boxSizing: 'border-box',
                     color: '#000',
-                    lineHeight: 1.25,
-                    fontWeight: 700,
-                    maxWidth: '39mm',
+                    fontFamily: "'Inter', -apple-system, sans-serif",
                   }}
                 >
-                  Dx &amp; indication explained.
-                  <br />
-                  Risks incl: Hepatotoxicity, Severe anemia,
-                  <br />
-                  Hemolysis, Dapsone syndrome, Thrombosis risk,
-                  <br />
-                  Infection risk,
-                  <br />
-                  Severe cutaneous adverse reactions.(SJS/TEN)
-                  <br />
-                  Teratogenicity discussed.
-                  <br />
-                  Monitoring &amp; alternatives explained.
-                  <br />
-                  Pt verbalized understanding &amp;
-                  <br />
-                  consented.
+                  <div
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: 900,
+                      color: '#000',
+                      lineHeight: 1.1,
+                      letterSpacing: '0.6px',
+                    }}
+                  >
+                    DRUG
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '9.5px',
+                      fontWeight: 900,
+                      color: '#000',
+                      lineHeight: 1.1,
+                      letterSpacing: '0.4px',
+                      marginBottom: '1.5px',
+                    }}
+                  >
+                    VERBAL CONSENT
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '7.5px',
+                      color: '#000',
+                      lineHeight: 1.22,
+                      fontWeight: 600,
+                      maxWidth: '39mm',
+                    }}
+                  >
+                    Dx &amp; indication explained.
+                    <br />
+                    Risks incl: Hepatotoxicity, Severe anemia,
+                    <br />
+                    Hemolysis, Dapsone syndrome, Thrombosis risk,
+                    <br />
+                    Infection risk,
+                    <br />
+                    Severe cutaneous adverse reactions.(SJS/TEN)
+                    <br />
+                    Teratogenicity discussed.
+                    <br />
+                    Monitoring &amp; alternatives explained.
+                    <br />
+                    Pt verbalized understanding &amp;
+                    <br />
+                    consented.
+                  </div>
                 </div>
               </div>
             </div>
