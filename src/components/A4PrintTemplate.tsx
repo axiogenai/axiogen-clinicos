@@ -1004,7 +1004,7 @@ export default function A4PrintTemplate({
                   visibility: printOnStationery ? 'hidden' : 'visible',
                 }}
               >
-                ℞
+                <span style={{ fontStyle: 'italic' }}>R</span><span style={{ fontSize: '22px', fontStyle: 'italic' }}>x</span>
               </span>
               <span
                 style={{
