@@ -140,7 +140,7 @@ export const GroqTranslatedCell: React.FC<{
   }
   const displayText = aiText || translateMedicalText(fullTextToTranslate, lang);
   return (
-    <div style={{ whiteSpace: 'pre-line', lineHeight: '1.3', fontSize: '11px', fontWeight: 600, color: '#222' }}>
+    <div style={{ whiteSpace: 'pre-line', lineHeight: '1.35', fontSize: '12.5px', fontWeight: 600, color: '#222' }}>
       {displayText}
     </div>
   );
@@ -1084,7 +1084,7 @@ export default function A4PrintTemplate({
                 width: '100%',
                 borderCollapse: 'collapse',
                 border: '1px solid #111',
-                fontSize: '11px',
+                fontSize: '12px',
               }}
             >
               <thead>
@@ -1092,7 +1092,7 @@ export default function A4PrintTemplate({
                   style={{
                     backgroundColor: '#fff',
                     borderBottom: '1px solid #111',
-                    fontSize: '11.5px',
+                    fontSize: '12px',
                     fontWeight: 700,
                     textAlign: 'left',
                   }}
@@ -1100,7 +1100,7 @@ export default function A4PrintTemplate({
                   <th
                     style={{
                       width: '32px',
-                      padding: '3px 2px',
+                      padding: '4px 2px',
                       textAlign: 'center',
                       borderRight: '1px solid #111',
                       color: '#000',
@@ -1110,7 +1110,7 @@ export default function A4PrintTemplate({
                   </th>
                   <th
                     style={{
-                      padding: '3px 6px',
+                      padding: '4px 6px',
                       borderRight: '1px solid #111',
                       color: '#000',
                     }}
@@ -1119,7 +1119,7 @@ export default function A4PrintTemplate({
                   </th>
                   <th
                     style={{
-                      padding: '3px 6px',
+                      padding: '4px 6px',
                       borderRight: '1px solid #111',
                       color: '#000',
                     }}
@@ -1129,7 +1129,7 @@ export default function A4PrintTemplate({
                   <th
                     style={{
                       width: '68px',
-                      padding: '3px 4px',
+                      padding: '4px 4px',
                       textAlign: 'center',
                       borderRight: '1px solid #111',
                       color: '#000',
@@ -1140,7 +1140,7 @@ export default function A4PrintTemplate({
                   <th
                     style={{
                       width: '36px',
-                      padding: '3px 2px',
+                      padding: '4px 2px',
                       textAlign: 'center',
                       color: '#047857',
                     }}
@@ -1172,17 +1172,17 @@ export default function A4PrintTemplate({
                             textAlign: 'center',
                             borderRight: '1px solid #111',
                             fontWeight: 700,
-                            fontSize: '11.5px',
+                            fontSize: '12px',
                           }}
                         >
                           {idx + 1}
                         </td>
                         <td
                           style={{
-                            padding: '3px 5px',
+                            padding: '4px 6px',
                             borderRight: '1px solid #111',
-                            fontWeight: 700,
-                            fontSize: '11.5px',
+                            fontWeight: 800,
+                            fontSize: '13px',
                             color: '#000',
                           }}
                         >
@@ -1190,9 +1190,9 @@ export default function A4PrintTemplate({
                         </td>
                         <td
                           style={{
-                            padding: '3px 5px',
+                            padding: '4px 6px',
                             borderRight: '1px solid #111',
-                            fontSize: '11px',
+                            fontSize: '12px',
                             color: '#111',
                           }}
                         >
@@ -1205,10 +1205,10 @@ export default function A4PrintTemplate({
                         </td>
                         <td
                           style={{
-                            padding: '3px 3px',
+                            padding: '4px 4px',
                             textAlign: 'center',
                             borderRight: '1px solid #111',
-                            fontSize: '11px',
+                            fontSize: '12px',
                             fontWeight: 600,
                             whiteSpace: 'nowrap',
                           }}
@@ -1217,10 +1217,10 @@ export default function A4PrintTemplate({
                         </td>
                         <td
                           style={{
-                            padding: '3px 2px',
+                            padding: '4px 2px',
                             textAlign: 'center',
                             fontWeight: 700,
-                            fontSize: '11.5px',
+                            fontSize: '13px',
                             color: '#047857',
                           }}
                         >
