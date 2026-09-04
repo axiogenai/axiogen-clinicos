@@ -140,7 +140,7 @@ export const GroqTranslatedCell: React.FC<{
   }
   const displayText = aiText || translateMedicalText(fullTextToTranslate, lang);
   return (
-    <div style={{ whiteSpace: 'pre-line', lineHeight: '1.35', fontSize: '12.5px', fontWeight: 600, color: '#222' }}>
+    <div style={{ whiteSpace: 'pre-line', lineHeight: '1.3', fontSize: '11px', fontWeight: 600, color: '#222' }}>
       {displayText}
     </div>
   );
@@ -273,7 +273,7 @@ export default function A4PrintTemplate({
         style={{
           width: '100%',
           boxSizing: 'border-box',
-          paddingTop: '20mm',
+          paddingTop: '6mm',
           paddingLeft: '8mm',
           paddingRight: '8mm',
           visibility: hideHeader || printOnStationery ? 'hidden' : 'visible',
@@ -1006,16 +1006,6 @@ export default function A4PrintTemplate({
               >
                 ℞
               </span>
-              <span
-                style={{
-                  fontSize: '20px',
-                  color: '#047857',
-                  lineHeight: 1,
-                  visibility: printOnStationery ? 'hidden' : 'visible',
-                }}
-              >
-                ⚕
-              </span>
             </div>
 
             {/* Dynamic Medicine Table */}
@@ -1024,7 +1014,7 @@ export default function A4PrintTemplate({
                 width: '100%',
                 borderCollapse: 'collapse',
                 border: '1px solid #111',
-                fontSize: '12px',
+                fontSize: '11px',
               }}
             >
               <thead>
@@ -1119,10 +1109,10 @@ export default function A4PrintTemplate({
                         </td>
                         <td
                           style={{
-                            padding: '4px 6px',
+                            padding: '3px 5px',
                             borderRight: '1px solid #111',
-                            fontWeight: 800,
-                            fontSize: '13px',
+                            fontWeight: 700,
+                            fontSize: '11.5px',
                             color: '#000',
                           }}
                         >
@@ -1130,9 +1120,9 @@ export default function A4PrintTemplate({
                         </td>
                         <td
                           style={{
-                            padding: '4px 6px',
+                            padding: '3px 5px',
                             borderRight: '1px solid #111',
-                            fontSize: '12px',
+                            fontSize: '11px',
                             color: '#111',
                           }}
                         >
@@ -1145,10 +1135,10 @@ export default function A4PrintTemplate({
                         </td>
                         <td
                           style={{
-                            padding: '4px 4px',
+                            padding: '3px 3px',
                             textAlign: 'center',
                             borderRight: '1px solid #111',
-                            fontSize: '12px',
+                            fontSize: '11px',
                             fontWeight: 600,
                             whiteSpace: 'nowrap',
                           }}
@@ -1157,10 +1147,10 @@ export default function A4PrintTemplate({
                         </td>
                         <td
                           style={{
-                            padding: '4px 2px',
+                            padding: '3px 2px',
                             textAlign: 'center',
-                            fontWeight: 800,
-                            fontSize: '13px',
+                            fontWeight: 700,
+                            fontSize: '11.5px',
                             color: '#000',
                           }}
                         >
@@ -1230,7 +1220,7 @@ export default function A4PrintTemplate({
           width: '100%',
           borderTop: printOnStationery ? 'none' : '2px solid #a53b3b',
           paddingTop: '2mm',
-          paddingBottom: '20mm',
+          paddingBottom: '6mm',
           paddingLeft: '8mm',
           paddingRight: '8mm',
           fontSize: '9.5px',
