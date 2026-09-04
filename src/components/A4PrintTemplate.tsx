@@ -764,17 +764,17 @@ export default function A4PrintTemplate({
                 style={{
                   border: '1px solid #7c2222',
                   padding: '1.5px 5px',
-                  fontSize: '10px',
+                  fontSize: '11px',
                   fontWeight: 700,
-                  color: '#1e40af',
+                  color: '#111',
                   background: '#fff',
                   display: 'inline-block',
                 }}
               >
                 Investigations Advised
               </div>
-              <div style={{ fontSize: '8.5px', fontWeight: 600, marginTop: '1.5px', color: '#111', lineHeight: 1.25 }}>
-                <div style={{ display: 'flex', gap: '5px' }}>
+              <div style={{ fontSize: '9.5px', fontWeight: 700, marginTop: '2px', color: '#000', lineHeight: 1.25 }}>
+                <div style={{ display: 'flex', gap: '6px' }}>
                   <span>■ CBC</span>
                   <span>■ LFT</span>
                   <span>■ BSLⓇ</span>
@@ -785,61 +785,55 @@ export default function A4PrintTemplate({
               </div>
 
               {/* Lab Tracking Form from user template photo */}
-              <div style={{ fontSize: '8px', marginTop: '2px', color: '#222', lineHeight: 1.25 }}>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', marginBottom: '2px' }}>
-                  <span style={{ fontSize: '8px' }}>Done on</span>
-                  <span style={{ flex: 1, borderBottom: '1px solid #555', height: '8px' }}></span>
+              <div style={{ fontSize: '9px', marginTop: '2px', color: '#000', lineHeight: 1.25 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', marginBottom: '2.5px' }}>
+                  <span style={{ fontSize: '9px', fontWeight: 600, color: '#000' }}>Done on</span>
+                  <span style={{ flex: 1, borderBottom: '1px solid #333', height: '9px' }}></span>
                 </div>
 
                 {/* CBC- Hb- WBC- Platelet Count- */}
-                <div style={{ marginBottom: '2px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    <span style={{ border: '1px solid #7c2222', padding: '0px 2px', color: '#1e40af', fontWeight: 700, fontSize: '7.5px' }}>
+                <div style={{ marginBottom: '2.5px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ border: '1px solid #7c2222', padding: '0px 3px', color: '#000', fontWeight: 700, fontSize: '8.5px' }}>
                       CBC-
                     </span>
-                    <span style={{ color: '#991b1b', fontWeight: 700, fontSize: '7.5px' }}>Hb-</span>
-                    <span style={{ color: '#1e40af', fontWeight: 700, fontSize: '7.5px', marginLeft: 'auto' }}>WBC-</span>
+                    <span style={{ color: '#7c2222', fontWeight: 700, fontSize: '8.5px' }}>Hb-</span>
+                    <span style={{ color: '#000', fontWeight: 700, fontSize: '8.5px', marginLeft: 'auto' }}>WBC-</span>
                   </div>
-                  <div style={{ color: '#1e40af', fontWeight: 700, fontSize: '7.5px', marginTop: '1px' }}>
+                  <div style={{ color: '#000', fontWeight: 700, fontSize: '8.5px', marginTop: '1.5px' }}>
                     Platelet Count-
                   </div>
                 </div>
 
                 {/* LFT- and two lines */}
-                <div style={{ marginBottom: '2px' }}>
-                  <span style={{ border: '1px solid #7c2222', padding: '0px 2px', color: '#991b1b', fontWeight: 700, fontSize: '7.5px' }}>
+                <div style={{ marginBottom: '2.5px' }}>
+                  <span style={{ border: '1px solid #7c2222', padding: '0px 3px', color: '#7c2222', fontWeight: 700, fontSize: '8.5px' }}>
                     LFT-
                   </span>
-                  <div style={{ borderBottom: '1px solid #555', width: '100%', marginTop: '3.5px' }}></div>
-                  <div style={{ borderBottom: '1px solid #555', width: '100%', marginTop: '4.5px' }}></div>
+                  <div style={{ borderBottom: '1px solid #333', width: '100%', marginTop: '4px' }}></div>
+                  <div style={{ borderBottom: '1px solid #333', width: '100%', marginTop: '5px' }}></div>
                 </div>
 
                 {/* BSL(R) - */}
-                <div style={{ marginBottom: '2px' }}>
-                  <span style={{ border: '1px solid #7c2222', padding: '0px 2px', color: '#111', fontWeight: 700, fontSize: '7.5px' }}>
+                <div style={{ marginBottom: '2.5px' }}>
+                  <span style={{ border: '1px solid #7c2222', padding: '0px 3px', color: '#000', fontWeight: 700, fontSize: '8.5px' }}>
                     BSLⓇ -
                   </span>
                 </div>
 
                 {/* Serum Creatinine- */}
-                <div style={{ marginBottom: '2px' }}>
-                  <span style={{ border: '1px solid #7c2222', padding: '0px 2px', color: '#111', fontWeight: 700, fontSize: '7.5px' }}>
+                <div style={{ marginBottom: '2.5px' }}>
+                  <span style={{ border: '1px solid #7c2222', padding: '0px 3px', color: '#000', fontWeight: 700, fontSize: '8.5px' }}>
                     Serum Creatinine-
                   </span>
                 </div>
 
                 {/* Next LAB Due Date */}
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', marginTop: '1.5px' }}>
-                  <span style={{ fontWeight: 700, fontSize: '7.5px', color: '#111', whiteSpace: 'nowrap' }}>Next LAB Due Date :</span>
-                  <span style={{ flex: 1, borderBottom: '1px solid #555', height: '8px' }}></span>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', marginTop: '2px' }}>
+                  <span style={{ fontWeight: 700, fontSize: '8.5px', color: '#000', whiteSpace: 'nowrap' }}>Next LAB Due Date :</span>
+                  <span style={{ flex: 1, borderBottom: '1px solid #333', height: '9px' }}></span>
                 </div>
               </div>
-
-              {casePaper.investigationsAdvised && casePaper.investigationsAdvised.length > 0 && (
-                <div style={{ fontSize: '8px', fontWeight: 700, color: '#1e40af', marginTop: '1.5px' }}>
-                  Advised: {casePaper.investigationsAdvised.map((inv: any) => typeof inv === 'string' ? inv : inv.name || '').join(', ')}
-                </div>
-              )}
             </div>
           )}
 
@@ -849,7 +843,7 @@ export default function A4PrintTemplate({
               style={{
                 border: '1px solid #7c2222',
                 padding: '1.5px 5px',
-                fontSize: '10.5px',
+                fontSize: '11px',
                 fontWeight: 700,
                 color: '#444',
                 background: '#fff',
@@ -878,7 +872,7 @@ export default function A4PrintTemplate({
                 style={{
                   border: '1px solid #2563eb',
                   padding: '1.5px 5px',
-                  fontSize: '10px',
+                  fontSize: '10.5px',
                   fontWeight: 700,
                   color: '#1e40af',
                   background: '#eff6ff',
@@ -887,7 +881,7 @@ export default function A4PrintTemplate({
               >
                 Patient Counselling Documentation
               </div>
-              <div style={{ fontSize: '10px', marginTop: '1.5px', lineHeight: 1.25, color: '#333' }}>
+              <div style={{ fontSize: '10.5px', marginTop: '2px', lineHeight: 1.25, color: '#000' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span>Verbal consent taken</span>
                   <span style={{ fontWeight: 700, color: '#047857' }}>☑</span>
@@ -914,8 +908,8 @@ export default function A4PrintTemplate({
               <div
                 style={{
                   border: '1px solid #991b1b',
-                  padding: '1px 4px',
-                  fontSize: '9.5px',
+                  padding: '1.5px 5px',
+                  fontSize: '10px',
                   fontWeight: 700,
                   color: '#991b1b',
                   background: '#fef2f2',
@@ -926,9 +920,10 @@ export default function A4PrintTemplate({
               </div>
               <div
                 style={{
-                  fontSize: '9px',
-                  color: '#444',
-                  marginTop: '1px',
+                  fontSize: '9.5px',
+                  color: '#000',
+                  fontWeight: 600,
+                  marginTop: '1.5px',
                   lineHeight: 1.15,
                 }}
               >
@@ -941,10 +936,10 @@ export default function A4PrintTemplate({
           <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: '1mm' }}>
             <div
               style={{
-                width: '41mm',
-                height: '41mm',
+                width: '43mm',
+                height: '43mm',
                 borderRadius: '50%',
-                border: '2.5px solid #29558c',
+                border: '2.5px solid #111',
                 padding: '1.5px',
                 boxSizing: 'border-box',
                 display: 'flex',
@@ -958,7 +953,7 @@ export default function A4PrintTemplate({
                   width: '100%',
                   height: '100%',
                   borderRadius: '50%',
-                  border: '1px solid #29558c',
+                  border: '1px solid #111',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -966,14 +961,14 @@ export default function A4PrintTemplate({
                   textAlign: 'center',
                   padding: '2px 3px',
                   boxSizing: 'border-box',
-                  color: '#111',
+                  color: '#000',
                 }}
               >
                 <div
                   style={{
-                    fontSize: '8px',
+                    fontSize: '9px',
                     fontWeight: 800,
-                    color: '#111',
+                    color: '#000',
                     lineHeight: 1,
                     letterSpacing: '0.2px',
                     marginBottom: '1px',
@@ -983,9 +978,9 @@ export default function A4PrintTemplate({
                 </div>
                 <div
                   style={{
-                    fontSize: '7.5px',
+                    fontSize: '8.5px',
                     fontWeight: 800,
-                    color: '#111',
+                    color: '#000',
                     lineHeight: 1,
                     letterSpacing: '0.2px',
                     marginBottom: '1px',
@@ -995,10 +990,10 @@ export default function A4PrintTemplate({
                 </div>
                 <div
                   style={{
-                    fontSize: '5.5px',
-                    color: '#222',
-                    lineHeight: 1.08,
-                    fontWeight: 600,
+                    fontSize: '6.5px',
+                    color: '#000',
+                    lineHeight: 1.15,
+                    fontWeight: 700,
                     padding: '0 1px',
                   }}
                 >
