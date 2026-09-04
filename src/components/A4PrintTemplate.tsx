@@ -273,9 +273,9 @@ export default function A4PrintTemplate({
         style={{
           width: '100%',
           boxSizing: 'border-box',
-          paddingTop: '6mm',
+          paddingTop: '10mm',
           paddingLeft: '8mm',
-          paddingRight: '8mm',
+          paddingRight: '20mm',
           visibility: hideHeader || printOnStationery ? 'hidden' : 'visible',
           marginBottom: '2mm',
         }}
@@ -499,7 +499,7 @@ export default function A4PrintTemplate({
           width: '100%',
           boxSizing: 'border-box',
           paddingLeft: '8mm',
-          paddingRight: '8mm',
+          paddingRight: '20mm',
           fontSize: '13px',
           fontWeight: 600,
           marginBottom: '2mm',
@@ -975,7 +975,7 @@ export default function A4PrintTemplate({
             flexDirection: 'column',
             justifyContent: 'space-between',
             paddingLeft: '3.5mm',
-            paddingRight: '8mm',
+            paddingRight: '20mm',
             paddingTop: '1mm',
             paddingBottom: '1mm',
             boxSizing: 'border-box',
@@ -1005,6 +1005,16 @@ export default function A4PrintTemplate({
                 }}
               >
                 ℞
+              </span>
+              <span
+                style={{
+                  fontSize: '18px',
+                  color: '#047857',
+                  lineHeight: 1,
+                  visibility: printOnStationery ? 'hidden' : 'visible',
+                }}
+              >
+                ⚕
               </span>
             </div>
 
@@ -1220,9 +1230,9 @@ export default function A4PrintTemplate({
           width: '100%',
           borderTop: printOnStationery ? 'none' : '2px solid #a53b3b',
           paddingTop: '2mm',
-          paddingBottom: '6mm',
+          paddingBottom: '20mm',
           paddingLeft: '8mm',
-          paddingRight: '8mm',
+          paddingRight: '20mm',
           fontSize: '9.5px',
           fontWeight: 600,
           lineHeight: 1.15,
