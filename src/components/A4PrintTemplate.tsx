@@ -834,9 +834,9 @@ export default function A4PrintTemplate({
             </div>
           </div>
 
-          {/* 5. Patient Counselling Documentation */}
+          {/* 5. Patient Counselling Documentation (Shifted down towards bottom) */}
           {sections.showCounselling !== false && (
-            <div>
+            <div style={{ marginTop: 'auto' }}>
               <div
                 style={{
                   border: '1px solid #2563eb',
@@ -871,9 +871,9 @@ export default function A4PrintTemplate({
             </div>
           )}
 
-          {/* 6. Warning Explained Box */}
+          {/* 6. Warning Explained Box (Right above Verbal Consent) */}
           {sections.showWarnings !== false && (
-            <div>
+            <div style={{ ...(!sections.showCounselling ? { marginTop: 'auto' } : {}) }}>
               <div
                 style={{
                   border: '1px solid #991b1b',
@@ -901,7 +901,7 @@ export default function A4PrintTemplate({
           )}
 
           {/* 7. DRUG VERBAL CONSENT Round Stamp */}
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'auto', paddingBottom: '2mm' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1mm', paddingBottom: '2mm' }}>
             <div
               style={{
                 width: '38mm',
