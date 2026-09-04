@@ -793,34 +793,34 @@ export default function A4PrintTemplate({
 
                 {/* CBC- Hb- WBC- Platelet Count- */}
                 <div style={{ marginBottom: '6px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ border: '1px solid #7c2222', padding: '1px 4px', color: '#000', fontWeight: 700, fontSize: '8.5px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', width: '100%' }}>
+                    <span style={{ border: '1px solid #7c2222', padding: '1px 3px', color: '#000', fontWeight: 700, fontSize: '8px', whiteSpace: 'nowrap' }}>
                       CBC-
                     </span>
-                    <span style={{ color: '#991b1b', fontWeight: 700, fontSize: '8.5px' }}>Hb-</span>
-                    <span style={{ flex: 1, borderBottom: '1px solid #333', height: '10px', minWidth: '15px' }}></span>
-                    <span style={{ color: '#000', fontWeight: 700, fontSize: '8.5px' }}>WBC-</span>
-                    <span style={{ flex: 1, borderBottom: '1px solid #333', height: '10px', minWidth: '15px' }}></span>
+                    <span style={{ flex: '1 1 18px', borderBottom: '1px solid #333', height: '10px', minWidth: '8px' }}></span>
+                    <span style={{ color: '#991b1b', fontWeight: 700, fontSize: '8px', whiteSpace: 'nowrap' }}>Hb-</span>
+                    <span style={{ flex: '1 1 22px', borderBottom: '1px solid #333', height: '10px', minWidth: '10px' }}></span>
+                    <span style={{ color: '#000', fontWeight: 700, fontSize: '8px', whiteSpace: 'nowrap' }}>WBC-</span>
+                    <span style={{ flex: '1 1 22px', borderBottom: '1px solid #333', height: '10px', minWidth: '10px' }}></span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', marginTop: '3px' }}>
-                    <span style={{ color: '#000', fontWeight: 700, fontSize: '8.5px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', marginTop: '4px' }}>
+                    <span style={{ color: '#000', fontWeight: 700, fontSize: '8.5px', whiteSpace: 'nowrap' }}>
                       Platelet Count-
                     </span>
                     <span style={{ flex: 1, borderBottom: '1px solid #333', height: '10px' }}></span>
                   </div>
                 </div>
 
-                {/* LFT- and two lines */}
-                <div style={{ marginBottom: '6px' }}>
+                {/* LFT- and one line */}
+                <div style={{ marginBottom: '5px' }}>
                   <span style={{ border: '1px solid #7c2222', padding: '1px 4px', color: '#7c2222', fontWeight: 700, fontSize: '8.5px' }}>
                     LFT-
                   </span>
                   <div style={{ borderBottom: '1px solid #333', width: '100%', marginTop: '7px' }}></div>
-                  <div style={{ borderBottom: '1px solid #333', width: '100%', marginTop: '8px' }}></div>
                 </div>
 
                 {/* BSL(R) - */}
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', marginBottom: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', marginBottom: '5px' }}>
                   <span style={{ border: '1px solid #7c2222', padding: '1px 4px', color: '#000', fontWeight: 700, fontSize: '8.5px' }}>
                     BSLⓇ -
                   </span>
@@ -828,7 +828,7 @@ export default function A4PrintTemplate({
                 </div>
 
                 {/* Serum Creatinine- */}
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', marginBottom: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', marginBottom: '5px' }}>
                   <span style={{ border: '1px solid #7c2222', padding: '1px 4px', color: '#000', fontWeight: 700, fontSize: '8.5px' }}>
                     Serum Creatinine-
                   </span>
@@ -836,43 +836,43 @@ export default function A4PrintTemplate({
                 </div>
 
                 {/* Next LAB Due Date */}
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', marginTop: '5px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px' }}>
                   <span style={{ fontWeight: 700, fontSize: '8.5px', color: '#000', whiteSpace: 'nowrap' }}>Next LAB Due Date :</span>
                   <span style={{ flex: 1, borderBottom: '1px solid #333', height: '10px' }}></span>
                 </div>
               </div>
+
+              {/* 4. Provisional Diagnosis (Shifted UP right below Next LAB Due Date with tight spacing, leaving space down) */}
+              <div style={{ marginTop: '2.5mm' }}>
+                <div
+                  style={{
+                    border: '1px solid #7c2222',
+                    padding: '1.5px 5px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    color: '#444',
+                    background: '#fff',
+                    display: 'inline-block',
+                  }}
+                >
+                  Provisional/Final Diagnosis
+                </div>
+                {cleanClinicalText((casePaper as any).diagnosis || (casePaper as any).notes || casePaper.complaint) ? (
+                  <div
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      color: '#111',
+                      marginTop: '2px',
+                      minHeight: '12px',
+                    }}
+                  >
+                    {cleanClinicalText((casePaper as any).diagnosis || (casePaper as any).notes || casePaper.complaint)}
+                  </div>
+                ) : null}
+              </div>
             </div>
           )}
-
-          {/* 4. Provisional Diagnosis */}
-          <div>
-            <div
-              style={{
-                border: '1px solid #7c2222',
-                padding: '1.5px 5px',
-                fontSize: '11px',
-                fontWeight: 700,
-                color: '#444',
-                background: '#fff',
-                display: 'inline-block',
-              }}
-            >
-              Provisional/Final Diagnosis
-            </div>
-            {cleanClinicalText((casePaper as any).diagnosis || (casePaper as any).notes || casePaper.complaint) ? (
-              <div
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  color: '#111',
-                  marginTop: '2px',
-                  minHeight: '12px',
-                }}
-              >
-                {cleanClinicalText((casePaper as any).diagnosis || (casePaper as any).notes || casePaper.complaint)}
-              </div>
-            ) : null}
-          </div>
 
           {/* Bottom Group: Shifted cleanly down right above the stamp */}
           <div
