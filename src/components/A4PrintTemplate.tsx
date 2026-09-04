@@ -275,7 +275,7 @@ export default function A4PrintTemplate({
           boxSizing: 'border-box',
           paddingTop: '10mm',
           paddingLeft: '8mm',
-          paddingRight: '20mm',
+          paddingRight: '8mm',
           visibility: hideHeader || printOnStationery ? 'hidden' : 'visible',
           marginBottom: '2mm',
         }}
@@ -499,7 +499,7 @@ export default function A4PrintTemplate({
           width: '100%',
           boxSizing: 'border-box',
           paddingLeft: '8mm',
-          paddingRight: '20mm',
+          paddingRight: '8mm',
           fontSize: '13px',
           fontWeight: 600,
           marginBottom: '2mm',
@@ -1069,7 +1069,7 @@ export default function A4PrintTemplate({
                       width: '36px',
                       padding: '3px 2px',
                       textAlign: 'center',
-                      color: '#991b1b',
+                      color: '#047857',
                     }}
                   >
                     {headers.count}
@@ -1148,7 +1148,7 @@ export default function A4PrintTemplate({
                             textAlign: 'center',
                             fontWeight: 700,
                             fontSize: '11.5px',
-                            color: '#000',
+                            color: '#047857',
                           }}
                         >
                           {calculatedCount}
@@ -1219,7 +1219,7 @@ export default function A4PrintTemplate({
           paddingTop: '2mm',
           paddingBottom: '20mm',
           paddingLeft: '8mm',
-          paddingRight: '20mm',
+          paddingRight: '8mm',
           fontSize: '9.5px',
           fontWeight: 600,
           lineHeight: 1.15,
