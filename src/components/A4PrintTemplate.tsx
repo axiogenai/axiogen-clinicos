@@ -683,11 +683,12 @@ export default function A4PrintTemplate({
             maxWidth: '48mm',
             height: '100%',
             borderRight: printOnStationery ? 'none' : '3px double #a53b3b',
-            padding: '2mm 2.5mm 2mm 0',
+            padding: '1mm 2.5mm 1mm 0',
             boxSizing: 'border-box',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'space-between',
+            justifyContent: 'flex-start',
+            gap: '9px',
             fontFamily: "'Inter', sans-serif",
             fontSize: '11px',
             fontWeight: 500,
@@ -724,7 +725,6 @@ export default function A4PrintTemplate({
               >
                 {cleanClinicalText(patient.pastHistory || casePaper.pastHistory)}
               </div>
-              <div style={{ borderBottom: '1px solid #222', width: '100%', marginTop: '2px' }} />
             </div>
           )}
 
@@ -755,7 +755,6 @@ export default function A4PrintTemplate({
               >
                 {cleanClinicalText(patient.allergies || casePaper.allergies)}
               </div>
-              <div style={{ borderBottom: '1px solid #222', width: '100%', marginTop: '2px' }} />
             </div>
           )}
 
@@ -804,7 +803,6 @@ export default function A4PrintTemplate({
                   </>
                 )}
               </div>
-              <div style={{ borderBottom: '1px solid #222', width: '100%', marginTop: '2px' }} />
             </div>
           )}
 
@@ -834,7 +832,6 @@ export default function A4PrintTemplate({
             >
               {cleanClinicalText((casePaper as any).diagnosis || (casePaper as any).notes || casePaper.complaint)}
             </div>
-            <div style={{ borderBottom: '1px solid #222', width: '100%', marginTop: '2px' }} />
           </div>
 
           {/* 5. Patient Counselling Documentation */}
@@ -871,7 +868,6 @@ export default function A4PrintTemplate({
                   <span style={{ fontWeight: 700, color: '#047857' }}>☑</span>
                 </div>
               </div>
-              <div style={{ borderBottom: '1px solid #222', width: '100%', marginTop: '2px' }} />
             </div>
           )}
 
@@ -905,7 +901,7 @@ export default function A4PrintTemplate({
           )}
 
           {/* 7. DRUG VERBAL CONSENT Round Stamp */}
-          <div style={{ display: 'flex', justifyContent: 'center', margin: '1mm 0 0 0' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'auto', paddingBottom: '2mm' }}>
             <div
               style={{
                 width: '38mm',
