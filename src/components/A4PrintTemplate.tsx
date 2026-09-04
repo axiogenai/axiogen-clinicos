@@ -936,11 +936,11 @@ export default function A4PrintTemplate({
           <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: '1mm' }}>
             <div
               style={{
-                width: '43mm',
-                height: '43mm',
+                width: '45mm',
+                height: '45mm',
                 borderRadius: '50%',
-                border: '2.5px solid #111',
-                padding: '1.5px',
+                border: '2px solid #000',
+                padding: '2px',
                 boxSizing: 'border-box',
                 display: 'flex',
                 alignItems: 'center',
@@ -953,48 +953,47 @@ export default function A4PrintTemplate({
                   width: '100%',
                   height: '100%',
                   borderRadius: '50%',
-                  border: '1px solid #111',
+                  border: '1px solid #000',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
                   textAlign: 'center',
-                  padding: '2px 3px',
+                  padding: '3px 4px',
                   boxSizing: 'border-box',
                   color: '#000',
                 }}
               >
                 <div
                   style={{
-                    fontSize: '9px',
-                    fontWeight: 800,
+                    fontSize: '11px',
+                    fontWeight: 900,
                     color: '#000',
-                    lineHeight: 1,
-                    letterSpacing: '0.2px',
-                    marginBottom: '1px',
+                    lineHeight: 1.1,
+                    letterSpacing: '0.8px',
                   }}
                 >
                   DRUG
                 </div>
                 <div
                   style={{
-                    fontSize: '8.5px',
-                    fontWeight: 800,
+                    fontSize: '9.5px',
+                    fontWeight: 900,
                     color: '#000',
-                    lineHeight: 1,
-                    letterSpacing: '0.2px',
-                    marginBottom: '1px',
+                    lineHeight: 1.1,
+                    letterSpacing: '0.4px',
+                    marginBottom: '2px',
                   }}
                 >
                   VERBAL CONSENT
                 </div>
                 <div
                   style={{
-                    fontSize: '6.5px',
+                    fontSize: '7.8px',
                     color: '#000',
-                    lineHeight: 1.15,
+                    lineHeight: 1.22,
                     fontWeight: 700,
-                    padding: '0 1px',
+                    padding: '0 2px',
                   }}
                 >
                   Dx &amp; indication explained.
