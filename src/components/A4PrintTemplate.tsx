@@ -729,7 +729,7 @@ export default function A4PrintTemplate({
 
           {/* 2. Drug History */}
           {sections.showDrugHistory !== false && (
-            <div style={{ marginTop: '2px' }}>
+            <div>
               <div
                 style={{
                   border: '1px solid #7c2222',
@@ -759,7 +759,7 @@ export default function A4PrintTemplate({
 
           {/* 3. Investigations Advised (Complete Clinical Lab Panel from template) */}
           {sections.showInvestigations !== false && (
-            <div style={{ marginTop: '3px' }}>
+            <div>
               <div
                 style={{
                   border: '1px solid #7c2222',
@@ -845,7 +845,7 @@ export default function A4PrintTemplate({
           )}
 
           {/* 4. Provisional Diagnosis */}
-          <div style={{ marginTop: '3px' }}>
+          <div>
             <div
               style={{
                 border: '1px solid #7c2222',
@@ -871,22 +871,16 @@ export default function A4PrintTemplate({
               >
                 {cleanClinicalText((casePaper as any).diagnosis || (casePaper as any).notes || casePaper.complaint)}
               </div>
-            ) : (
-              <div style={{ marginTop: '2px' }}>
-                <div style={{ borderBottom: '1px solid #333', width: '100%', marginTop: '7px' }}></div>
-                <div style={{ borderBottom: '1px solid #333', width: '100%', marginTop: '7px' }}></div>
-              </div>
-            )}
+            ) : null}
           </div>
 
           {/* Bottom Group: Shifted cleanly down right above the stamp */}
           <div
             style={{
-              marginTop: 'auto',
               display: 'flex',
               flexDirection: 'column',
-              gap: '2.5mm',
-              paddingTop: '2mm',
+              gap: '2mm',
+              paddingTop: '1.5mm',
               borderTop: '1px solid #c48b8b',
             }}
           >
