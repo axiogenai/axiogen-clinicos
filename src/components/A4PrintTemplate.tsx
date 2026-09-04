@@ -683,12 +683,11 @@ export default function A4PrintTemplate({
             maxWidth: '48mm',
             height: '100%',
             borderRight: printOnStationery ? 'none' : '3px double #a53b3b',
-            padding: '1mm 2.5mm 1mm 0',
+            padding: '1mm 2mm 1mm 0',
             boxSizing: 'border-box',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'flex-start',
-            gap: '9px',
+            justifyContent: 'space-between',
             fontFamily: "'Inter', sans-serif",
             fontSize: '11px',
             fontWeight: 500,
@@ -701,8 +700,8 @@ export default function A4PrintTemplate({
               <div
                 style={{
                   border: '1px solid #7c2222',
-                  padding: '2px 6px',
-                  fontSize: '11px',
+                  padding: '1.5px 5px',
+                  fontSize: '10.5px',
                   fontWeight: 700,
                   color: '#444',
                   background: '#fff',
@@ -711,16 +710,16 @@ export default function A4PrintTemplate({
               >
                 Past History
               </div>
-              <div style={{ fontSize: '9.5px', color: '#444', marginTop: '1px' }}>
+              <div style={{ fontSize: '9px', color: '#444', marginTop: '1px' }}>
                 (DM/HTN/Thyroid/Autoimmune)
               </div>
               <div
                 style={{
-                  fontSize: '11.5px',
+                  fontSize: '11px',
                   fontWeight: 700,
                   color: '#111',
                   marginTop: '1px',
-                  minHeight: '14px',
+                  minHeight: '12px',
                 }}
               >
                 {cleanClinicalText(patient.pastHistory || casePaper.pastHistory)}
@@ -734,8 +733,8 @@ export default function A4PrintTemplate({
               <div
                 style={{
                   border: '1px solid #7c2222',
-                  padding: '2px 6px',
-                  fontSize: '11px',
+                  padding: '1.5px 5px',
+                  fontSize: '10.5px',
                   fontWeight: 700,
                   color: '#444',
                   background: '#fff',
@@ -746,11 +745,11 @@ export default function A4PrintTemplate({
               </div>
               <div
                 style={{
-                  fontSize: '11.5px',
+                  fontSize: '11px',
                   fontWeight: 700,
                   color: '#7c2222',
                   marginTop: '1px',
-                  minHeight: '14px',
+                  minHeight: '12px',
                 }}
               >
                 {cleanClinicalText(patient.allergies || casePaper.allergies)}
@@ -758,51 +757,89 @@ export default function A4PrintTemplate({
             </div>
           )}
 
-          {/* 3. Investigations Advised */}
+          {/* 3. Investigations Advised (Complete Clinical Lab Panel from template) */}
           {sections.showInvestigations !== false && (
             <div>
               <div
                 style={{
                   border: '1px solid #7c2222',
-                  padding: '2px 6px',
-                  fontSize: '11px',
+                  padding: '1.5px 5px',
+                  fontSize: '10px',
                   fontWeight: 700,
-                  color: '#444',
+                  color: '#1e40af',
                   background: '#fff',
                   display: 'inline-block',
                 }}
               >
                 Investigations Advised
               </div>
-              <div
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  marginTop: '2px',
-                  color: '#111',
-                  lineHeight: 1.25,
-                }}
-              >
-                {casePaper.investigationsAdvised && casePaper.investigationsAdvised.length > 0 ? (
-                  casePaper.investigationsAdvised.map((inv: any, idx: number) => {
-                    const text = typeof inv === 'string' ? inv : inv.name || inv.investigation || '';
-                    return (
-                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        <span style={{ fontSize: '10px' }}>■</span> {text}
-                      </div>
-                    );
-                  })
-                ) : (
-                  <>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                      <span style={{ fontSize: '10px' }}>■</span> CBC <span style={{ fontSize: '10px' }}>■</span> LFT <span style={{ fontSize: '10px' }}>■</span> BSL®
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                      <span style={{ fontSize: '10px' }}>■</span> Serum Creatinine
-                    </div>
-                  </>
-                )}
+              <div style={{ fontSize: '8.5px', fontWeight: 600, marginTop: '1.5px', color: '#111', lineHeight: 1.25 }}>
+                <div style={{ display: 'flex', gap: '5px' }}>
+                  <span>■ CBC</span>
+                  <span>■ LFT</span>
+                  <span>■ BSLⓇ</span>
+                </div>
+                <div style={{ marginTop: '1px' }}>
+                  <span>■ Serum Creatinine</span>
+                </div>
               </div>
+
+              {/* Lab Tracking Form from user template photo */}
+              <div style={{ fontSize: '8px', marginTop: '2px', color: '#222', lineHeight: 1.25 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', marginBottom: '2px' }}>
+                  <span style={{ fontSize: '8px' }}>Done on</span>
+                  <span style={{ flex: 1, borderBottom: '1px solid #555', height: '8px' }}></span>
+                </div>
+
+                {/* CBC- Hb- WBC- Platelet Count- */}
+                <div style={{ marginBottom: '2px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <span style={{ border: '1px solid #7c2222', padding: '0px 2px', color: '#1e40af', fontWeight: 700, fontSize: '7.5px' }}>
+                      CBC-
+                    </span>
+                    <span style={{ color: '#991b1b', fontWeight: 700, fontSize: '7.5px' }}>Hb-</span>
+                    <span style={{ color: '#1e40af', fontWeight: 700, fontSize: '7.5px', marginLeft: 'auto' }}>WBC-</span>
+                  </div>
+                  <div style={{ color: '#1e40af', fontWeight: 700, fontSize: '7.5px', marginTop: '1px' }}>
+                    Platelet Count-
+                  </div>
+                </div>
+
+                {/* LFT- and two lines */}
+                <div style={{ marginBottom: '2px' }}>
+                  <span style={{ border: '1px solid #7c2222', padding: '0px 2px', color: '#991b1b', fontWeight: 700, fontSize: '7.5px' }}>
+                    LFT-
+                  </span>
+                  <div style={{ borderBottom: '1px solid #555', width: '100%', marginTop: '3.5px' }}></div>
+                  <div style={{ borderBottom: '1px solid #555', width: '100%', marginTop: '4.5px' }}></div>
+                </div>
+
+                {/* BSL(R) - */}
+                <div style={{ marginBottom: '2px' }}>
+                  <span style={{ border: '1px solid #7c2222', padding: '0px 2px', color: '#111', fontWeight: 700, fontSize: '7.5px' }}>
+                    BSLⓇ -
+                  </span>
+                </div>
+
+                {/* Serum Creatinine- */}
+                <div style={{ marginBottom: '2px' }}>
+                  <span style={{ border: '1px solid #7c2222', padding: '0px 2px', color: '#111', fontWeight: 700, fontSize: '7.5px' }}>
+                    Serum Creatinine-
+                  </span>
+                </div>
+
+                {/* Next LAB Due Date */}
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', marginTop: '1.5px' }}>
+                  <span style={{ fontWeight: 700, fontSize: '7.5px', color: '#111', whiteSpace: 'nowrap' }}>Next LAB Due Date :</span>
+                  <span style={{ flex: 1, borderBottom: '1px solid #555', height: '8px' }}></span>
+                </div>
+              </div>
+
+              {casePaper.investigationsAdvised && casePaper.investigationsAdvised.length > 0 && (
+                <div style={{ fontSize: '8px', fontWeight: 700, color: '#1e40af', marginTop: '1.5px' }}>
+                  Advised: {casePaper.investigationsAdvised.map((inv: any) => typeof inv === 'string' ? inv : inv.name || '').join(', ')}
+                </div>
+              )}
             </div>
           )}
 
@@ -811,8 +848,8 @@ export default function A4PrintTemplate({
             <div
               style={{
                 border: '1px solid #7c2222',
-                padding: '2px 6px',
-                fontSize: '11px',
+                padding: '1.5px 5px',
+                fontSize: '10.5px',
                 fontWeight: 700,
                 color: '#444',
                 background: '#fff',
@@ -823,25 +860,25 @@ export default function A4PrintTemplate({
             </div>
             <div
               style={{
-                fontSize: '12px',
+                fontSize: '11.5px',
                 fontWeight: 700,
                 color: '#111',
-                marginTop: '2px',
-                minHeight: '14px',
+                marginTop: '1.5px',
+                minHeight: '12px',
               }}
             >
               {cleanClinicalText((casePaper as any).diagnosis || (casePaper as any).notes || casePaper.complaint)}
             </div>
           </div>
 
-          {/* 5. Patient Counselling Documentation (Shifted down towards bottom) */}
+          {/* 5. Patient Counselling Documentation */}
           {sections.showCounselling !== false && (
-            <div style={{ marginTop: 'auto' }}>
+            <div>
               <div
                 style={{
                   border: '1px solid #2563eb',
-                  padding: '2px 6px',
-                  fontSize: '10.5px',
+                  padding: '1.5px 5px',
+                  fontSize: '10px',
                   fontWeight: 700,
                   color: '#1e40af',
                   background: '#eff6ff',
@@ -850,7 +887,7 @@ export default function A4PrintTemplate({
               >
                 Patient Counselling Documentation
               </div>
-              <div style={{ fontSize: '10.5px', marginTop: '2px', lineHeight: 1.3, color: '#333' }}>
+              <div style={{ fontSize: '10px', marginTop: '1.5px', lineHeight: 1.25, color: '#333' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span>Verbal consent taken</span>
                   <span style={{ fontWeight: 700, color: '#047857' }}>☑</span>
@@ -871,14 +908,14 @@ export default function A4PrintTemplate({
             </div>
           )}
 
-          {/* 6. Warning Explained Box (Right above Verbal Consent) */}
+          {/* 6. Warning Explained Box */}
           {sections.showWarnings !== false && (
-            <div style={{ ...(!sections.showCounselling ? { marginTop: 'auto' } : {}) }}>
+            <div>
               <div
                 style={{
                   border: '1px solid #991b1b',
-                  padding: '1.5px 5px',
-                  fontSize: '10px',
+                  padding: '1px 4px',
+                  fontSize: '9.5px',
                   fontWeight: 700,
                   color: '#991b1b',
                   background: '#fef2f2',
@@ -889,9 +926,9 @@ export default function A4PrintTemplate({
               </div>
               <div
                 style={{
-                  fontSize: '9.5px',
+                  fontSize: '9px',
                   color: '#444',
-                  marginTop: '1.5px',
+                  marginTop: '1px',
                   lineHeight: 1.15,
                 }}
               >
@@ -900,64 +937,89 @@ export default function A4PrintTemplate({
             </div>
           )}
 
-          {/* 7. DRUG VERBAL CONSENT Round Stamp */}
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1mm', paddingBottom: '2mm' }}>
+          {/* 7. DRUG VERBAL CONSENT Double Concentric Circle Stamp */}
+          <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: '1mm' }}>
             <div
               style={{
-                width: '38mm',
-                height: '38mm',
+                width: '41mm',
+                height: '41mm',
                 borderRadius: '50%',
-                border: '1.5px dashed #444',
+                border: '2.5px solid #29558c',
+                padding: '1.5px',
+                boxSizing: 'border-box',
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                textAlign: 'center',
-                padding: '2px',
-                boxSizing: 'border-box',
                 background: '#fff',
               }}
             >
               <div
                 style={{
-                  fontSize: '8.5px',
-                  fontWeight: 800,
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: '50%',
+                  border: '1px solid #29558c',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  textAlign: 'center',
+                  padding: '2px 3px',
+                  boxSizing: 'border-box',
                   color: '#111',
-                  letterSpacing: '0.2px',
-                  lineHeight: 1,
-                  marginBottom: '1px',
                 }}
               >
-                DRUG VERBAL CONSENT
-              </div>
-              <div
-                style={{
-                  fontSize: '6px',
-                  color: '#333',
-                  lineHeight: 1.08,
-                  fontWeight: 600,
-                  padding: '0 2px',
-                }}
-              >
-                Dx &amp; Indication explained.
-                <br />
-                Risks: Hepatotoxicity, Severe
-                <br />
-                anemia, Hemolysis, Dapsone
-                <br />
-                syndrome, Infection risk,
-                <br />
-                Severe cutaneous adverse
-                <br />
-                reactions (SJS/TEN),
-                <br />
-                Teratogenicity discussed.
-                <br />
-                Monitoring &amp; alternatives.
-                <br />
-                Pt verbalised understanding
-                <br />
-                &amp; consented.
+                <div
+                  style={{
+                    fontSize: '8px',
+                    fontWeight: 800,
+                    color: '#111',
+                    lineHeight: 1,
+                    letterSpacing: '0.2px',
+                    marginBottom: '1px',
+                  }}
+                >
+                  DRUG
+                </div>
+                <div
+                  style={{
+                    fontSize: '7.5px',
+                    fontWeight: 800,
+                    color: '#111',
+                    lineHeight: 1,
+                    letterSpacing: '0.2px',
+                    marginBottom: '1px',
+                  }}
+                >
+                  VERBAL CONSENT
+                </div>
+                <div
+                  style={{
+                    fontSize: '5.5px',
+                    color: '#222',
+                    lineHeight: 1.08,
+                    fontWeight: 600,
+                    padding: '0 1px',
+                  }}
+                >
+                  Dx &amp; indication explained.
+                  <br />
+                  Risks incl: Hepatotoxicity, Severe anemia,
+                  <br />
+                  Hemolysis, Dapsone syndrome, Thrombosis risk,
+                  <br />
+                  Infection risk,
+                  <br />
+                  Severe cutaneous adverse reactions.(SJS/TEN)
+                  <br />
+                  Teratogenicity discussed.
+                  <br />
+                  Monitoring &amp; alternatives explained.
+                  <br />
+                  Pt verbalized understanding &amp;
+                  <br />
+                  consented.
+                </div>
               </div>
             </div>
           </div>
