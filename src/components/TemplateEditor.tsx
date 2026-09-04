@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Plus, Pill, FlaskConical, Lightbulb, AlertTriangle, X, Check, Eye, Loader2 } from 'lucide-react';
+import { Plus, Pill, FlaskConical, Lightbulb, AlertTriangle, X, Check, Eye } from 'lucide-react';
 import type { CaseTemplate, TemplateMedicine } from '../data/templates';
 import MedicineEditorRow from './MedicineEditorRow';
 import MedicineSearchModal from './MedicineSearchModal';
-import { parseSentenceWithGroqAI } from '../utils/sentenceParser';
+import { parsePrescriptionSentence } from '../utils/sentenceParser';
 import { useClinic } from '../context/ClinicContext';
 
 interface TemplateEditorProps {
@@ -38,18 +38,16 @@ export default function TemplateEditor({ template, onSave, onCancel, onPreview }
   const [customAdvice, setCustomAdvice] = useState('');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [sentenceInput, setSentenceInput] = useState('');
-  const [isParsing, setIsParsing] = useState(false);
 
-  // Groq AI sentence parser — type "dolo 500 sakali ratri 15 days" and press Enter
-  const handleSentenceAdd = async () => {
+  // Instant local sentence parser — type "dolo 500 sakali ratri 15 days" and press Enter
+  const handleSentenceAdd = () => {
     const raw = sentenceInput.trim();
-    if (!raw || isParsing) return;
+    if (!raw) return;
 
-    setIsParsing(true);
     setSentenceInput('');
 
     try {
-      const parsed = await parseSentenceWithGroqAI(raw);
+      const parsed = parsePrescriptionSentence(raw);
 
       const medicineName = parsed?.formattedMedicineName || raw;
       const frequency = parsed?.frequency || '';
@@ -60,7 +58,7 @@ export default function TemplateEditor({ template, onSave, onCancel, onPreview }
       }
 
       const newMed: TemplateMedicine & { medicineName: string } = {
-        medicineId: `ai_${Date.now()}`,
+        medicineId: `med_${Date.now()}`,
         medicineName: medicineName,
         dosage: '',
         frequency,
@@ -72,8 +70,7 @@ export default function TemplateEditor({ template, onSave, onCancel, onPreview }
         medicines: [...prev.medicines, newMed],
       }));
     } catch (err) {
-      console.warn('Groq AI template parse failed:', err);
-      // Fallback: add raw text as medicine name
+      console.warn('Template add failed:', err);
       const fallbackMed: TemplateMedicine & { medicineName: string } = {
         medicineId: `custom_${Date.now()}`,
         medicineName: raw,
@@ -85,8 +82,6 @@ export default function TemplateEditor({ template, onSave, onCancel, onPreview }
         ...prev,
         medicines: [...prev.medicines, fallbackMed],
       }));
-    } finally {
-      setIsParsing(false);
     }
   };
 
@@ -287,20 +282,15 @@ export default function TemplateEditor({ template, onSave, onCancel, onPreview }
             }}
             className="flex-1 bg-transparent border-none outline-none text-xs sm:text-sm text-gray-800 font-medium min-w-0"
             placeholder="Type here and press Enter to add..."
-            disabled={isParsing}
           />
-          {isParsing ? (
-            <Loader2 className="w-4 h-4 text-indigo-500 animate-spin shrink-0" />
-          ) : (
-            <button
-              type="button"
-              onClick={handleSentenceAdd}
-              disabled={!sentenceInput.trim()}
-              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 shrink-0"
-            >
-              <Plus className="w-3.5 h-3.5" /> Add
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={handleSentenceAdd}
+            disabled={!sentenceInput.trim()}
+            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" /> Add
+          </button>
         </div>
 
         {errors.medicines && (

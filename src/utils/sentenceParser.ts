@@ -26,7 +26,7 @@ export function formatClinicalMedicineName(rawName: string, explicitForm = '', i
     else if (/\b(capsule|cap|caps)\b/i.test(lower)) form = 'capsule';
     else if (/\b(syrup|syp|suspension|susp)\b/i.test(lower)) form = 'syrup';
     else if (/\b(injection|inj)\b/i.test(lower)) form = 'injection';
-    else if (/\b(ointment|oint|oliment|oliments)\b/i.test(lower)) form = 'ointment';
+    else if (/\b(ointment|oint|oinment|oliment|oliments)\b/i.test(lower)) form = 'ointment';
     else if (/\b(cream|crm)\b/i.test(lower)) form = 'cream';
     else if (/\b(gel)\b/i.test(lower)) form = 'gel';
     else if (/\b(lotion|lot)\b/i.test(lower)) form = 'lotion';
@@ -52,10 +52,11 @@ export function formatClinicalMedicineName(rawName: string, explicitForm = '', i
     })
     .join(' ');
 
+  if (form === 'tablet') return /tab\./i.test(titleCasedCore) ? titleCasedCore : `Tab. ${titleCasedCore}`;
   if (form === 'capsule') return `Cap. ${titleCasedCore}`;
   if (form === 'syrup') return `Syp. ${titleCasedCore}`;
   if (form === 'injection') return `Inj. ${titleCasedCore}`;
-  if (form === 'ointment') return /ointment/i.test(titleCasedCore) ? titleCasedCore : `${titleCasedCore} Ointment`;
+  if (form === 'ointment') return /ointment|oinment/i.test(titleCasedCore) ? titleCasedCore : `${titleCasedCore} Ointment`;
   if (form === 'cream') return /cream/i.test(titleCasedCore) ? titleCasedCore : `${titleCasedCore} Cream`;
   if (form === 'gel') return /gel/i.test(titleCasedCore) ? titleCasedCore : `${titleCasedCore} Gel`;
   if (form === 'lotion') return /lotion/i.test(titleCasedCore) ? titleCasedCore : `${titleCasedCore} Lotion`;
@@ -64,10 +65,10 @@ export function formatClinicalMedicineName(rawName: string, explicitForm = '', i
   if (form === 'powder') return /powder/i.test(titleCasedCore) ? titleCasedCore : `${titleCasedCore} Powder`;
 
   if (isTopicalHint) {
-    return /ointment|cream|gel|lotion/i.test(titleCasedCore) ? titleCasedCore : `${titleCasedCore} Cream`;
+    return /ointment|oinment|cream|gel|lotion/i.test(titleCasedCore) ? titleCasedCore : `${titleCasedCore} Cream`;
   }
 
-  return `Tab. ${titleCasedCore}`;
+  return titleCasedCore;
 }
 
 /**

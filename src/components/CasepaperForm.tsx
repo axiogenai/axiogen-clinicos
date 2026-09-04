@@ -693,34 +693,22 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
 
     // 1. INSTANT LOCAL CLINICAL PARSE (0ms) - extracts medicine name, form, frequency, duration, count
     const parsed = parsePrescriptionSentence(sentenceToParse);
-    let matchedMed = filteredMedicines.find(m => m.id === medicineId) || dbMedicines.find(m => m.id === medicineId);
+    // If clicked directly from dropdown, use matched DB med.
+    // If entered via text/Enter, keep entered name as-is without matching random DB tablets.
+    let matchedMed = medicineId
+      ? (filteredMedicines.find(m => m.id === medicineId) || dbMedicines.find(m => m.id === medicineId))
+      : null;
 
-    const inputLower = sentenceToParse.toLowerCase();
-    const wantsOintment = inputLower.includes('ointment') || inputLower.includes('oint') || inputLower.includes('oliment') || inputLower.includes('oliments');
-    const wantsCream = inputLower.includes('cream') || inputLower.includes('crm');
-    const wantsGel = inputLower.includes('gel');
-    const wantsLotion = inputLower.includes('lotion') || inputLower.includes('lot');
-
-    if (!matchedMed && parsed.cleanedMedicineQuery) {
-      const q = parsed.cleanedMedicineQuery.toLowerCase().trim();
-      matchedMed = dbMedicines.find(m => {
-        const nameLower = m.name.toLowerCase();
-        const brandLower = (m.brand || '').toLowerCase();
-        const queryMatch = nameLower.includes(q) || brandLower.includes(q);
-        if (!queryMatch) return false;
-        if (wantsOintment && (nameLower.includes('cream') && !nameLower.includes('ointment'))) return false;
-        if (wantsCream && (nameLower.includes('ointment') && !nameLower.includes('cream'))) return false;
-        if (wantsGel && (!nameLower.includes('gel') && (nameLower.includes('cream') || nameLower.includes('ointment')))) return false;
-        if (wantsLotion && (!nameLower.includes('lotion') && (nameLower.includes('cream') || nameLower.includes('ointment')))) return false;
-        return true;
-      });
+    let fullName = '';
+    if (matchedMed) {
+      let rawName = matchedMed.name.trim();
+      if (matchedMed.strength && !rawName.toLowerCase().includes(matchedMed.strength.toLowerCase())) {
+        rawName = `${rawName} ${matchedMed.strength}`;
+      }
+      fullName = formatClinicalMedicineName(rawName, matchedMed.form);
+    } else {
+      fullName = parsed.formattedMedicineName || sentenceToParse || 'Medicine';
     }
-
-    let rawName = matchedMed ? matchedMed.name.trim() : (parsed.formattedMedicineName || sentenceToParse || 'Medicine');
-    if (matchedMed && matchedMed.strength && !rawName.toLowerCase().includes(matchedMed.strength.toLowerCase())) {
-      rawName = `${rawName} ${matchedMed.strength}`;
-    }
-    const fullName = formatClinicalMedicineName(rawName, matchedMed?.form);
 
     const freq = parsed.frequency || (matchedMed ? matchedMed.defaultFrequency || '' : '');
     const dur = parsed.duration || (matchedMed ? matchedMed.defaultDuration || '7 Days' : '7 Days');

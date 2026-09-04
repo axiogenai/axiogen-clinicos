@@ -984,38 +984,25 @@ export default function A4PrintTemplate({
         >
           {/* Top Rx & Medical Symbol */}
           <div>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '1mm',
-                paddingRight: '2mm',
-              }}
-            >
-              <span
-                style={{
-                  fontSize: '28px',
-                  fontFamily: "'Playfair Display', 'Times New Roman', serif",
-                  fontWeight: 800,
-                  fontStyle: 'italic',
-                  color: '#111',
-                  lineHeight: 1,
-                  visibility: printOnStationery ? 'hidden' : 'visible',
-                }}
-              >
-                <span style={{ fontStyle: 'italic' }}>R</span><span style={{ fontSize: '22px', fontStyle: 'italic' }}>x</span>
-              </span>
-              <span
-                style={{
-                  fontSize: '18px',
-                  color: '#047857',
-                  lineHeight: 1,
-                  visibility: printOnStationery ? 'hidden' : 'visible',
-                }}
-              >
-                ⚕
-              </span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px', height: '10mm', visibility: printOnStationery ? 'hidden' : 'visible' }}>
+              <div style={{ fontSize: '26px', fontFamily: "'EB Garamond', Georgia, serif", fontWeight: 800, fontStyle: 'italic', color: '#111' }}>
+                Rx
+              </div>
+              {!printOnStationery && (
+                <svg width="32" height="36" viewBox="0 0 100 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="47.5" y="14" width="5" height="88" rx="2.5" fill="#2d773f" />
+                  <circle cx="50" cy="12" r="5" fill="#2d773f" />
+                  <path d="M 46 22 C 32 10, 15 15, 8 21 C 22 26, 36 27, 46 30 Z" fill="#2d773f" />
+                  <path d="M 45 27 C 32 20, 20 22, 12 27 C 24 30, 36 30, 45 32 Z" fill="#2d773f" />
+                  <path d="M 54 22 C 68 10, 85 15, 92 21 C 78 26, 64 27, 54 30 Z" fill="#2d773f" />
+                  <path d="M 55 27 C 68 20, 80 22, 88 27 C 76 30, 64 30, 55 32 Z" fill="#2d773f" />
+                  <ellipse cx="50" cy="38" rx="18" ry="7.5" stroke="#2d773f" strokeWidth="4.5" fill="none" />
+                  <ellipse cx="50" cy="54" rx="15" ry="7" stroke="#2d773f" strokeWidth="4.5" fill="none" />
+                  <ellipse cx="50" cy="69" rx="12" ry="6" stroke="#2d773f" strokeWidth="4" fill="none" />
+                  <ellipse cx="50" cy="82" rx="9" ry="5" stroke="#2d773f" strokeWidth="3.5" fill="none" />
+                  <ellipse cx="50" cy="93" rx="6" ry="3.5" stroke="#2d773f" strokeWidth="3" fill="none" />
+                </svg>
+              )}
             </div>
 
             {/* Dynamic Medicine Table */}
