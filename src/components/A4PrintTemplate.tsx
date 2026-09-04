@@ -936,8 +936,8 @@ export default function A4PrintTemplate({
           <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: '1mm' }}>
             <div
               style={{
-                width: '45mm',
-                height: '45mm',
+                width: '46mm',
+                height: '46mm',
                 borderRadius: '50%',
                 border: '2px solid #000',
                 padding: '2px',
@@ -959,9 +959,10 @@ export default function A4PrintTemplate({
                   alignItems: 'center',
                   justifyContent: 'center',
                   textAlign: 'center',
-                  padding: '3px 4px',
+                  padding: '2mm 1.5mm',
                   boxSizing: 'border-box',
                   color: '#000',
+                  fontFamily: "'Inter', -apple-system, sans-serif",
                 }}
               >
                 <div
@@ -970,7 +971,7 @@ export default function A4PrintTemplate({
                     fontWeight: 900,
                     color: '#000',
                     lineHeight: 1.1,
-                    letterSpacing: '0.8px',
+                    letterSpacing: '0.6px',
                   }}
                 >
                   DRUG
@@ -982,18 +983,18 @@ export default function A4PrintTemplate({
                     color: '#000',
                     lineHeight: 1.1,
                     letterSpacing: '0.4px',
-                    marginBottom: '2px',
+                    marginBottom: '1.5px',
                   }}
                 >
                   VERBAL CONSENT
                 </div>
                 <div
                   style={{
-                    fontSize: '7.8px',
+                    fontSize: '7.4px',
                     color: '#000',
-                    lineHeight: 1.22,
+                    lineHeight: 1.25,
                     fontWeight: 700,
-                    padding: '0 2px',
+                    maxWidth: '39mm',
                   }}
                 >
                   Dx &amp; indication explained.
