@@ -194,7 +194,7 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
             </p>
           </div>
           <span className="text-[10px] bg-[#ecfdf5] text-[#047857] px-2.5 py-1 rounded-full font-bold border border-[#a7f3d0]">
-            {patients.length} Registered Patients
+            {patients.length.toLocaleString()} Registered Patients
           </span>
         </div>
 

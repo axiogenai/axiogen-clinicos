@@ -218,9 +218,22 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
     }
 
     if (method === 'GET') {
-      const { data, error } = await supabase.from('patients').select('*').order('created_at', { ascending: false });
-      if (error) throw error;
-      return (data || []).map(mapPatient) as any;
+      const pageSize = 1000;
+      let allPatients: any[] = [];
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from('patients')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        allPatients = allPatients.concat(data);
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
+      return allPatients.map(mapPatient) as any;
     }
 
     if (method === 'POST') {
@@ -599,45 +612,195 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
       const options = { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' } as const;
       targetDate = new Intl.DateTimeFormat('en-CA', options).format(now);
     }
-    const { data, error } = await supabase.from('queues').select('*').eq('date', targetDate).order('created_at', { ascending: true });
-    if (error) throw error;
-    return (data || []).map(mapQueueItem) as any;
+
+    const { data: qData } = await supabase.from('queues').select('*').eq('date', targetDate).order('created_at', { ascending: true });
+    const { data: opdData } = await supabase.from('opd_registers').select('*').eq('date', targetDate).order('sr_no', { ascending: true });
+    const { data: cpData } = await supabase.from('case_papers').select('*').eq('date', targetDate);
+
+    const items: any[] = [];
+    const seen = new Set<string>();
+
+    (qData || []).forEach((q: any) => {
+      const key = `${q.date}_${q.patient_id || q.name}`.toLowerCase();
+      seen.add(key);
+      items.push(mapQueueItem(q));
+    });
+
+    (opdData || []).forEach((r: any) => {
+      const key = `${r.date}_${r.patient_id || r.patient_name}`.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        items.push({
+          queueId: r.queue_id || r.opd_no || `OPD_${r.id}`,
+          id: r.queue_id || r.opd_no || `OPD_${r.id}`,
+          clinicId: r.clinic_id || 1,
+          patientId: r.patient_id,
+          name: r.patient_name || 'Patient',
+          age: r.age,
+          gender: r.gender || 'M',
+          phone: r.phone || '',
+          village: r.village || '',
+          timeAdded: r.time_added || '09:00 AM',
+          complaint: r.complaint || 'General Checkup',
+          notes: r.diagnosis || '',
+          date: r.date,
+          status: r.status || 'completed',
+          paymentStatus: r.payment_status || 'paid',
+          paymentMode: r.payment_mode || 'cash',
+          casePaperNo: r.case_paper_no || r.opd_no || '',
+        });
+      }
+    });
+
+    if (items.length === 0 && cpData && cpData.length > 0) {
+      const pIds = Array.from(new Set(cpData.map((c: any) => c.patient_id).filter(Boolean)));
+      let pMap = new Map<string, any>();
+      if (pIds.length > 0) {
+        const { data: pList } = await supabase.from('patients').select('id, name, age, gender, phone, village').in('id', pIds);
+        (pList || []).forEach((p: any) => pMap.set(p.id, p));
+      }
+      cpData.forEach((cp: any, idx: number) => {
+        const p = pMap.get(cp.patient_id);
+        const pName = p?.name || cp.patient_id || `Patient ${idx + 1}`;
+        const key = `${cp.date}_${cp.patient_id || pName}`.toLowerCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          items.push({
+            queueId: cp.queue_id || `CP_${cp.id}`,
+            id: cp.queue_id || `CP_${cp.id}`,
+            clinicId: cp.clinic_id || 1,
+            patientId: cp.patient_id,
+            name: pName,
+            age: p?.age,
+            gender: p?.gender || 'M',
+            phone: p?.phone || '',
+            village: p?.village || '',
+            timeAdded: '09:00 AM',
+            complaint: cp.complaint || 'General Consultation',
+            notes: cp.past_history || '',
+            date: cp.date,
+            status: cp.status || 'completed',
+            paymentStatus: 'paid',
+            paymentMode: 'cash',
+            casePaperNo: String(idx + 1).padStart(11, '0'),
+          });
+        }
+      });
+    }
+
+    return items as any;
   }
 
   if (endpoint.startsWith('/register/monthly')) {
     const url = new URL(`http://localhost${endpoint}`);
-    const year = url.searchParams.get('year') || new Date().getFullYear();
-    const month = String(url.searchParams.get('month') || (new Date().getMonth() + 1)).padStart(2, '0');
-    const monthPrefix = `${year}-${month}`;
-    const { data, error } = await supabase
-      .from('queues')
-      .select('*')
-      .gte('date', `${monthPrefix}-01`)
-      .lte('date', `${monthPrefix}-31`)
-      .order('date', { ascending: true });
-    if (error) throw error;
+    const year = parseInt(url.searchParams.get('year') || String(new Date().getFullYear()), 10);
+    const month = parseInt(url.searchParams.get('month') || String(new Date().getMonth() + 1), 10);
+    const monthPrefix = `${year}-${String(month).padStart(2, '0')}`;
+    const startDate = `${monthPrefix}-01`;
+    const endDate = `${monthPrefix}-31`;
 
-    const records = (data || []).map((q: any, idx: number) => ({
-      id: q.id || q.queue_id || idx + 1,
-      date: q.date,
-      opdNo: String(idx + 1).padStart(11, '0'),
-      patientName: q.name,
-      patientId: q.patient_id,
-      age: q.age,
-      gender: q.gender || 'M',
-      phone: q.phone,
-      village: q.village,
-      complaint: q.complaint || 'General Checkup',
-      diagnosis: q.notes || '',
-      status: q.status || 'COMPLETED',
-    }));
+    const [opdRes, qRes, cpRes] = await Promise.all([
+      supabase.from('opd_registers').select('*').gte('date', startDate).lte('date', endDate).order('date', { ascending: true }),
+      supabase.from('queues').select('*').gte('date', startDate).lte('date', endDate).order('date', { ascending: true }),
+      supabase.from('case_papers').select('*').gte('date', startDate).lte('date', endDate).order('date', { ascending: true }),
+    ]);
 
-    const totalPatients = records.length;
-    const completed = records.filter((r: any) => r.status === 'completed' || r.status === 'done').length;
-    const waiting = records.filter((r: any) => r.status === 'waiting' || r.status === 'in-room').length;
+    const opdData = opdRes.data || [];
+    const qData = qRes.data || [];
+    const cpData = cpRes.data || [];
+
+    const pIds = new Set<string>();
+    qData.forEach((q: any) => { if (q.patient_id) pIds.add(q.patient_id); });
+    cpData.forEach((c: any) => { if (c.patient_id) pIds.add(c.patient_id); });
+
+    let pMap = new Map<string, any>();
+    if (pIds.size > 0) {
+      const ids = Array.from(pIds);
+      for (let i = 0; i < ids.length; i += 500) {
+        const chunk = ids.slice(i, i + 500);
+        const { data: pList } = await supabase.from('patients').select('id, name, age, gender, phone, village').in('id', chunk);
+        (pList || []).forEach((p: any) => pMap.set(p.id, p));
+      }
+    }
+
+    const unified: any[] = [];
+    const seen = new Set<string>();
+
+    opdData.forEach((r: any) => {
+      const key = `${r.date}_${r.patient_id || r.patient_name}`.toLowerCase();
+      seen.add(key);
+      unified.push({
+        id: r.id || `opd_${r.date}_${r.sr_no}`,
+        date: r.date,
+        opdNo: r.opd_no || String(r.sr_no || 1).padStart(11, '0'),
+        patientName: r.patient_name || 'Unknown Patient',
+        patientId: r.patient_id,
+        age: r.age,
+        gender: r.gender || 'M',
+        phone: r.phone || '',
+        village: r.village || '',
+        complaint: r.complaint || 'General Consultation',
+        diagnosis: r.diagnosis || '',
+        status: r.status || 'COMPLETED',
+      });
+    });
+
+    qData.forEach((q: any) => {
+      const key = `${q.date}_${q.patient_id || q.name}`.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        const p = q.patient_id ? pMap.get(q.patient_id) : null;
+        unified.push({
+          id: q.queue_id || q.id,
+          date: q.date,
+          opdNo: '',
+          patientName: q.name || p?.name || 'Unknown Patient',
+          patientId: q.patient_id,
+          age: q.age || p?.age,
+          gender: p?.gender || 'M',
+          phone: q.phone || p?.phone || '',
+          village: q.village || p?.village || '',
+          complaint: q.complaint || 'General Checkup',
+          diagnosis: q.notes || '',
+          status: q.status || 'COMPLETED',
+        });
+      }
+    });
+
+    cpData.forEach((cp: any) => {
+      const p = cp.patient_id ? pMap.get(cp.patient_id) : null;
+      const pName = p?.name || cp.patient_id;
+      const key = `${cp.date}_${cp.patient_id || pName}`.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        unified.push({
+          id: `cp_${cp.id}`,
+          date: cp.date,
+          opdNo: '',
+          patientName: pName || 'Unknown Patient',
+          patientId: cp.patient_id,
+          age: p?.age,
+          gender: p?.gender || 'M',
+          phone: p?.phone || '',
+          village: p?.village || '',
+          complaint: cp.complaint || 'Consultation',
+          diagnosis: cp.past_history || '',
+          status: cp.status || 'COMPLETED',
+        });
+      }
+    });
+
+    unified.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    unified.forEach((r, idx) => {
+      r.opdNo = String(idx + 1).padStart(11, '0');
+    });
+
+    const totalPatients = unified.length;
+    const completed = unified.filter((r: any) => (r.status || '').toLowerCase() === 'completed' || (r.status || '').toLowerCase() === 'done').length;
+    const waiting = unified.filter((r: any) => (r.status || '').toLowerCase() === 'waiting' || (r.status || '').toLowerCase() === 'in-room').length;
 
     return {
-      records,
+      records: unified,
       summary: { totalPatients, completed, waiting },
       year,
       month,
@@ -647,29 +810,67 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
   if (endpoint.startsWith('/register/yearly')) {
     const url = new URL(`http://localhost${endpoint}`);
     const year = Number(url.searchParams.get('year') || new Date().getFullYear());
-    const { data, error } = await supabase
-      .from('queues')
-      .select('*')
-      .gte('date', `${year}-01-01`)
-      .lte('date', `${year}-12-31`)
-      .order('date', { ascending: true });
-    if (error) throw error;
+    const startDate = `${year}-01-01`;
+    const endDate = `${year}-12-31`;
 
-    const rows = data || [];
+    const [opdRes, qRes, cpRes] = await Promise.all([
+      supabase.from('opd_registers').select('date, patient_id, patient_name, status').gte('date', startDate).lte('date', endDate),
+      supabase.from('queues').select('date, patient_id, name, status').gte('date', startDate).lte('date', endDate),
+      supabase.from('case_papers').select('date, patient_id, status').gte('date', startDate).lte('date', endDate),
+    ]);
+
+    const opdData = opdRes.data || [];
+    const qData = qRes.data || [];
+    const cpData = cpRes.data || [];
+
+    let grandTotal = 0;
     const monthlyBreakdown = Array.from({ length: 12 }, (_, i) => {
       const monthNum = i + 1;
       const monthPrefix = `${year}-${String(monthNum).padStart(2, '0')}`;
-      const monthRows = rows.filter(r => (r.date || '').startsWith(monthPrefix));
+      const seen = new Set<string>();
+      let totalPatients = 0;
+      let completed = 0;
+      let waiting = 0;
+
+      opdData.filter((r: any) => (r.date || '').startsWith(monthPrefix)).forEach((r: any) => {
+        const k = `${r.date}_${r.patient_id || r.patient_name}`.toLowerCase();
+        seen.add(k);
+        totalPatients++;
+        if ((r.status || '').toLowerCase() === 'completed' || (r.status || '').toLowerCase() === 'done') completed++;
+        else waiting++;
+      });
+
+      qData.filter((q: any) => (q.date || '').startsWith(monthPrefix)).forEach((q: any) => {
+        const k = `${q.date}_${q.patient_id || q.name}`.toLowerCase();
+        if (!seen.has(k)) {
+          seen.add(k);
+          totalPatients++;
+          if ((q.status || '').toLowerCase() === 'completed' || (q.status || '').toLowerCase() === 'done') completed++;
+          else waiting++;
+        }
+      });
+
+      cpData.filter((cp: any) => (cp.date || '').startsWith(monthPrefix)).forEach((cp: any) => {
+        const k = `${cp.date}_${cp.patient_id}`.toLowerCase();
+        if (!seen.has(k)) {
+          seen.add(k);
+          totalPatients++;
+          if ((cp.status || '').toLowerCase() === 'completed' || (cp.status || '').toLowerCase() === 'done') completed++;
+          else waiting++;
+        }
+      });
+
+      grandTotal += totalPatients;
       return {
         month: monthNum,
-        totalPatients: monthRows.length,
-        completed: monthRows.filter(r => r.status === 'completed' || r.status === 'done').length,
-        waiting: monthRows.filter(r => r.status === 'waiting' || r.status === 'in-room').length,
+        totalPatients,
+        completed,
+        waiting,
       };
     });
 
     return {
-      totalPatients: rows.length,
+      totalPatients: grandTotal,
       monthlyBreakdown,
       year,
     } as any;
@@ -679,9 +880,22 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
     return { success: true } as any;
   }
 
-  if (endpoint.startsWith('/register/clear-all')) {
-    const { error } = await supabase.from('queues').delete().neq('queue_id', 'preserve_all');
-    if (error) throw error;
+  if (endpoint.startsWith('/register/') && method === 'DELETE') {
+    const id = endpoint.split('/')[2];
+    if (id === 'clear-all') {
+      await supabase.from('queues').delete().neq('queue_id', 'preserve_all');
+      await supabase.from('opd_registers').delete().neq('id', -999);
+      return { success: true } as any;
+    }
+    if (id.startsWith('cp_')) {
+      const cpId = id.replace('cp_', '');
+      await supabase.from('case_papers').delete().eq('id', cpId);
+    } else if (id.startsWith('Q')) {
+      await supabase.from('queues').delete().eq('queue_id', id);
+    } else {
+      await supabase.from('opd_registers').delete().eq('id', id);
+      await supabase.from('queues').delete().eq('queue_id', id);
+    }
     return { success: true } as any;
   }
 
