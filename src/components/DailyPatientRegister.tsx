@@ -15,14 +15,17 @@ function CustomDropdown<T extends string | number>({
   value,
   options,
   onChange,
-  labelPrefix
+  labelPrefix,
+  align = 'left'
 }: {
   value: T;
   options: { label: string; value: T }[];
   onChange: (val: T) => void;
   labelPrefix?: string;
+  align?: 'left' | 'right';
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [placement, setPlacement] = useState<'left' | 'right'>('left');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,6 +37,24 @@ function CustomDropdown<T extends string | number>({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (isOpen && dropdownRef.current) {
+      if (align === 'right') {
+        setPlacement('right');
+      } else if (align === 'left') {
+        setPlacement('left');
+      } else {
+        const rect = dropdownRef.current.getBoundingClientRect();
+        // If opening left-aligned would overflow the right edge of viewport, align right
+        if (rect.left + 185 > window.innerWidth && rect.right >= 185) {
+          setPlacement('right');
+        } else {
+          setPlacement('left');
+        }
+      }
+    }
+  }, [isOpen, align]);
 
   const selectedOption = options.find(o => o.value === value) || options[0];
 
@@ -50,7 +71,7 @@ function CustomDropdown<T extends string | number>({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-1.5 w-44 rounded-xl bg-white border border-[#e4e2e1] shadow-xl ring-1 ring-black/5 z-50 py-1.5 animate-in fade-in zoom-in-95 duration-100">
+        <div className={`absolute ${placement === 'right' ? 'right-0' : 'left-0'} mt-1.5 w-44 max-w-[calc(100vw-2rem)] rounded-xl bg-white border border-[#e4e2e1] shadow-xl ring-1 ring-black/5 z-50 py-1.5 animate-in fade-in zoom-in-95 duration-100`}>
           <div className="max-h-60 overflow-y-auto space-y-0.5 px-1 no-scrollbar">
             {options.map((opt) => {
               const isSelected = opt.value === value;
@@ -818,6 +839,7 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
             {viewMode === 'monthly' && (
               <div className="flex items-center gap-2">
                 <CustomDropdown
+                  align="left"
                   value={selectedMonth}
                   options={Array.from({ length: 12 }, (_, i) => ({
                     label: new Date(2026, i).toLocaleString('en-IN', { month: 'long' }),
@@ -826,6 +848,7 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
                   onChange={(val) => setSelectedMonth(val)}
                 />
                 <CustomDropdown
+                  align="left"
                   value={selectedYear}
                   options={[2025, 2026, 2027, 2028].map(y => ({ label: String(y), value: y }))}
                   onChange={(val) => setSelectedYear(val)}
@@ -836,6 +859,7 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
             {viewMode === 'yearly' && (
               <div className="flex items-center gap-2">
                 <CustomDropdown
+                  align="left"
                   value={selectedYear}
                   labelPrefix="Select Year:"
                   options={[2025, 2026, 2027, 2028].map(y => ({ label: String(y), value: y }))}
