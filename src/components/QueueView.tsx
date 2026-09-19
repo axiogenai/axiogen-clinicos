@@ -73,17 +73,36 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
 
   const getPatient = (id: string) => patients.find(p => p.id === id);
 
-  const waiting = queue.filter(q => q.status === 'waiting').length;
-  const consulting = queue.filter(q => q.status === 'in-consultation').length;
-  const completed = queue.filter(q => q.status === 'completed').length;
-
   const [queueSearchQuery, setQueueSearchQuery] = useState('');
 
-  // Doctor View: In Room (in-consultation) at top, then Waiting patients in FIFO order, then Completed at bottom
+  // Doctor View: Deduplicate by patient and sort: In Room at top, then Waiting in FIFO, then Completed at bottom
   const displayQueue = useMemo(() => {
-    return [...queue].sort((a, b) => {
+    const uniqueMap = new Map<string, QueueItem>();
+
+    for (const item of queue) {
+      const patientKey = (item.patientId || item.name || '').trim().toLowerCase();
+      if (!patientKey) continue;
+
+      if (!uniqueMap.has(patientKey)) {
+        uniqueMap.set(patientKey, item);
+      } else {
+        const existing = uniqueMap.get(patientKey)!;
+        const getScore = (s: string) => s === 'completed' ? 3 : s === 'in-consultation' ? 2 : 1;
+        const existingScore = getScore(existing.status);
+        const newScore = getScore(item.status);
+
+        // Keep the higher priority status (completed > in-consultation > waiting)
+        if (newScore > existingScore) {
+          uniqueMap.set(patientKey, item);
+        }
+      }
+    }
+
+    const uniqueList = Array.from(uniqueMap.values());
+
+    return uniqueList.sort((a, b) => {
       const getWeight = (status: string) => {
-        if (status === 'in-consultation' || status === 'in_consultation') return 1;
+        if (status === 'in-consultation') return 1;
         if (status === 'waiting') return 2;
         return 3;
       };
@@ -95,6 +114,10 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
       return (a.queueId || '').localeCompare(b.queueId || '');
     });
   }, [queue]);
+
+  const waiting = displayQueue.filter(q => q.status === 'waiting').length;
+  const consulting = displayQueue.filter(q => q.status === 'in-consultation').length;
+  const completed = displayQueue.filter(q => q.status === 'completed').length;
 
   const filteredQueue = useMemo(() => {
     const q = queueSearchQuery.trim().toLowerCase();
@@ -398,7 +421,7 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
             </h2>
             <span className="bg-[#ecfdf5] text-[#047857] py-1 px-3 rounded-full text-[10px] sm:text-[11px] font-bold flex items-center gap-1.5 border border-[#a7f3d0] shrink-0">
               <Users className="w-3 h-3 text-[#065f46]" />
-              {queueSearchQuery.trim() ? `${filteredQueue.length} of ${queue.length} Patients` : `${queue.length} Patients`}
+              {queueSearchQuery.trim() ? `${filteredQueue.length} of ${displayQueue.length} Patients` : `${displayQueue.length} Patients`}
             </span>
           </div>
 

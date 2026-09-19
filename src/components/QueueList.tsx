@@ -81,8 +81,24 @@ export default function QueueList({
   const getPatient = (id: string, phone?: string, name?: string) => 
     patients.find(p => p.id === id || (phone && p.phone === phone) || (name && p.name === name));
 
-  // Receptionist View: Pure Normal FIFO (First-In, First-Out by arrival order)
-  const sortedQueue = [...queue];
+  // Receptionist View: Deduplicate by patient and keep arrival order (FIFO)
+  const sortedQueue = useMemo(() => {
+    const uniqueMap = new Map<string, QueueItem>();
+    for (const item of queue) {
+      const patientKey = (item.patientId || item.name || '').trim().toLowerCase();
+      if (!patientKey) continue;
+      if (!uniqueMap.has(patientKey)) {
+        uniqueMap.set(patientKey, item);
+      } else {
+        const existing = uniqueMap.get(patientKey)!;
+        const getScore = (s: string) => s === 'completed' ? 3 : (s === 'in-consultation' || s === 'in_consultation') ? 2 : 1;
+        if (getScore(item.status) > getScore(existing.status)) {
+          uniqueMap.set(patientKey, item);
+        }
+      }
+    }
+    return Array.from(uniqueMap.values());
+  }, [queue]);
 
   const filteredQueue = useMemo(() => {
     const q = queueSearchQuery.trim().toLowerCase();
@@ -157,7 +173,7 @@ export default function QueueList({
         <div className="flex items-center gap-3 min-w-0">
           <h2 className="text-base font-serif font-bold text-[#1a1c1a] truncate">Today's Live Patient Queue</h2>
           <span className="bg-[#f2eee3] text-[#4b463e] text-[11px] font-bold px-3 py-0.5 rounded-full border border-[#cdc6ba] shrink-0">
-            {queueSearchQuery.trim() ? `${filteredQueue.length} of ${queue.length} patients` : `${queue.length} patients`}
+            {queueSearchQuery.trim() ? `${filteredQueue.length} of ${sortedQueue.length} patients` : `${sortedQueue.length} patients`}
           </span>
         </div>
 

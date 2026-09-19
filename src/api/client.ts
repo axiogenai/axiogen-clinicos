@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import bcrypt from 'bcryptjs';
+import { translateMedicalTextAsync } from '../utils/medicalTranslator';
 
 const getApiBase = () => {
   if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
@@ -405,11 +406,87 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
       }
       const { data, error } = await query.order('created_at', { ascending: true });
       if (error) throw error;
-      return (data || []).map(mapQueueItem) as any;
+
+      // Deduplicate queue entries by (date + patient_id || name)
+      // Preference order: completed > in-consultation > waiting, then newer updated_at
+      const seen = new Map<string, any>();
+      const duplicateIdsToDelete: string[] = [];
+
+      for (const item of (data || [])) {
+        const patientKey = (item.patient_id || item.name || '').trim().toLowerCase();
+        if (!patientKey) continue;
+        const key = `${item.date || targetDate}___${patientKey}`;
+
+        if (!seen.has(key)) {
+          seen.set(key, item);
+        } else {
+          const existing = seen.get(key);
+          const getScore = (s: string) => s === 'completed' ? 3 : (s === 'in-consultation' || s === 'in_consultation') ? 2 : 1;
+          const existingScore = getScore(existing.status);
+          const newScore = getScore(item.status);
+
+          if (
+            newScore > existingScore || 
+            (newScore === existingScore && new Date(item.updated_at || item.created_at).getTime() >= new Date(existing.updated_at || existing.created_at).getTime())
+          ) {
+            duplicateIdsToDelete.push(existing.queue_id);
+            seen.set(key, item);
+          } else {
+            duplicateIdsToDelete.push(item.queue_id);
+          }
+        }
+      }
+
+      // Silently delete duplicate entries in background
+      if (duplicateIdsToDelete.length > 0) {
+        void supabase.from('queues').delete().in('queue_id', duplicateIdsToDelete);
+      }
+
+      const deduplicated = Array.from(seen.values());
+      return deduplicated.map(mapQueueItem) as any;
     }
 
     if (method === 'POST') {
       const nowIso = new Date().toISOString();
+      const targetDate = body.date || new Date().toISOString().split('T')[0];
+      const patientId = body.patientId;
+      const patientName = (body.name || '').trim();
+
+      // Check if a queue item already exists for this patient on this date to prevent duplicate entries
+      let existingQuery = supabase.from('queues').select('*').eq('date', targetDate);
+      if (patientId) {
+        existingQuery = existingQuery.eq('patient_id', patientId);
+      } else if (patientName) {
+        existingQuery = existingQuery.ilike('name', patientName);
+      }
+      const { data: existingList } = await existingQuery;
+
+      if (existingList && existingList.length > 0) {
+        // Sort existing to pick best: completed > in-consultation > waiting
+        const getScore = (s: string) => s === 'completed' ? 3 : (s === 'in-consultation' || s === 'in_consultation') ? 2 : 1;
+        existingList.sort((a, b) => getScore(b.status) - getScore(a.status));
+        const winner = existingList[0];
+        const losers = existingList.slice(1);
+
+        // Silently delete any extra duplicate items
+        if (losers.length > 0) {
+          void supabase.from('queues').delete().in('queue_id', losers.map(l => l.queue_id));
+        }
+
+        const updates: any = { updated_at: nowIso };
+        if (body.status !== undefined) updates.status = body.status;
+        if (body.complaint !== undefined) updates.complaint = body.complaint;
+        if (body.notes !== undefined) updates.notes = body.notes;
+        if (body.paymentStatus !== undefined) updates.payment_status = body.paymentStatus;
+        if (body.paymentMode !== undefined) updates.payment_mode = body.paymentMode;
+        if (body.casePaperNo !== undefined) updates.case_paper_no = body.casePaperNo;
+
+        const { data: updated, error: updErr } = await supabase.from('queues').update(updates).eq('queue_id', winner.queue_id).select().single();
+        if (!updErr && updated) {
+          return mapQueueItem(updated) as any;
+        }
+      }
+
       const row = {
         queue_id: body.queueId || body.id || `Q${Date.now()}`,
         clinic_id: body.clinicId || 1,
@@ -421,7 +498,7 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
         time_added: body.timeAdded || new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }),
         complaint: body.complaint || '',
         notes: body.notes || '',
-        date: body.date || new Date().toISOString().split('T')[0],
+        date: targetDate,
         status: body.status || 'waiting',
         payment_status: body.paymentStatus || 'paid',
         payment_mode: body.paymentMode || 'cash',
@@ -448,6 +525,19 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
       if (body.village !== undefined) updates.village = body.village;
       if (body.casePaperNo !== undefined) updates.case_paper_no = body.casePaperNo;
       updates.updated_at = new Date().toISOString();
+
+      // Check if id matches queue_id, patient_id, or name
+      const { data: matchedRows } = await supabase.from('queues').select('queue_id, patient_id, name').or(`queue_id.eq.${id},patient_id.eq.${id},name.ilike.${id}`);
+      if (matchedRows && matchedRows.length > 0) {
+        const winnerId = matchedRows[0].queue_id;
+        const dupeIds = matchedRows.slice(1).map(r => r.queue_id);
+        if (dupeIds.length > 0) {
+          void supabase.from('queues').delete().in('queue_id', dupeIds);
+        }
+        const { data, error } = await supabase.from('queues').update(updates).eq('queue_id', winnerId).select().single();
+        if (error) throw error;
+        return mapQueueItem(data) as any;
+      }
 
       const { data, error } = await supabase.from('queues').update(updates).eq('queue_id', id).select().single();
       if (error) throw error;
@@ -965,6 +1055,13 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
     }
     await supabase.from('users').update({ passcode: newPasscode, reset_otp: null, reset_otp_expires: null }).eq('role', 'doctor');
     return { success: true, message: 'Passcode updated successfully' } as any;
+  }
+
+  // 13. Groq AI & Neural Multi-Lingual Medical Translation
+  if (endpoint.startsWith('/clinic/translate') && method === 'POST') {
+    const { text, targetLang } = body;
+    const translatedText = await translateMedicalTextAsync(text || '', targetLang || 'marathi');
+    return { translatedText } as any;
   }
 
   throw new Error(`Endpoint ${endpoint} not supported by Supabase direct.`);

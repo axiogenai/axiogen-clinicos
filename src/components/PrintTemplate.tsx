@@ -3,7 +3,13 @@ import type { Patient } from '../data/patients';
 import type { CasePaper } from '../types';
 import type { ClinicSettings } from '../data/clinicSettings';
 import { calculateMedicineCount } from '../utils/countCalculator';
-import { translateMedicalText, translateMedicalTextAsync, cleanFrequencyString } from '../utils/medicalTranslator';
+import {
+  translateMedicalText,
+  translateMedicalTextAsync,
+  cleanFrequencyString,
+  translateDurationSync,
+  translateDurationAsync,
+} from '../utils/medicalTranslator';
 import { formatLocalizedDate, formatFollowUpDate } from '../utils/dateFormatter';
 export type PrintLanguage = 'marathi' | 'english' | 'hindi' | 'kannada';
 interface PrintTemplateProps {
@@ -58,40 +64,43 @@ export const getPatientLabels = (lang: PrintLanguage = 'marathi') => {
 export const getTableHeaders = (lang: PrintLanguage = 'marathi') => {
   switch (lang) {
     case 'english':
-      return { srNo: 'Sr. No.', medName: 'Medicine Name', freq: 'Frequency & Instructions', duration: 'Duration', count: 'Count', advice: 'Counselling & Advice', investigation: 'Investigations Advised' };
+      return { srNo: 'Sr. No.', medName: 'Medicine Name', freq: 'Frequency & Instructions', duration: 'Duration', count: 'Count' };
     case 'hindi':
-      return { srNo: 'Sr. No.', medName: 'दवा का नाम', freq: 'खुराक व निर्देश', duration: 'अवधि', count: 'कुल संख्या', advice: 'सलाह व परामर्श', investigation: 'जांच सलाह' };
+      return { srNo: 'Sr. No.', medName: 'दवा का नाम', freq: 'खुराक व निर्देश', duration: 'अवधि', count: 'कुल संख्या' };
     case 'kannada':
-      return { srNo: 'Sr. No.', medName: 'ಔಷಧದ ಹೆಸರು', freq: 'ಪ್ರಮಾಣ ಮತ್ತು ಸೂಚನೆಗಳು', duration: 'ಅವಧಿ', count: 'ಒಟ್ಟು ಸಂಖ್ಯೆ', advice: 'ಸಲಹೆ ಮತ್ತು ಮಾರ್ಗದರ್ಶನ', investigation: 'ತನಿಖೆಗಳು' };
+      return { srNo: 'Sr. No.', medName: 'ಔಷಧದ ಹೆಸರು', freq: 'ಪ್ರಮಾಣ ಮತ್ತು ಸೂಚನೆಗಳು', duration: 'ಅವಧಿ', count: 'ಒಟ್ಟು ಸಂಖ್ಯೆ' };
     case 'marathi':
     default:
-      return { srNo: 'Sr. No.', medName: 'औषधाचे नाव', freq: 'मात्रा (वारंवारता) व सूचना', duration: 'कालावधी', count: 'एकूण', advice: 'सल्ला व समुपदेशन', investigation: 'तपासण्या सलाह' };
+      return { srNo: 'Sr. No.', medName: 'औषधाचे नाव', freq: 'मात्रा (वारंवारता) व सूचना', duration: 'कालावधी', count: 'एकूण' };
   }
 };
 export const translateDuration = (dur?: string, lang: PrintLanguage = 'marathi'): string => {
-  if (!dur) return '-';
-  const numMatch = dur.match(/\d+/);
-  const num = numMatch ? numMatch[0] : '';
-  const lower = dur.toLowerCase();
-  if (lang === 'english') return dur;
-  if (lang === 'hindi') {
-    if (lower.includes('day')) return `${num} दिन`;
-    if (lower.includes('week')) return `${num} हफ्ते`;
-    if (lower.includes('month')) return `${num} महीना`;
-    return dur;
-  }
-  if (lang === 'kannada') {
-    if (lower.includes('day')) return `${num} ದಿನಗಳು`;
-    if (lower.includes('week')) return `${num} ವಾರಗಳು`;
-    if (lower.includes('month')) return `${num} ತಿಂಗಳು`;
-    return dur;
-  }
-  // Marathi (default)
-  if (lower.includes('day')) return `${num} दिवस`;
-  if (lower.includes('week')) return `${num} आठवडे`;
-  if (lower.includes('month')) return `${num} महिना`;
-  return dur;
+  return translateDurationSync(dur, lang);
 };
+
+export const GroqTranslatedDuration: React.FC<{
+  dur?: string;
+  lang: PrintLanguage;
+}> = ({ dur, lang }) => {
+  const [displayText, setDisplayText] = useState<string>(() => translateDurationSync(dur, lang));
+
+  useEffect(() => {
+    if (!dur || !dur.trim() || dur.trim() === '-') {
+      setDisplayText('-');
+      return;
+    }
+    let isMounted = true;
+    translateDurationAsync(dur, lang).then(res => {
+      if (isMounted && res) {
+        setDisplayText(res);
+      }
+    });
+    return () => { isMounted = false; };
+  }, [dur, lang]);
+
+  return <span>{displayText}</span>;
+};
+
 export const cleanFrequencyForPrint = (freq?: string): string => {
   return cleanFrequencyString(freq);
 };
@@ -104,6 +113,46 @@ export const getPrintMedicineName = (med: any): string => {
   }
   return name;
 };
+
+export const GroqTranslatedMedicineName: React.FC<{
+  med: any;
+  lang: PrintLanguage;
+}> = ({ med, lang }) => {
+  const rawName = getPrintMedicineName(med);
+  const parenMatch = rawName.match(/^(.*?)\s*\((.+?)\)\s*$/);
+  const baseName = parenMatch ? parenMatch[1].trim() : rawName;
+  const parenInstruction = parenMatch ? parenMatch[2].trim() : '';
+
+  const [translatedParen, setTranslatedParen] = useState<string>(() => {
+    if (!parenInstruction) return '';
+    return translateMedicalText(parenInstruction, lang);
+  });
+
+  useEffect(() => {
+    if (!parenInstruction) {
+      setTranslatedParen('');
+      return;
+    }
+    let isMounted = true;
+    translateMedicalTextAsync(parenInstruction, lang).then(res => {
+      if (isMounted && res) {
+        setTranslatedParen(res);
+      }
+    });
+    return () => { isMounted = false; };
+  }, [parenInstruction, lang]);
+
+  if (!parenInstruction) {
+    return <span>{rawName}</span>;
+  }
+
+  return (
+    <span>
+      {baseName} <span style={{ fontWeight: 600, color: '#222' }}>({translatedParen || parenInstruction})</span>
+    </span>
+  );
+};
+
 export const translateFrequency = (freq?: string, _medName?: string, lang: PrintLanguage = 'marathi'): string => {
   return translateMedicalText(freq, lang);
 };
@@ -118,10 +167,14 @@ export const GroqTranslatedCell: React.FC<{
   const fullTextToTranslate = cleanNotes
     ? (cleanFreq && cleanFreq !== '-' ? `${cleanFreq} - ${cleanNotes}` : cleanNotes)
     : cleanFreq;
-  const [aiText, setAiText] = useState<string | null>(null);
+  const [aiText, setAiText] = useState<string>(() => {
+    if (!fullTextToTranslate || fullTextToTranslate === '-') return '-';
+    return translateMedicalText(fullTextToTranslate, lang);
+  });
+
   useEffect(() => {
     if (!fullTextToTranslate || fullTextToTranslate === '-') {
-      setAiText(null);
+      setAiText('-');
       return;
     }
     let isMounted = true;
@@ -134,10 +187,11 @@ export const GroqTranslatedCell: React.FC<{
       .catch(() => {});
     return () => { isMounted = false; };
   }, [fullTextToTranslate, lang]);
+
   if (!fullTextToTranslate || fullTextToTranslate === '-') {
     return <span>-</span>;
   }
-  const displayText = aiText || translateMedicalText(fullTextToTranslate, lang);
+  const displayText = aiText || fullTextToTranslate;
   return (
     <div style={{ whiteSpace: 'pre-line', lineHeight: '1.3', fontSize: '11.5px', fontWeight: 600 }}>
       {displayText}
@@ -525,16 +579,19 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                   <tbody>
                     {casePaper.medicines && casePaper.medicines.length > 0 ? (
                       casePaper.medicines.map((med, index) => {
-                        const displayName = getPrintMedicineName(med);
                         const count = calculateMedicineCount(med);
                         return (
                           <tr key={index} style={{ borderBottom: '1px solid #666', minHeight: '32px', height: '32px' }}>
                             <td style={{ border: '1px solid #666', padding: '5px 2px', textAlign: 'center', fontFamily: 'monospace', fontSize: '11.5px', color: '#333' }}>{index + 1}</td>
-                            <td style={{ border: '1px solid #666', padding: '5px 7px', fontWeight: 700, color: '#111', fontSize: '12.5px' }}>{displayName}</td>
+                            <td style={{ border: '1px solid #666', padding: '5px 7px', fontWeight: 700, color: '#111', fontSize: '12.5px' }}>
+                              <GroqTranslatedMedicineName med={med} lang={language} />
+                            </td>
                             <td style={{ border: '1px solid #666', padding: '5px 7px', fontWeight: 600, color: '#222', fontSize: '12px' }}>
                               {renderFrequencyCell(med.frequency, med.name, language, med.instructions || med.notes)}
                             </td>
-                            <td style={{ border: '1px solid #666', padding: '5px 5px', color: '#333', fontSize: '12px' }}>{translateDuration(med.duration, language)}</td>
+                            <td style={{ border: '1px solid #666', padding: '5px 5px', color: '#333', fontSize: '12px' }}>
+                              <GroqTranslatedDuration dur={med.duration} lang={language} />
+                            </td>
                             <td style={{ border: '1px solid #666', padding: '5px 2px', textAlign: 'center', fontWeight: 700, color: '#047857', fontSize: '12.5px' }}>{count}</td>
                           </tr>
                         );
@@ -821,16 +878,19 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
                   <tbody>
                     {casePaper.medicines && casePaper.medicines.length > 0 ? (
                       casePaper.medicines.map((med, index) => {
-                        const displayName = getPrintMedicineName(med);
                         const count = calculateMedicineCount(med);
                         return (
                           <tr key={index} style={{ borderBottom: '1px solid #666', minHeight: '30px', height: '30px' }}>
                             <td style={{ border: '1px solid #666', padding: '5px 1px', textAlign: 'center', fontFamily: 'monospace', fontSize: '11px', color: '#333' }}>{index + 1}</td>
-                            <td style={{ border: '1px solid #666', padding: '5px 5px', fontWeight: 700, color: '#111', fontSize: '12px' }}>{displayName}</td>
+                            <td style={{ border: '1px solid #666', padding: '5px 5px', fontWeight: 700, color: '#111', fontSize: '12px' }}>
+                              <GroqTranslatedMedicineName med={med} lang={language} />
+                            </td>
                             <td style={{ border: '1px solid #666', padding: '5px 5px', fontWeight: 600, color: '#222', fontSize: '12px' }}>
                               {renderFrequencyCell(med.frequency, med.name, language, med.instructions || med.notes)}
                             </td>
-                            <td style={{ border: '1px solid #666', padding: '5px 4px', color: '#333', fontSize: '12px' }}>{translateDuration(med.duration, language)}</td>
+                            <td style={{ border: '1px solid #666', padding: '5px 4px', color: '#333', fontSize: '12px' }}>
+                              <GroqTranslatedDuration dur={med.duration} lang={language} />
+                            </td>
                             <td style={{ border: '1px solid #666', padding: '5px 2px', textAlign: 'center', fontWeight: 700, color: '#047857', fontSize: '12px' }}>{count}</td>
                           </tr>
                         );

@@ -3,7 +3,13 @@ import type { Patient } from '../data/patients';
 import type { CasePaper } from '../types';
 import type { ClinicSettings } from '../data/clinicSettings';
 import { calculateMedicineCount } from '../utils/countCalculator';
-import { translateMedicalText, translateMedicalTextAsync, cleanFrequencyString } from '../utils/medicalTranslator';
+import {
+  translateMedicalText,
+  translateMedicalTextAsync,
+  cleanFrequencyString,
+  translateDurationSync,
+  translateDurationAsync,
+} from '../utils/medicalTranslator';
 import { formatLocalizedDate, formatFollowUpDate } from '../utils/dateFormatter';
 
 export type PrintLanguage = 'marathi' | 'english' | 'hindi' | 'kannada';
@@ -74,38 +80,114 @@ export const getTableHeaders = (lang: PrintLanguage = 'marathi') => {
 };
 
 export const translateDuration = (dur?: string, lang: PrintLanguage = 'marathi'): string => {
-  if (!dur) return '-';
-  const numMatch = dur.match(/\d+/);
-  const num = numMatch ? numMatch[0] : '';
-  const lower = dur.toLowerCase();
-  if (lang === 'english') return dur;
-  if (lang === 'hindi') {
-    if (lower.includes('day')) return `${num} दिन`;
-    if (lower.includes('week')) return `${num} हफ्ते`;
-    if (lower.includes('month')) return `${num} महीना`;
-    return dur;
-  }
-  if (lang === 'kannada') {
-    if (lower.includes('day')) return `${num} ದಿನಗಳು`;
-    if (lower.includes('week')) return `${num} ವಾರಗಳು`;
-    if (lower.includes('month')) return `${num} ತಿಂಗಳು`;
-    return dur;
-  }
-  // Marathi (default)
-  if (lower.includes('day')) return `${num} दिवस`;
-  if (lower.includes('week')) return `${num} आठवडे`;
-  if (lower.includes('month')) return `${num} महिना`;
-  return dur;
+  return translateDurationSync(dur, lang);
+};
+
+export const GroqTranslatedText: React.FC<{
+  text?: string;
+  lang: PrintLanguage;
+  as?: any;
+  style?: React.CSSProperties;
+  className?: string;
+}> = ({ text, lang, as: Component = 'span', style, className }) => {
+  const [displayText, setDisplayText] = useState<string>(() => {
+    if (!text || !text.trim()) return '';
+    return translateMedicalText(text.trim(), lang);
+  });
+
+  useEffect(() => {
+    if (!text || !text.trim()) {
+      setDisplayText('');
+      return;
+    }
+    let isMounted = true;
+    translateMedicalTextAsync(text.trim(), lang).then(res => {
+      if (isMounted && res) {
+        setDisplayText(res);
+      }
+    });
+    return () => { isMounted = false; };
+  }, [text, lang]);
+
+  if (!text || !text.trim()) return null;
+
+  return (
+    <Component style={style} className={className}>
+      {displayText || text}
+    </Component>
+  );
+};
+
+export const GroqTranslatedDuration: React.FC<{
+  dur?: string;
+  lang: PrintLanguage;
+}> = ({ dur, lang }) => {
+  const [displayText, setDisplayText] = useState<string>(() => translateDurationSync(dur, lang));
+
+  useEffect(() => {
+    if (!dur || !dur.trim() || dur.trim() === '-') {
+      setDisplayText('-');
+      return;
+    }
+    let isMounted = true;
+    translateDurationAsync(dur, lang).then(res => {
+      if (isMounted && res) {
+        setDisplayText(res);
+      }
+    });
+    return () => { isMounted = false; };
+  }, [dur, lang]);
+
+  return <span>{displayText}</span>;
 };
 
 export const getPrintMedicineName = (med: any): string => {
   let name = (med.name || '').trim();
   const strength = (med.dosage || med.strength || '').trim();
-  const isJunkPackSize = /^\d+\s*['"`;&]?\s*s?$/i.test(strength) || /[\d\`'\,\-\;\:]+\s*(s|tab|tabs|cap|caps|strip|strips|kit|kits|vial|amp|nos|unit)/i.test(strength) || /^\d+$/i.test(strength);
+  const isJunkPackSize = /^\d+\s*['"`;&]?\s*s?$/i.test(strength) || /[\d\`'\,\-\;\:]+\s*(s|tab|tabs|cap|caps|strip|strips|kit|kits|vial|amp|nos|unit) /i.test(strength) || /^\d+$/i.test(strength);
   if (strength && !isJunkPackSize && !name.toLowerCase().includes(strength.toLowerCase())) {
     name = `${name} ${strength}`;
   }
   return name;
+};
+
+export const GroqTranslatedMedicineName: React.FC<{
+  med: any;
+  lang: PrintLanguage;
+}> = ({ med, lang }) => {
+  const rawName = getPrintMedicineName(med);
+  const parenMatch = rawName.match(/^(.*?)\s*\((.+?)\)\s*$/);
+  const baseName = parenMatch ? parenMatch[1].trim() : rawName;
+  const parenInstruction = parenMatch ? parenMatch[2].trim() : '';
+
+  const [translatedParen, setTranslatedParen] = useState<string>(() => {
+    if (!parenInstruction) return '';
+    return translateMedicalText(parenInstruction, lang);
+  });
+
+  useEffect(() => {
+    if (!parenInstruction) {
+      setTranslatedParen('');
+      return;
+    }
+    let isMounted = true;
+    translateMedicalTextAsync(parenInstruction, lang).then(res => {
+      if (isMounted && res) {
+        setTranslatedParen(res);
+      }
+    });
+    return () => { isMounted = false; };
+  }, [parenInstruction, lang]);
+
+  if (!parenInstruction) {
+    return <span>{rawName}</span>;
+  }
+
+  return (
+    <span>
+      {baseName} <span style={{ fontWeight: 600, color: '#222' }}>({translatedParen || parenInstruction})</span>
+    </span>
+  );
 };
 
 export const GroqTranslatedCell: React.FC<{
@@ -119,10 +201,14 @@ export const GroqTranslatedCell: React.FC<{
   const fullTextToTranslate = cleanNotes
     ? (cleanFreq && cleanFreq !== '-' ? `${cleanFreq} - ${cleanNotes}` : cleanNotes)
     : cleanFreq;
-  const [aiText, setAiText] = useState<string | null>(null);
+  const [aiText, setAiText] = useState<string>(() => {
+    if (!fullTextToTranslate || fullTextToTranslate === '-') return '-';
+    return translateMedicalText(fullTextToTranslate, lang);
+  });
+
   useEffect(() => {
     if (!fullTextToTranslate || fullTextToTranslate === '-') {
-      setAiText(null);
+      setAiText('-');
       return;
     }
     let isMounted = true;
@@ -135,10 +221,12 @@ export const GroqTranslatedCell: React.FC<{
       .catch(() => {});
     return () => { isMounted = false; };
   }, [fullTextToTranslate, lang]);
+
   if (!fullTextToTranslate || fullTextToTranslate === '-') {
     return <span>-</span>;
   }
-  const displayText = aiText || translateMedicalText(fullTextToTranslate, lang);
+
+  const displayText = aiText || fullTextToTranslate;
   return (
     <div style={{ whiteSpace: 'pre-line', lineHeight: '1.3', fontSize: '11px', fontWeight: 600, color: '#222' }}>
       {displayText}
@@ -1152,8 +1240,6 @@ export default function A4PrintTemplate({
               <tbody>
                 {casePaper.medicines && casePaper.medicines.length > 0 ? (
                   casePaper.medicines.map((med, idx) => {
-                    const durationStr = med.duration ? translateDuration(med.duration, language) : '-';
-                    const medName = getPrintMedicineName(med);
                     const isLast = idx === casePaper.medicines.length - 1;
                     const calculatedCount = calculateMedicineCount(med);
 
@@ -1186,7 +1272,7 @@ export default function A4PrintTemplate({
                             color: '#000',
                           }}
                         >
-                          {medName}
+                          <GroqTranslatedMedicineName med={med} lang={language} />
                         </td>
                         <td
                           style={{
@@ -1213,7 +1299,7 @@ export default function A4PrintTemplate({
                             whiteSpace: 'nowrap',
                           }}
                         >
-                          {durationStr}
+                          <GroqTranslatedDuration dur={med.duration} lang={language} />
                         </td>
                         <td
                           style={{
@@ -1240,7 +1326,7 @@ export default function A4PrintTemplate({
                         fontStyle: 'italic',
                       }}
                     >
-                      No medicines prescribed
+                      <GroqTranslatedText text="No medicines prescribed" lang={language} />
                     </td>
                   </tr>
                 )}
@@ -1333,9 +1419,10 @@ export default function A4PrintTemplate({
                 color: '#222',
               }}
             >
-              - त्वचा विकाराची औषधे इतर औषधांप्रमाणे महाग असू शकतात. - चिठ्ठीमधील औषधे दिलेल्या अवधीसाठीच आहेत.
-              <br />
-              - काही विकार बरे होण्यास वेळ लागतो. तसेच काही विकार औषधानंतर काही प्रमाणात वाढतात व त्यानंतर बरे होतात.
+              <GroqTranslatedText
+                text="- त्वचा विकाराची औषधे इतर औषधांप्रमाणे महाग असू शकतात. - चिठ्ठीमधील औषधे दिलेल्या अवधीसाठीच आहेत. काही विकार बरे होण्यास वेळ लागतो. तसेच काही विकार औषधानंतर काही प्रमाणात वाढतात व त्यानंतर बरे होतात."
+                lang={language}
+              />
             </div>
           </>
         )}

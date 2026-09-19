@@ -1,16 +1,6 @@
-let _groqTransKeyWarned = false;
-
-function getApiKey() {
-  const key = process.env.GROQ_API_KEY;
-  if (!key || key === 'your_groq_api_key_here' || key.length < 20) {
-    if (!_groqTransKeyWarned) {
-      console.warn('⚠️ Groq API key not configured — AI translation disabled.');
-      _groqTransKeyWarned = true;
-    }
-    return null;
-  }
-  return key;
-}
+const GROQ_KEYS = [
+  process.env.GROQ_API_KEY
+].filter(k => k && k !== 'your_groq_api_key_here' && k.length > 20);
 
 const cache = new Map();
 
@@ -24,9 +14,26 @@ function stripRawCodes(str) {
     .trim();
 }
 
-function fallbackMedicalTranslate(text, lang = 'marathi') {
-  if (!text || !text.trim()) return '-';
-  return text.trim();
+const LANG_CODE_MAP = {
+  english: 'en',
+  marathi: 'mr',
+  hindi: 'hi',
+  kannada: 'kn'
+};
+
+async function callGoogleTranslate(text, targetLang = 'marathi') {
+  try {
+    const tl = LANG_CODE_MAP[targetLang.toLowerCase()] || 'mr';
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`;
+    const res = await fetch(url);
+    if (!res.ok) return text;
+    const data = await res.json();
+    if (data && data[0] && Array.isArray(data[0])) {
+      const translated = data[0].map(x => x[0]).join('').trim();
+      if (translated) return translated;
+    }
+  } catch {}
+  return text;
 }
 
 function getScriptForLang(lang) {
@@ -52,7 +59,7 @@ function getGuidelines(lang) {
    - Do NOT add quotes, preamble, conversational filler, or explanations.`;
 }
 
-async function translateWithGroq(text, targetLang) {
+async function translateWithGroq(text, targetLang = 'marathi') {
   if (!text || !text.trim()) return '-';
   const cleanText = text.trim();
   const lang = (targetLang || 'marathi').toLowerCase();
@@ -60,11 +67,6 @@ async function translateWithGroq(text, targetLang) {
   const cacheKey = `${lang}:${cleanText.toLowerCase()}`;
   if (cache.has(cacheKey)) {
     return cache.get(cacheKey);
-  }
-
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    return fallbackMedicalTranslate(cleanText, lang);
   }
 
   const script = getScriptForLang(lang);
@@ -79,65 +81,69 @@ Output ONLY a JSON object with this exact structure:
   "translatedText": "the translated text in ${script}"
 }`;
 
-  const models = ['openai/gpt-oss-20b', 'groq/compound-mini', 'qwen/qwen3.6-27b'];
+  const models = ['openai/gpt-oss-20b', 'qwen/qwen3.8-27b', 'groq/compound-mini'];
 
-  for (const model of models) {
-    try {
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'User-Agent': 'ClinicOS-Prescription-Engine/1.0'
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: `Translate this prescription instruction into natural ${script} JSON format: "${cleanText}"` }
-          ],
-          temperature: 0.0,
-          response_format: { type: 'json_object' }
-        })
-      });
-
-      if (!response.ok) {
-        continue;
-      }
-
-      const data = await response.json();
-      let rawContent = data.choices?.[0]?.message?.content?.trim();
-      if (!rawContent) continue;
-
-      let translated = '';
+  for (const apiKey of GROQ_KEYS) {
+    for (const model of models) {
       try {
-        const parsed = JSON.parse(rawContent);
-        translated = parsed.translatedText || Object.values(parsed)[0];
-      } catch {
-        translated = rawContent;
-      }
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'User-Agent': 'ClinicOS-Prescription-Engine/1.0'
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: `Translate this prescription instruction into natural ${script} JSON format: "${cleanText}"` }
+            ],
+            temperature: 0.1,
+            response_format: { type: 'json_object' }
+          })
+        });
 
-      if (typeof translated === 'string') {
-        if (translated.includes('</think>')) {
-          translated = translated.split('</think>').pop().trim();
+        if (!response.ok) continue;
+
+        const data = await response.json();
+        let rawContent = data.choices?.[0]?.message?.content?.trim();
+        if (!rawContent) continue;
+
+        let translated = '';
+        try {
+          const parsed = JSON.parse(rawContent);
+          translated = parsed.translatedText || Object.values(parsed)[0];
+        } catch {
+          translated = rawContent;
         }
-        translated = translated.replace(/^["'`*]+|["'`*]+$/g, '').trim();
-      }
 
-      if (translated && typeof translated === 'string' && translated.trim()) {
-        cache.set(cacheKey, translated.trim());
-        return translated.trim();
-      }
-    } catch (err) {
-      console.warn(`Groq translation model ${model} error:`, err.message);
+        if (typeof translated === 'string') {
+          if (translated.includes('</think>')) {
+            translated = translated.split('</think>').pop().trim();
+          }
+          translated = translated.replace(/^["'`*]+|["'`*]+$/g, '').trim();
+        }
+
+        if (translated && typeof translated === 'string' && translated.trim()) {
+          cache.set(cacheKey, translated.trim());
+          return translated.trim();
+        }
+      } catch (err) {}
     }
   }
 
-  return fallbackMedicalTranslate(cleanText, lang);
+  // Fallback to Google Neural Translate
+  const fallback = await callGoogleTranslate(cleanText, lang);
+  if (fallback && fallback.trim()) {
+    cache.set(cacheKey, fallback.trim());
+    return fallback.trim();
+  }
+
+  return cleanText;
 }
 
 module.exports = {
   translateWithGroq,
-  stripRawCodes,
-  fallbackMedicalTranslate
+  stripRawCodes
 };

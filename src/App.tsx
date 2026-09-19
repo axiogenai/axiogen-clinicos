@@ -33,9 +33,21 @@ function DoctorDashboardView() {
 
   const startConsultation = async (queueItem: QueueItem, patient: Patient, forceReconsult = false) => {
     let effectiveQueueId = queueItem.queueId;
-    const existingInQueue = queue.find(q => q.queueId === queueItem.queueId || q.patientId === patient.id);
+    const existingInQueue = queue.find(
+      q => q.queueId === queueItem.queueId || 
+           (q.patientId && q.patientId === patient.id) || 
+           (q.name && patient.name && q.name.trim().toLowerCase() === patient.name.trim().toLowerCase())
+    );
 
-    if (!existingInQueue || queueItem.queueId.startsWith('Q_TEMP_')) {
+    if (existingInQueue) {
+      effectiveQueueId = existingInQueue.queueId;
+      if (existingInQueue.status !== 'completed' || forceReconsult) {
+        updateQueueStatus(existingInQueue.queueId, 'in-consultation');
+      }
+    } else if (queueItem.queueId && !queueItem.queueId.startsWith('Q_TEMP_')) {
+      effectiveQueueId = queueItem.queueId;
+      updateQueueStatus(queueItem.queueId, 'in-consultation');
+    } else {
       const newQueueId = `Q${Date.now()}`;
       const newQueueItem: QueueItem = {
         queueId: newQueueId,
@@ -53,11 +65,6 @@ function DoctorDashboardView() {
       };
       addToQueue(newQueueItem);
       effectiveQueueId = newQueueId;
-    } else {
-      effectiveQueueId = existingInQueue.queueId;
-      if (existingInQueue.status !== 'completed' || forceReconsult) {
-        updateQueueStatus(existingInQueue.queueId, 'in-consultation');
-      }
     }
 
     setSelectedPatient(patient);
