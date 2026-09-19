@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Pill, FlaskConical, Lightbulb, Calendar, ArrowLeft, Printer, Trash2, CheckCircle2, Search, Plus, X, ChevronDown, FileText, Languages, Loader2, Edit2, Save, User, BookOpen, Phone, MapPin } from 'lucide-react';
+import { Pill, FlaskConical, Lightbulb, Calendar, ArrowLeft, Printer, Trash2, CheckCircle2, Search, Plus, X, ChevronDown, FileText, Languages, Loader2, Edit2, Save, User, BookOpen, Phone } from 'lucide-react';
 import type { Patient } from '../data/patients';
 import { medicines as initialLocalMedicines } from '../data/medicines';
 import { useClinic } from '../context/ClinicContext';
@@ -10,6 +10,7 @@ import ReprintPreview from './ReprintPreview';
 import PatientEMRHistoryModal from './PatientEMRHistoryModal';
 import AddCustomMedicineModal from './AddCustomMedicineModal';
 import ConfirmModal from './ConfirmModal';
+import VillageAutocompleteInput from './VillageAutocompleteInput';
 
 import { calculateMedicineCount } from '../utils/countCalculator';
 import { formatFollowUpDate } from '../utils/dateFormatter';
@@ -2071,16 +2072,11 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                   <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1.5">
                     Village / City
                   </label>
-                  <div className="relative">
-                    <MapPin className="w-4 h-4 text-[#7c766d] absolute left-3 top-3" />
-                    <input
-                      type="text"
-                      value={patientEditForm.village}
-                      onChange={(e) => setPatientEditForm({ ...patientEditForm, village: e.target.value })}
-                      placeholder="e.g. Peth Vadgaon"
-                      className="w-full pl-9 pr-3.5 py-2.5 bg-[#faf9f6] border border-[#d1cbbe] rounded-xl text-sm font-medium text-[#1a1c1a] focus:bg-white focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/20 outline-hidden transition-all"
-                    />
-                  </div>
+                  <VillageAutocompleteInput
+                    value={patientEditForm.village}
+                    onChange={(val) => setPatientEditForm({ ...patientEditForm, village: val })}
+                    placeholder="e.g. Vadgaon, Vita, Karad..."
+                  />
                 </div>
               </div>
 

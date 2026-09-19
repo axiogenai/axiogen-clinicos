@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, AlertTriangle, Phone, MapPin, Clock, Edit2, Save, User, FileText, Activity, Hash, BookOpen } from 'lucide-react';
 import type { Patient, QueueItem, PastVisit } from '../data/patients';
 import { useClinic } from '../context/ClinicContext';
+import VillageAutocompleteInput from './VillageAutocompleteInput';
 
 interface Props {
   queueItem: QueueItem;
@@ -304,16 +305,11 @@ export default function PatientDetailsModal({ queueItem, patient, onClose }: Pro
             {/* Village / City */}
             <div>
               <label className="block text-xs font-bold text-[#4b463e] mb-1">Village / City (गाव)</label>
-              <div className="relative">
-                <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
-                  type="text"
-                  value={formData.village}
-                  onChange={(e) => setFormData({ ...formData, village: e.target.value })}
-                  placeholder="e.g. Peth Vadgaon / Top"
-                  className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm bg-white border border-[#cdc6ba] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#047857] text-[#1a1c1a]"
-                />
-              </div>
+              <VillageAutocompleteInput
+                value={formData.village}
+                onChange={(val) => setFormData({ ...formData, village: val })}
+                placeholder="e.g. Vadgaon, Vita, Karad..."
+              />
             </div>
 
             {/* Chief Complaint */}

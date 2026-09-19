@@ -21,6 +21,7 @@ import type { Patient } from '../data/patients';
 import { useClinic } from '../context/ClinicContext';
 import { api } from '../api/client';
 import { filterAndSortPatients } from './PatientSearch';
+import VillageAutocompleteInput from './VillageAutocompleteInput';
 
 interface Props {
   selectedPatient: Patient | null;
@@ -180,7 +181,7 @@ export default function PatientRegistrationForm({
       const trimmedVillage = formData.village.trim();
       if (!trimmedVillage || trimmedVillage.length < 2) {
         newErrors.village = 'Village/Town name is required (at least 2 characters)';
-      } else if (!/^[a-zA-Z\s\.\-']+$/.test(trimmedVillage)) {
+      } else if (!/^[a-zA-Z\u0900-\u097F\s\.\-']+$/.test(trimmedVillage)) {
         newErrors.village = 'Village/Town should only contain letters and spaces';
       }
 
@@ -653,14 +654,14 @@ export default function PatientRegistrationForm({
 
               <div>
                 <label className="form-label">Village / Town <span className="text-red-500">*</span></label>
-                <input 
-                  ref={villageInputRef}
-                  type="text" 
-                  className={`form-input ${errors.village ? 'error' : ''}`}
-                  placeholder="e.g. Shirur, Pune"
+                <VillageAutocompleteInput 
+                  inputRef={villageInputRef}
+                  placeholder="e.g. Vadgaon, Vita, Karad, Sangli..."
                   value={formData.village} 
-                  onChange={e => setFormData({...formData, village: e.target.value.replace(/[^a-zA-Z\s\.\-']/g, '')})} 
+                  onChange={val => setFormData({...formData, village: val})} 
                   onKeyDown={e => handleKeyDown(e, complaintInputRef)}
+                  error={!!errors.village}
+                  required
                 />
                 {errors.village && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.village}</p>}
               </div>
