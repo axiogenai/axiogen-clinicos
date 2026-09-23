@@ -10,6 +10,8 @@ import PrintTemplate from './PrintTemplate';
 import A4PrintTemplate from './A4PrintTemplate';
 import ClinicSettingsModal from './ClinicSettingsModal';
 
+import type { PrintLanguage } from './A4PrintTemplate';
+
 interface PrintPreviewProps {
   patient: Patient;
   casePaper: CasePaper;
@@ -17,10 +19,11 @@ interface PrintPreviewProps {
   onReturnToQueue?: () => void;
 }
 
-const LANGS = [
-  { key: 'marathi' as const, label: 'मराठी' },
-  { key: 'english' as const, label: 'English' },
-  { key: 'hindi' as const, label: 'हिंदी' },
+const LANGS: Array<{ key: PrintLanguage; label: string }> = [
+  { key: 'marathi', label: 'मराठी' },
+  { key: 'english', label: 'English' },
+  { key: 'hindi', label: 'हिंदी' },
+  { key: 'kannada', label: 'ಕನ್ನಡ' },
 ];
 
 export default function PrintPreview({
@@ -30,7 +33,7 @@ export default function PrintPreview({
   onReturnToQueue,
 }: PrintPreviewProps) {
   const { clinicSettings, updateClinicSettings, setToast } = useClinic();
-  const [selectedLanguage, setSelectedLanguage] = useState<'english' | 'marathi' | 'hindi'>('marathi');
+  const [selectedLanguage, setSelectedLanguage] = useState<PrintLanguage>('marathi');
   const [hideHeader, setHideHeader] = useState(false);
   const [printOnStationery, setPrintOnStationery] = useState(false);
   const [zoom, setZoom] = useState(55);
