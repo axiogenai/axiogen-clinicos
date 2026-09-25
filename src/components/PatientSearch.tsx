@@ -3,6 +3,7 @@ import { Search, UserPlus, X, Trash2 } from 'lucide-react';
 import type { Patient } from '../data/patients';
 import { useClinic } from '../context/ClinicContext';
 import ConfirmModal from './ConfirmModal';
+import { formatPatientAge } from '../utils/patientFormatter';
 
 interface Props {
   patients: Patient[];
@@ -167,7 +168,7 @@ export default function PatientSearch({ patients, onSelectPatient, onNewPatient 
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-gray-900">{patient.name}</p>
-                      <span className="text-gray-500 font-normal text-xs">{patient.age}y / {patient.gender}</span>
+                      <span className="text-gray-500 font-normal text-xs">{formatPatientAge(patient)} / {patient.gender}</span>
                       {patient.casePaperNo && (
                         <span className="text-[10px] font-mono font-bold bg-[#fef3c7] text-[#92400e] px-1.5 py-0.5 rounded border border-[#fde68a]">
                           Book: {patient.casePaperNo}

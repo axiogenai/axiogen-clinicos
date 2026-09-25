@@ -459,11 +459,14 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
         id: `PT${String(Date.now()).slice(-6)}`,
         name: (patientData.name || 'Unknown').trim(),
         age: patientData.age || 0,
+        ageUnit: patientData.ageUnit || 'years',
+        ageMonths: patientData.ageMonths,
         gender: patientData.gender || 'M',
         phone: cleanPhone,
         village: (patientData.village || '').trim(),
         pastHistory: patientData.pastHistory || '',
         allergies: patientData.allergies || '',
+        notes: patientData.notes || (patientData as any).receptionNotes || '',
         pastVisits: [],
         casePaperNo: customCasePaperNo,
       };
@@ -471,7 +474,11 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
       try {
         const created = await api.createPatient(tempPatient);
         if (created && created.id) {
-          patient = created;
+          patient = {
+            ...created,
+            ageUnit: created.ageUnit || tempPatient.ageUnit,
+            ageMonths: created.ageMonths !== undefined ? created.ageMonths : tempPatient.ageMonths,
+          };
         } else {
           patient = tempPatient;
         }
@@ -492,6 +499,8 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
       patientId: targetPatient.id,
       name: targetPatient.name,
       age: targetPatient.age,
+      ageUnit: targetPatient.ageUnit || patientData.ageUnit,
+      ageMonths: targetPatient.ageMonths !== undefined ? targetPatient.ageMonths : patientData.ageMonths,
       phone: targetPatient.phone,
       village: targetPatient.village,
       timeAdded: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
@@ -625,6 +634,8 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
     data: {
       name?: string;
       age?: number;
+      ageUnit?: 'years' | 'months';
+      ageMonths?: number | string;
       gender?: 'M' | 'F' | 'Other';
       phone?: string;
       village?: string;
@@ -645,12 +656,15 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
             ...p,
             name: data.name !== undefined ? data.name : p.name,
             age: data.age !== undefined ? data.age : p.age,
+            ageUnit: data.ageUnit !== undefined ? data.ageUnit : p.ageUnit,
+            ageMonths: data.ageMonths !== undefined ? data.ageMonths : p.ageMonths,
             gender: data.gender !== undefined ? data.gender : p.gender,
             phone: cleanPhone || p.phone,
             village: data.village !== undefined ? data.village : p.village,
             casePaperNo: data.casePaperNo !== undefined ? data.casePaperNo : p.casePaperNo,
             pastHistory: data.pastHistory !== undefined ? data.pastHistory : p.pastHistory,
-            allergies: data.allergies !== undefined ? data.allergies : p.allergies
+            allergies: data.allergies !== undefined ? data.allergies : p.allergies,
+            notes: data.notes !== undefined ? data.notes : p.notes,
           };
         }
         return p;
@@ -660,12 +674,15 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
       api.updatePatient(patientId, {
         name: data.name,
         age: data.age,
+        ageUnit: data.ageUnit,
+        ageMonths: data.ageMonths,
         gender: data.gender,
         phone: cleanPhone,
         village: data.village,
         casePaperNo: data.casePaperNo,
         pastHistory: data.pastHistory,
-        allergies: data.allergies
+        allergies: data.allergies,
+        notes: data.notes,
       }).catch(() => {});
     }
 
@@ -677,6 +694,8 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
             ...q,
             name: data.name !== undefined ? data.name : q.name,
             age: data.age !== undefined ? data.age : q.age,
+            ageUnit: data.ageUnit !== undefined ? data.ageUnit : q.ageUnit,
+            ageMonths: data.ageMonths !== undefined ? data.ageMonths : q.ageMonths,
             phone: cleanPhone || q.phone,
             village: data.village !== undefined ? data.village : q.village,
             casePaperNo: data.casePaperNo !== undefined ? data.casePaperNo : q.casePaperNo,
@@ -690,6 +709,8 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
       api.updateQueueItem(queueId, {
         name: data.name,
         age: data.age,
+        ageUnit: data.ageUnit,
+        ageMonths: data.ageMonths,
         phone: cleanPhone,
         village: data.village,
         casePaperNo: data.casePaperNo,

@@ -8,6 +8,7 @@ import ConfirmModal from './ConfirmModal';
 import type { Patient } from '../data/patients';
 import type { CasePaper } from '../types';
 import { calculateMedicineCount } from '../utils/countCalculator';
+import { formatPatientAge } from '../utils/patientFormatter';
 import * as XLSX from 'xlsx';
 
 // Custom Styled Dropdown Component (Replaces ugly native browser select)
@@ -224,6 +225,7 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
       const patientName = item.name || 'Unknown Patient';
       const patient = patients.find(p => p.id === item.patientId || p.name?.toLowerCase() === patientName.toLowerCase());
       const itemDate = (item as any).date || (item as any).createdAt?.split('T')[0] || selectedDate;
+      const formattedAge = formatPatientAge(item) || (patient ? formatPatientAge(patient) : (item.age ? `${item.age} Yrs` : '-'));
       return {
         srNo: index + 1,
         opdNo: String(index + 1).padStart(11, '0'),
@@ -232,7 +234,7 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
         time: item.timeAdded || '09:00 AM',
         date: itemDate,
         name: patientName,
-        age: item.age || patient?.age || '-',
+        age: formattedAge,
         gender: patient?.gender || 'M',
         phone: item.phone || patient?.phone || '-',
         village: item.village || patient?.village || '-',
@@ -1298,7 +1300,7 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
 
               <div>
                 <div className="font-bold text-[#1a1c1a] text-sm">{item.name}</div>
-                <div className="text-xs text-[#7c766d] mt-0.5">{item.age} Y / {item.gender} · {item.village}</div>
+                <div className="text-xs text-[#7c766d] mt-0.5">{item.age} / {item.gender} · {item.village}</div>
               </div>
 
               <div className="bg-[#f8f6f0] p-2.5 rounded-xl border border-[#e4e2e1] text-xs text-[#4b463e] space-y-1">
@@ -1426,7 +1428,7 @@ export default function DailyPatientRegister({ isDoctor }: { isDoctor?: boolean 
                     <div className="font-bold text-[#1a1c1a] text-sm">{item.name}</div>
                     <div className="text-[11px] text-[#7c766d]">{item.doctor}</div>
                   </td>
-                  <td className="text-xs font-medium text-[#4b463e]">{item.age} Y / {item.gender}</td>
+                  <td className="text-xs font-medium text-[#4b463e]">{item.age} / {item.gender}</td>
                   <td className="text-xs font-semibold text-[#1a1c1a]">{item.phone}</td>
                   <td className="text-xs text-[#4b463e]">{item.village}</td>
                   <td className="text-xs font-medium text-[#1a1c1a]">{item.complaint}</td>

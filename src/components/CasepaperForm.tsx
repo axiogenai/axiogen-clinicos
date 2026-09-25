@@ -16,6 +16,7 @@ import { calculateMedicineCount } from '../utils/countCalculator';
 import { formatFollowUpDate } from '../utils/dateFormatter';
 import { translateFrequencyToMarathi } from '../utils/marathiTranslator';
 import { parsePrescriptionSentence, formatClinicalMedicineName } from '../utils/sentenceParser';
+import { formatAgeGender } from '../utils/patientFormatter';
 
 interface CasepaperFormProps {
   patient: Patient;
@@ -291,6 +292,8 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
   const [patientEditForm, setPatientEditForm] = useState({
     name: patient.name || '',
     age: patient.age || 0,
+    ageUnit: (patient.ageUnit || 'years') as 'years' | 'months',
+    ageMonths: patient.ageMonths !== undefined ? String(patient.ageMonths) : '',
     gender: (patient.gender || 'M') as 'M' | 'F' | 'Other',
     phone: patient.phone || '',
     village: patient.village || '',
@@ -325,6 +328,8 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     setPatientEditForm({
       name: currentPatient.name || '',
       age: currentPatient.age || 0,
+      ageUnit: (currentPatient.ageUnit || 'years') as 'years' | 'months',
+      ageMonths: currentPatient.ageMonths !== undefined ? String(currentPatient.ageMonths) : '',
       gender: (currentPatient.gender || 'M') as 'M' | 'F' | 'Other',
       phone: currentPatient.phone || '',
       village: currentPatient.village || '',
@@ -345,7 +350,9 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     try {
       const payload = {
         name: patientEditForm.name.trim(),
-        age: Number(patientEditForm.age) || 0,
+        age: patientEditForm.ageUnit === 'months' ? 0 : (Number(patientEditForm.age) || 0),
+        ageUnit: patientEditForm.ageUnit,
+        ageMonths: patientEditForm.ageMonths,
         gender: patientEditForm.gender,
         phone: patientEditForm.phone.trim(),
         village: patientEditForm.village.trim(),
@@ -956,7 +963,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                 </button>
               </div>
               <p className="text-[10px] sm:text-xs text-[#7c766d] mt-0.5 flex items-center gap-1.5 flex-wrap">
-                <span>{currentPatient.age} Yrs / {currentPatient.gender === 'M' ? 'Male' : (currentPatient.gender === 'F' ? 'Female' : 'Other')}</span>
+                <span>{formatAgeGender(currentPatient)}</span>
                 <span>·</span>
                 <span>{currentPatient.phone || 'N/A'}</span>
                 <span>·</span>
@@ -2021,18 +2028,60 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[#4b463e] mb-1.5">
-                    Age (Years)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="130"
-                    value={patientEditForm.age || ''}
-                    onChange={(e) => setPatientEditForm({ ...patientEditForm, age: parseInt(e.target.value) || 0 })}
-                    placeholder="e.g. 28"
-                    className="w-full px-3.5 py-2.5 bg-[#faf9f6] border border-[#d1cbbe] rounded-xl text-sm font-medium text-[#1a1c1a] focus:bg-white focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/20 outline-hidden transition-all"
-                  />
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-[#4b463e]">
+                      Age
+                    </label>
+                    <div className="inline-flex rounded-lg border border-[#e4e2e1] p-0.5 bg-[#f8f6f0] text-[10px]">
+                      <button
+                        type="button"
+                        onClick={() => setPatientEditForm(prev => ({ ...prev, ageUnit: 'years' }))}
+                        className={`px-1.5 py-0.5 rounded font-semibold transition-all cursor-pointer ${
+                          patientEditForm.ageUnit !== 'months'
+                            ? 'bg-white text-[#047857] shadow-xs'
+                            : 'text-[#7c766d] hover:text-[#1a1c1a]'
+                        }`}
+                      >
+                        Years
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPatientEditForm(prev => ({ ...prev, ageUnit: 'months' }))}
+                        className={`px-1.5 py-0.5 rounded font-semibold transition-all cursor-pointer ${
+                          patientEditForm.ageUnit === 'months'
+                            ? 'bg-[#047857] text-white shadow-xs'
+                            : 'text-[#7c766d] hover:text-[#1a1c1a]'
+                        }`}
+                      >
+                        Months (Baby)
+                      </button>
+                    </div>
+                  </div>
+                  {patientEditForm.ageUnit === 'months' ? (
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={patientEditForm.ageMonths}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^0-9.]/g, '');
+                        const parts = val.split('.');
+                        const cleaned = parts.length > 2 ? `${parts[0]}.${parts.slice(1).join('')}` : val;
+                        setPatientEditForm({ ...patientEditForm, ageMonths: cleaned });
+                      }}
+                      placeholder="e.g. 1, 1.2, 3, 4 months"
+                      className="w-full px-3.5 py-2.5 bg-[#faf9f6] border border-[#d1cbbe] rounded-xl text-sm font-medium text-[#1a1c1a] focus:bg-white focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/20 outline-hidden transition-all"
+                    />
+                  ) : (
+                    <input
+                      type="number"
+                      min="0"
+                      max="130"
+                      value={patientEditForm.age || ''}
+                      onChange={(e) => setPatientEditForm({ ...patientEditForm, age: parseInt(e.target.value) || 0 })}
+                      placeholder="e.g. 28"
+                      className="w-full px-3.5 py-2.5 bg-[#faf9f6] border border-[#d1cbbe] rounded-xl text-sm font-medium text-[#1a1c1a] focus:bg-white focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/20 outline-hidden transition-all"
+                    />
+                  )}
                 </div>
 
                 <div>

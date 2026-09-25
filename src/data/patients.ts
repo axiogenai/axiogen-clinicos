@@ -8,6 +8,8 @@ export interface Patient {
   id: string;
   name: string;
   age: number;
+  ageUnit?: 'years' | 'months';
+  ageMonths?: number | string;
   gender: 'M' | 'F' | 'Other';
   phone: string;
   village: string;
@@ -16,6 +18,7 @@ export interface Patient {
   pastVisits: PastVisit[];
   validity?: string; // ISO date YYYY-MM-DD — registration expiry
   casePaperNo?: string; // Custom physical casepaper / book number
+  notes?: string;
 }
 
 export interface QueueItem {
@@ -27,7 +30,9 @@ export interface QueueItem {
   notes?: string;
   name?: string;
   age?: number;
-  gender?: 'M' | 'F';
+  ageUnit?: 'years' | 'months';
+  ageMonths?: number | string;
+  gender?: 'M' | 'F' | 'Other';
   phone?: string;
   village?: string;
   paymentStatus?: 'paid' | 'unpaid';

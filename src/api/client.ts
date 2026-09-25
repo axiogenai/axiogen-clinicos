@@ -14,17 +14,30 @@ const API_BASE = getApiBase();
 
 function mapPatient(p: any) {
   if (!p) return null;
+  let ageUnit: 'years' | 'months' = 'years';
+  let ageMonths: string | undefined = undefined;
+  let cleanNotes = p.notes || '';
+
+  const match = cleanNotes.match(/\[AGE_MONTHS:([^\]]+)\]/);
+  if (match) {
+    ageUnit = 'months';
+    ageMonths = match[1];
+    cleanNotes = cleanNotes.replace(/\[AGE_MONTHS:[^\]]+\]/g, '').trim();
+  }
+
   return {
     id: p.id,
     clinicId: p.clinic_id,
     name: p.name,
     age: p.age,
+    ageUnit,
+    ageMonths,
     gender: p.gender,
     phone: p.phone,
     village: p.village,
     pastHistory: p.past_history,
     allergies: p.allergies,
-    notes: p.notes,
+    notes: cleanNotes,
     createdAt: p.created_at,
     updatedAt: p.updated_at,
     validity: p.validity,
@@ -53,6 +66,17 @@ function mapTemplate(t: any) {
 
 function mapQueueItem(q: any) {
   if (!q) return null;
+  let ageUnit: 'years' | 'months' = 'years';
+  let ageMonths: string | undefined = undefined;
+  let cleanNotes = q.notes || '';
+
+  const match = cleanNotes.match(/\[AGE_MONTHS:([^\]]+)\]/);
+  if (match) {
+    ageUnit = 'months';
+    ageMonths = match[1];
+    cleanNotes = cleanNotes.replace(/\[AGE_MONTHS:[^\]]+\]/g, '').trim();
+  }
+
   return {
     queueId: q.queue_id,
     id: q.queue_id,
@@ -60,11 +84,13 @@ function mapQueueItem(q: any) {
     patientId: q.patient_id,
     name: q.name,
     age: q.age,
+    ageUnit,
+    ageMonths,
     phone: q.phone,
     village: q.village,
     timeAdded: q.time_added,
     complaint: q.complaint,
-    notes: q.notes,
+    notes: cleanNotes,
     date: q.date,
     status: q.status,
     paymentStatus: q.payment_status || 'paid',
@@ -239,17 +265,28 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
 
     if (method === 'POST') {
       const nowIso = new Date().toISOString();
+      let dbAge: number | null = null;
+      let notesWithAge = body.notes || '';
+
+      if (body.ageUnit === 'months' && body.ageMonths !== undefined && body.ageMonths !== '') {
+        dbAge = 0;
+        notesWithAge = `${notesWithAge.replace(/\[AGE_MONTHS:[^\]]+\]/g, '').trim()} [AGE_MONTHS:${body.ageMonths}]`.trim();
+      } else if (body.age !== undefined && body.age !== '' && !isNaN(Number(body.age))) {
+        dbAge = parseInt(String(body.age), 10);
+        notesWithAge = notesWithAge.replace(/\[AGE_MONTHS:[^\]]+\]/g, '').trim();
+      }
+
       const row = {
         id: body.id || `PT${Date.now()}`,
         clinic_id: body.clinicId || 1,
         name: body.name,
-        age: body.age !== undefined && body.age !== '' ? parseInt(body.age, 10) : null,
+        age: dbAge,
         gender: body.gender || 'Other',
         phone: body.phone || '',
         village: body.village || '',
         past_history: body.pastHistory || '',
         allergies: body.allergies || '',
-        notes: body.notes || '',
+        notes: notesWithAge,
         case_paper_no: body.casePaperNo || null,
         validity: body.validity || null,
         created_at: body.createdAt || nowIso,
@@ -265,7 +302,17 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
       const id = parts[2];
       const updates: any = {};
       if (body.name !== undefined) updates.name = body.name;
-      if (body.age !== undefined) updates.age = body.age !== '' ? parseInt(body.age, 10) : null;
+
+      if (body.ageUnit === 'months' && body.ageMonths !== undefined && body.ageMonths !== '') {
+        updates.age = 0;
+        const currentNotes = body.notes !== undefined ? body.notes : '';
+        updates.notes = `${currentNotes.replace(/\[AGE_MONTHS:[^\]]+\]/g, '').trim()} [AGE_MONTHS:${body.ageMonths}]`.trim();
+      } else if (body.age !== undefined) {
+        updates.age = body.age !== '' && !isNaN(Number(body.age)) ? parseInt(String(body.age), 10) : null;
+        if (body.notes !== undefined) {
+          updates.notes = body.notes.replace(/\[AGE_MONTHS:[^\]]+\]/g, '').trim();
+        }
+      }
       if (body.gender !== undefined) updates.gender = body.gender;
       if (body.phone !== undefined) updates.phone = body.phone;
       if (body.village !== undefined) updates.village = body.village;
@@ -487,17 +534,28 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
         }
       }
 
+      let dbAge: number | null = null;
+      let notesWithAge = body.notes || '';
+
+      if (body.ageUnit === 'months' && body.ageMonths !== undefined && body.ageMonths !== '') {
+        dbAge = 0;
+        notesWithAge = `${notesWithAge.replace(/\[AGE_MONTHS:[^\]]+\]/g, '').trim()} [AGE_MONTHS:${body.ageMonths}]`.trim();
+      } else if (body.age !== undefined && body.age !== '' && !isNaN(Number(body.age))) {
+        dbAge = parseInt(String(body.age), 10);
+        notesWithAge = notesWithAge.replace(/\[AGE_MONTHS:[^\]]+\]/g, '').trim();
+      }
+
       const row = {
         queue_id: body.queueId || body.id || `Q${Date.now()}`,
         clinic_id: body.clinicId || 1,
         patient_id: body.patientId,
         name: body.name,
-        age: body.age !== undefined && body.age !== '' ? parseInt(body.age, 10) : null,
+        age: dbAge,
         phone: body.phone || '',
         village: body.village || '',
         time_added: body.timeAdded || new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }),
         complaint: body.complaint || '',
-        notes: body.notes || '',
+        notes: notesWithAge,
         date: targetDate,
         status: body.status || 'waiting',
         payment_status: body.paymentStatus || 'paid',
@@ -518,9 +576,21 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
       if (body.paymentStatus !== undefined) updates.payment_status = body.paymentStatus;
       if (body.paymentMode !== undefined) updates.payment_mode = body.paymentMode;
       if (body.complaint !== undefined) updates.complaint = body.complaint;
-      if (body.notes !== undefined) updates.notes = body.notes;
+
+      if (body.ageUnit === 'months' && body.ageMonths !== undefined && body.ageMonths !== '') {
+        updates.age = 0;
+        const currentNotes = body.notes !== undefined ? body.notes : '';
+        updates.notes = `${currentNotes.replace(/\[AGE_MONTHS:[^\]]+\]/g, '').trim()} [AGE_MONTHS:${body.ageMonths}]`.trim();
+      } else if (body.age !== undefined) {
+        updates.age = body.age !== '' && !isNaN(Number(body.age)) ? parseInt(String(body.age), 10) : null;
+        if (body.notes !== undefined) {
+          updates.notes = body.notes.replace(/\[AGE_MONTHS:[^\]]+\]/g, '').trim();
+        }
+      } else if (body.notes !== undefined) {
+        updates.notes = body.notes;
+      }
+
       if (body.name !== undefined) updates.name = body.name;
-      if (body.age !== undefined) updates.age = body.age;
       if (body.phone !== undefined) updates.phone = body.phone;
       if (body.village !== undefined) updates.village = body.village;
       if (body.casePaperNo !== undefined) updates.case_paper_no = body.casePaperNo;

@@ -22,6 +22,7 @@ import { useClinic } from '../context/ClinicContext';
 import { api } from '../api/client';
 import { filterAndSortPatients } from './PatientSearch';
 import VillageAutocompleteInput from './VillageAutocompleteInput';
+import { formatPatientAge } from '../utils/patientFormatter';
 
 interface Props {
   selectedPatient: Patient | null;
@@ -81,6 +82,8 @@ export default function PatientRegistrationForm({
   const [formData, setFormData] = useState({
     name: '',
     age: '',
+    ageUnit: 'years' as 'years' | 'months',
+    ageMonths: '',
     gender: 'M' as 'M' | 'F' | 'Other',
     phone: '',
     village: '',
@@ -164,17 +167,29 @@ export default function PatientRegistrationForm({
         newErrors.name = 'Patient name should only contain letters, spaces, dots or hyphens';
       }
 
+      // Phone number is optional now. If provided, must be a valid 10-digit number.
       const cleanPhone = formData.phone.replace(/\D/g, '');
-      if (!cleanPhone || cleanPhone.length !== 10) {
-        newErrors.phone = 'Valid 10-digit mobile number required';
-      } else if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
-        newErrors.phone = 'Mobile number must start with 6, 7, 8, or 9 (valid Indian mobile)';
+      if (cleanPhone) {
+        if (cleanPhone.length !== 10) {
+          newErrors.phone = 'If provided, mobile number must be 10 digits';
+        } else if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+          newErrors.phone = 'Mobile number must start with 6, 7, 8, or 9 (valid Indian mobile)';
+        }
       }
 
-      if (formData.age.trim()) {
-        const numAge = Number(formData.age);
-        if (isNaN(numAge) || !Number.isInteger(numAge) || numAge < 1 || numAge > 99) {
-          newErrors.age = 'Age must be 2 digits (1 - 99)';
+      if (formData.ageUnit === 'months') {
+        if (formData.ageMonths.trim()) {
+          const numMonths = Number(formData.ageMonths);
+          if (isNaN(numMonths) || numMonths <= 0 || numMonths > 48) {
+            newErrors.age = 'Baby age in months must be between 0.1 and 48 (e.g. 1, 1.2, 3, 4)';
+          }
+        }
+      } else {
+        if (formData.age.trim()) {
+          const numAge = Number(formData.age);
+          if (isNaN(numAge) || !Number.isInteger(numAge) || numAge < 1 || numAge > 120) {
+            newErrors.age = 'Age must be between 1 and 120 years';
+          }
         }
       }
 
@@ -186,11 +201,13 @@ export default function PatientRegistrationForm({
       }
 
       // Check if patient with EXACT SAME name and phone already registered
-      const exactDuplicate = matchedFamilyMembers.find(
-        p => p.name.trim().toLowerCase() === trimmedName.toLowerCase()
-      );
-      if (exactDuplicate) {
-        newErrors.name = `Patient "${exactDuplicate.name}" is already registered with this mobile number. Select them from Existing Patients or use a different name for a family member.`;
+      if (cleanPhone) {
+        const exactDuplicate = matchedFamilyMembers.find(
+          p => p.name.trim().toLowerCase() === trimmedName.toLowerCase()
+        );
+        if (exactDuplicate) {
+          newErrors.name = `Patient "${exactDuplicate.name}" is already registered with this mobile number. Select them from Existing Patients or use a different name for a family member.`;
+        }
       }
     } else {
       if (!chosenPatient) {
@@ -224,7 +241,9 @@ export default function PatientRegistrationForm({
     } else {
       onSubmit({
         name: formData.name.trim(),
-        age: formData.age ? parseInt(formData.age, 10) : 0,
+        age: formData.ageUnit === 'months' ? 0 : (formData.age ? parseInt(formData.age, 10) : 0),
+        ageUnit: formData.ageUnit,
+        ageMonths: formData.ageUnit === 'months' ? formData.ageMonths.trim() : undefined,
         gender: formData.gender,
         phone: formData.phone.replace(/\D/g, ''),
         village: formData.village.trim(),
@@ -432,7 +451,7 @@ export default function PatientRegistrationForm({
                         <div>
                           <div className="font-bold text-sm text-[#1a1c1a] flex items-center gap-2">
                             <span>{p.name}</span>
-                            <span className="text-xs text-[#7c766d] font-normal">({p.age}y · {p.gender === 'M' ? 'Male' : 'Female'})</span>
+                            <span className="text-xs text-[#7c766d] font-normal">({formatPatientAge(p)} · {p.gender === 'M' ? 'Male' : 'Female'})</span>
                           </div>
                           <div className="text-xs text-[#7c766d] flex items-center gap-3 mt-0.5">
                             <span className="flex items-center gap-1"><Phone className="w-3 h-3 text-[#047857]" />{p.phone}</span>
@@ -470,7 +489,7 @@ export default function PatientRegistrationForm({
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="font-bold text-[#1a1c1a] text-sm">{chosenPatient.name}</p>
-                      <span className="text-[11px] text-[#047857] font-semibold">({chosenPatient.age} yrs · {chosenPatient.gender === 'M' ? 'Male' : 'Female'})</span>
+                      <span className="text-[11px] text-[#047857] font-semibold">({formatPatientAge(chosenPatient)} · {chosenPatient.gender === 'M' ? 'Male' : 'Female'})</span>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-[#4b463e] mt-1">
                       <span className="flex items-center gap-1"><Phone className="w-3 h-3 text-[#047857]" />{chosenPatient.phone}</span>
@@ -587,18 +606,62 @@ export default function PatientRegistrationForm({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="form-label">Age (Optional, 2 Digits)</label>
-                  <input 
-                    ref={ageInputRef}
-                    type="text" 
-                    inputMode="numeric"
-                    maxLength={2}
-                    className={`form-input ${errors.age ? 'error' : ''}`}
-                    placeholder="e.g. 28"
-                    value={formData.age} 
-                    onChange={e => setFormData({...formData, age: e.target.value.replace(/\D/g, '').slice(0, 2)})} 
-                    onKeyDown={e => handleKeyDown(e, genderSelectRef)}
-                  />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="form-label mb-0">Age</label>
+                    <div className="inline-flex rounded-lg border border-[#e4e2e1] p-0.5 bg-[#f8f6f0] text-[11px]">
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, ageUnit: 'years' }))}
+                        className={`px-2 py-0.5 rounded-md font-semibold transition-all cursor-pointer ${
+                          formData.ageUnit !== 'months'
+                            ? 'bg-white text-[#047857] shadow-xs'
+                            : 'text-[#7c766d] hover:text-[#1a1c1a]'
+                        }`}
+                      >
+                        Years
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, ageUnit: 'months' }))}
+                        className={`px-2 py-0.5 rounded-md font-semibold transition-all cursor-pointer ${
+                          formData.ageUnit === 'months'
+                            ? 'bg-[#047857] text-white shadow-xs'
+                            : 'text-[#7c766d] hover:text-[#1a1c1a]'
+                        }`}
+                      >
+                        Months (Baby)
+                      </button>
+                    </div>
+                  </div>
+                  {formData.ageUnit === 'months' ? (
+                    <input 
+                      ref={ageInputRef}
+                      type="text" 
+                      inputMode="decimal"
+                      className={`form-input ${errors.age ? 'error' : ''}`}
+                      placeholder="e.g. 1, 1.2, 3, 4 months"
+                      value={formData.ageMonths} 
+                      onChange={e => {
+                        const val = e.target.value.replace(/[^0-9.]/g, '');
+                        const parts = val.split('.');
+                        const cleaned = parts.length > 2 ? `${parts[0]}.${parts.slice(1).join('')}` : val;
+                        setFormData({ ...formData, ageMonths: cleaned });
+                      }} 
+                      onKeyDown={e => handleKeyDown(e, genderSelectRef)}
+                    />
+                  ) : (
+                    <input 
+                      ref={ageInputRef}
+                      type="text" 
+                      inputMode="numeric"
+                      maxLength={3}
+                      className={`form-input ${errors.age ? 'error' : ''}`}
+                      placeholder="e.g. 28"
+                      value={formData.age} 
+                      onChange={e => setFormData({...formData, age: e.target.value.replace(/\D/g, '').slice(0, 3)})} 
+                      onKeyDown={e => handleKeyDown(e, genderSelectRef)}
+                    />
+                  )}
                   {errors.age && <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.age}</p>}
                 </div>
 
@@ -637,14 +700,14 @@ export default function PatientRegistrationForm({
               </div>
 
               <div>
-                <label className="form-label">Phone Number <span className="text-red-500">*</span> (10 Digits)</label>
+                <label className="form-label">Phone Number <span className="text-xs text-[#7c766d] font-normal">(Optional · 10 Digits)</span></label>
                 <input 
                   ref={phoneInputRef}
                   type="tel" 
                   inputMode="numeric"
                   maxLength={10}
                   className={`form-input ${errors.phone ? 'error' : ''}`}
-                  placeholder="e.g. 9876543210"
+                  placeholder="e.g. 9876543210 (Optional)"
                   value={formData.phone} 
                   onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})} 
                   onKeyDown={e => handleKeyDown(e, villageInputRef)}

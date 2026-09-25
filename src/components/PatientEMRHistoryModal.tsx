@@ -3,6 +3,7 @@ import { X, Calendar, Pill, FileText, Clock, Copy, Check } from 'lucide-react';
 import type { Patient } from '../data/patients';
 import type { CasePaper } from '../types';
 import { api } from '../api/client';
+import { formatAgeGender } from '../utils/patientFormatter';
 
 interface Props {
   patient: Patient;
@@ -55,7 +56,7 @@ export default function PatientEMRHistoryModal({ patient, onClose, onLoadPrescri
               <h3 className="text-lg font-serif font-bold text-white">{patient.name}</h3>
             </div>
             <p className="text-xs text-emerald-100 mt-1">
-              {patient.age} Yrs / {patient.gender === 'M' ? 'Male' : 'Female'} · {patient.phone} · {patient.village || 'N/A'}
+              {formatAgeGender(patient)} · {patient.phone} · {patient.village || 'N/A'}
             </p>
           </div>
           <button

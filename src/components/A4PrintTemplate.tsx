@@ -11,6 +11,7 @@ import {
   translateDurationAsync,
 } from '../utils/medicalTranslator';
 import { formatLocalizedDate, formatFollowUpDate } from '../utils/dateFormatter';
+import { formatAgeGender } from '../utils/patientFormatter';
 
 export type PrintLanguage = 'marathi' | 'english' | 'hindi' | 'kannada';
 
@@ -613,7 +614,7 @@ export default function A4PrintTemplate({
               {patient.village || ''}
             </div>
             <div style={{ position: 'absolute', top: '8.5mm', left: '135mm', fontSize: '13px' }}>
-              {patient.age} Yrs / {patient.gender === 'M' ? 'Male' : 'Female'}
+              {formatAgeGender(patient, language)}
             </div>
           </div>
         ) : (
@@ -741,7 +742,7 @@ export default function A4PrintTemplate({
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {patient.age} Yrs / {patient.gender === 'M' ? 'Male' : 'Female'}
+                  {formatAgeGender(patient, language)}
                 </span>
               </div>
             </div>

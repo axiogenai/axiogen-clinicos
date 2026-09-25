@@ -3,6 +3,7 @@ import { X, AlertTriangle, Phone, MapPin, Clock, Edit2, Save, User, FileText, Ac
 import type { Patient, QueueItem, PastVisit } from '../data/patients';
 import { useClinic } from '../context/ClinicContext';
 import VillageAutocompleteInput from './VillageAutocompleteInput';
+import { formatPatientAge } from '../utils/patientFormatter';
 
 interface Props {
   queueItem: QueueItem;
@@ -19,6 +20,8 @@ export default function PatientDetailsModal({ queueItem, patient, onClose }: Pro
   const [formData, setFormData] = useState({
     name: queueItem.name || patient?.name || '',
     age: queueItem.age || patient?.age || 0,
+    ageUnit: (queueItem.ageUnit || patient?.ageUnit || 'years') as 'years' | 'months',
+    ageMonths: queueItem.ageMonths !== undefined ? String(queueItem.ageMonths) : (patient?.ageMonths !== undefined ? String(patient?.ageMonths) : ''),
     gender: (queueItem.gender || patient?.gender || 'M') as 'M' | 'F' | 'Other',
     phone: queueItem.phone || patient?.phone || '',
     village: queueItem.village || patient?.village || '',
@@ -50,6 +53,8 @@ export default function PatientDetailsModal({ queueItem, patient, onClose }: Pro
     setFormData({
       name: queueItem.name || patient?.name || '',
       age: queueItem.age || patient?.age || 0,
+      ageUnit: (queueItem.ageUnit || patient?.ageUnit || 'years') as 'years' | 'months',
+      ageMonths: queueItem.ageMonths !== undefined ? String(queueItem.ageMonths) : (patient?.ageMonths !== undefined ? String(patient?.ageMonths) : ''),
       gender: (queueItem.gender || patient?.gender || 'M') as 'M' | 'F' | 'Other',
       phone: queueItem.phone || patient?.phone || '',
       village: queueItem.village || patient?.village || '',
@@ -85,7 +90,7 @@ export default function PatientDetailsModal({ queueItem, patient, onClose }: Pro
                   )}
                 </div>
                 <div className="text-emerald-100 text-[11px] sm:text-xs mt-1 font-medium flex flex-wrap items-center gap-1.5 sm:gap-2">
-                  <span>{formData.age ? `${formData.age} yrs` : 'Age N/A'}</span>
+                  <span>{formatPatientAge(formData) || 'Age N/A'}</span>
                   <span>•</span>
                   <span>{formData.gender === 'M' ? 'Male' : formData.gender === 'F' ? 'Female' : 'Other'}</span>
                   <span>•</span>
@@ -277,16 +282,58 @@ export default function PatientDetailsModal({ queueItem, patient, onClose }: Pro
             {/* Age & Gender */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-[#4b463e] mb-1">Age (Years)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="120"
-                  value={formData.age || ''}
-                  onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value, 10) || 0 })}
-                  placeholder="e.g. 28"
-                  className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-[#cdc6ba] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#047857] text-[#1a1c1a]"
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-[#4b463e]">Age</label>
+                  <div className="inline-flex rounded-lg border border-[#e4e2e1] p-0.5 bg-[#f8f6f0] text-[10px]">
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, ageUnit: 'years' }))}
+                      className={`px-1.5 py-0.5 rounded font-semibold transition-all cursor-pointer ${
+                        formData.ageUnit !== 'months'
+                          ? 'bg-white text-[#047857] shadow-xs'
+                          : 'text-[#7c766d] hover:text-[#1a1c1a]'
+                      }`}
+                    >
+                      Years
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, ageUnit: 'months' }))}
+                      className={`px-1.5 py-0.5 rounded font-semibold transition-all cursor-pointer ${
+                        formData.ageUnit === 'months'
+                          ? 'bg-[#047857] text-white shadow-xs'
+                          : 'text-[#7c766d] hover:text-[#1a1c1a]'
+                      }`}
+                    >
+                      Months (Baby)
+                    </button>
+                  </div>
+                </div>
+                {formData.ageUnit === 'months' ? (
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={formData.ageMonths}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9.]/g, '');
+                      const parts = val.split('.');
+                      const cleaned = parts.length > 2 ? `${parts[0]}.${parts.slice(1).join('')}` : val;
+                      setFormData({ ...formData, ageMonths: cleaned });
+                    }}
+                    placeholder="e.g. 1, 1.2, 3, 4 months"
+                    className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-[#cdc6ba] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#047857] text-[#1a1c1a]"
+                  />
+                ) : (
+                  <input
+                    type="number"
+                    min="0"
+                    max="120"
+                    value={formData.age || ''}
+                    onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value, 10) || 0 })}
+                    placeholder="e.g. 28"
+                    className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-[#cdc6ba] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#047857] text-[#1a1c1a]"
+                  />
+                )}
               </div>
               <div>
                 <label className="block text-xs font-bold text-[#4b463e] mb-1">Gender</label>

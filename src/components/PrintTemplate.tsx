@@ -11,6 +11,7 @@ import {
   translateDurationAsync,
 } from '../utils/medicalTranslator';
 import { formatLocalizedDate, formatFollowUpDate } from '../utils/dateFormatter';
+import { formatAgeGender } from '../utils/patientFormatter';
 export type PrintLanguage = 'marathi' | 'english' | 'hindi' | 'kannada';
 interface PrintTemplateProps {
   patient: Patient;
@@ -493,7 +494,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
             </div>
             {/* Age/Sex slot */}
             <div style={{ position: "absolute", top: "7.2mm", left: "133mm", fontSize: "12.5px" }}>
-              {patient.age} Yrs / {patient.gender === "M" ? "Male" : "Female"}
+              {formatAgeGender(patient, language)}
             </div>
           </div>
         ) : (
@@ -525,7 +526,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
               <div style={{ display: "flex", alignItems: "baseline", gap: "6px", flex: "0 0 36%", minWidth: 0 }}>
                 <span style={{ whiteSpace: "nowrap", fontSize: "12.5px", fontWeight: 600 }}>{labels.age}</span>
                 <span style={{ flex: 1, borderBottom: "1px solid #333", paddingLeft: "4px", paddingBottom: "1px", fontWeight: 700, color: "#111", whiteSpace: "nowrap" }}>
-                  {patient.age} Yrs / {patient.gender === "M" ? "Male" : "Female"}
+                  {formatAgeGender(patient, language)}
                 </span>
               </div>
             </div>

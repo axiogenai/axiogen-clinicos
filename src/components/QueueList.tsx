@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Phone, MapPin, Clock, Stethoscope, Check, X, ArrowRight, Eye, Trash2, Banknote, QrCode, RefreshCw, CheckCircle2, AlertCircle, Search } from 'lucide-react';
 import type { Patient, QueueItem } from '../data/patients';
 import { useClinic } from '../context/ClinicContext';
+import { formatPatientAge } from '../utils/patientFormatter';
 
 interface Props {
   queue: QueueItem[];
@@ -206,7 +207,7 @@ export default function QueueList({
         {filteredQueue.map((item, index) => {
           const patient = getPatient(item.patientId);
           const name = item.name || patient?.name || 'Unknown';
-          const age = item.age || patient?.age;
+          const ageDisplay = formatPatientAge(item) || (patient ? formatPatientAge(patient) : '');
           const gender = item.gender || patient?.gender;
           const phone = item.phone || patient?.phone || 'N/A';
           const village = item.village || patient?.village || 'N/A';
@@ -223,7 +224,7 @@ export default function QueueList({
                   </span>
                   <div className="min-w-0">
                     <div className="font-bold text-[#1a1c1a] text-sm truncate">{name}</div>
-                    {age && <div className="text-[11px] text-[#7c766d]">{age}y · {gender === 'M' ? 'Male' : 'Female'}</div>}
+                    {ageDisplay && <div className="text-[11px] text-[#7c766d]">{ageDisplay} · {gender === 'M' ? 'Male' : 'Female'}</div>}
                   </div>
                 </div>
                 <div className="shrink-0">{getStatusBadge(item.status)}</div>
@@ -389,7 +390,7 @@ export default function QueueList({
               {filteredQueue.map((item, index) => {
               const patient = getPatient(item.patientId);
               const name = item.name || patient?.name || 'Unknown';
-              const age = item.age || patient?.age;
+              const ageDisplay = formatPatientAge(item) || (patient ? formatPatientAge(patient) : '');
               const gender = item.gender || patient?.gender;
               const phone = item.phone || patient?.phone || 'N/A';
               const village = item.village || patient?.village || 'N/A';
@@ -411,9 +412,9 @@ export default function QueueList({
                       <div className="font-bold text-[#1a1c1a] text-sm truncate group-hover:text-[#047857] transition-colors">
                         {name}
                       </div>
-                      {age && (
+                      {ageDisplay && (
                         <div className="text-[11px] text-[#7c766d] font-medium truncate">
-                          {age}y · {gender === 'M' ? 'Male' : 'Female'}
+                          {ageDisplay} · {gender === 'M' ? 'Male' : 'Female'}
                         </div>
                       )}
                     </div>
