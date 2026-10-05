@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import bcrypt from 'bcryptjs';
 import { translateMedicalTextAsync } from '../utils/medicalTranslator';
+import { getTodayDateStr } from '../utils/dateFormatter';
 
 const getApiBase = () => {
   if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
@@ -418,40 +419,31 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
     }
   }
 
-  // 7. Queue
+  // 7. Queue (Optimized for low-bandwidth clinic connectivity & today-only filter)
   if (endpoint.startsWith('/queue')) {
     if (endpoint.includes('/stats')) {
-      let targetDate = '';
-      if (endpoint.includes('date=')) {
-        targetDate = endpoint.split('date=')[1]?.split('&')[0];
-      } else {
-        const now = new Date();
-        const options = { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' } as const;
-        targetDate = new Intl.DateTimeFormat('en-CA', options).format(now);
-      }
+      const targetDate = endpoint.includes('date=')
+        ? (endpoint.split('date=')[1]?.split('&')[0] || getTodayDateStr())
+        : getTodayDateStr();
       const { data } = await supabase.from('queues').select('status').eq('date', targetDate);
       const total = data?.length || 0;
       const waiting = data?.filter((q: any) => q.status === 'waiting').length || 0;
-      const inRoom = data?.filter((q: any) => q.status === 'in-room').length || 0;
-      const done = data?.filter((q: any) => q.status === 'done').length || 0;
+      const inRoom = data?.filter((q: any) => q.status === 'in-room' || q.status === 'in-consultation').length || 0;
+      const done = data?.filter((q: any) => q.status === 'done' || q.status === 'completed').length || 0;
       return { total, waiting, inRoom, done } as any;
     }
 
     if (method === 'GET') {
-      let targetDate = '';
-      if (endpoint.includes('date=')) {
-        targetDate = endpoint.split('date=')[1]?.split('&')[0];
-      } else {
-        const now = new Date();
-        const options = { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' } as const;
-        targetDate = new Intl.DateTimeFormat('en-CA', options).format(now);
-      }
+      const targetDate = endpoint.includes('date=')
+        ? (endpoint.split('date=')[1]?.split('&')[0] || getTodayDateStr())
+        : getTodayDateStr();
 
-      let query = supabase.from('queues').select('*');
-      if (targetDate) {
-        query = query.eq('date', targetDate);
-      }
-      const { data, error } = await query.order('created_at', { ascending: true });
+      // Query lean columns only to conserve doctor cabin cellular/wifi bandwidth (<2KB payload)
+      const { data, error } = await supabase
+        .from('queues')
+        .select('queue_id, clinic_id, patient_id, name, age, phone, village, time_added, complaint, notes, date, status, payment_status, payment_mode, case_paper_no, created_at, updated_at')
+        .eq('date', targetDate)
+        .order('created_at', { ascending: true });
       if (error) throw error;
 
       // Deduplicate queue entries by (date + patient_id || name)
@@ -495,7 +487,7 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
 
     if (method === 'POST') {
       const nowIso = new Date().toISOString();
-      const targetDate = body.date || new Date().toISOString().split('T')[0];
+      const targetDate = body.date || getTodayDateStr();
       const patientId = body.patientId;
       const patientName = (body.name || '').trim();
 
@@ -1220,8 +1212,8 @@ export const api = {
   deletePatient: (id: string) => apiRequest<any>(`/patients/${id}`, { method: 'DELETE' }),
 
   // Queue
-  getQueue: (date?: string) => apiRequest<any[]>(`/queue${date ? `?date=${date}` : ''}`),
-  getQueueStats: (date?: string) => apiRequest<any>(`/queue/stats${date ? `?date=${date}` : ''}`),
+  getQueue: (date?: string) => apiRequest<any[]>(`/queue?date=${date || getTodayDateStr()}`),
+  getQueueStats: (date?: string) => apiRequest<any>(`/queue/stats?date=${date || getTodayDateStr()}`),
   addToQueue: (queueItem: any) => apiRequest<any>('/queue', { method: 'POST', body: JSON.stringify(queueItem) }),
   updateQueueStatus: (queueId: string, status: string) => apiRequest<any>(`/queue/${queueId}`, { method: 'PUT', body: JSON.stringify({ status }) }),
   updateQueueItem: (queueId: string, data: any) => apiRequest<any>(`/queue/${queueId}`, { method: 'PUT', body: JSON.stringify(data) }),

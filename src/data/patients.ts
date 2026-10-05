@@ -25,6 +25,7 @@ export interface QueueItem {
   queueId: string;
   patientId: string;
   timeAdded: string;
+  date?: string;
   complaint: string;
   status: 'waiting' | 'in-consultation' | 'completed' | 'cancelled';
   notes?: string;

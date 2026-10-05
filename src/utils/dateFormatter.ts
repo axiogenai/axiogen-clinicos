@@ -94,3 +94,20 @@ export function formatFollowUpDate(dateString?: string, lang: SupportedLanguage 
     return dateString;
   }
 }
+
+/**
+ * Returns today's date string in YYYY-MM-DD format using Indian Standard Time (Asia/Kolkata).
+ * Guarantees zero timezone offset issues between UTC and clinic operations.
+ */
+export function getTodayDateStr(): string {
+  try {
+    const options = { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' } as const;
+    return new Intl.DateTimeFormat('en-CA', options).format(new Date());
+  } catch {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+}

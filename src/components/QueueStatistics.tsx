@@ -1,15 +1,22 @@
+import { useMemo } from 'react';
 import { Clock, Stethoscope, CheckCircle2, TrendingUp } from 'lucide-react';
 import type { QueueItem } from '../data/patients';
+import { getTodayDateStr } from '../utils/dateFormatter';
 
 interface Props {
   queue: QueueItem[];
 }
 
 export default function QueueStatistics({ queue }: Props) {
-  const total = queue.length;
-  const waiting = queue.filter(q => q.status === 'waiting').length;
-  const inConsultation = queue.filter(q => q.status === 'in-consultation').length;
-  const completed = queue.filter(q => q.status === 'completed').length;
+  const today = getTodayDateStr();
+  const todayQueue = useMemo(() => {
+    return queue.filter(q => !q.date || q.date === today);
+  }, [queue, today]);
+
+  const total = todayQueue.length;
+  const waiting = todayQueue.filter(q => q.status === 'waiting').length;
+  const inConsultation = todayQueue.filter(q => q.status === 'in-consultation').length;
+  const completed = todayQueue.filter(q => q.status === 'completed').length;
   const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   const stats = [

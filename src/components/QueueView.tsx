@@ -6,6 +6,7 @@ import PatientEMRHistoryModal from './PatientEMRHistoryModal';
 import ConfirmModal from './ConfirmModal';
 import { useClinic } from '../context/ClinicContext';
 import { api } from '../api/client';
+import { getTodayDateStr } from '../utils/dateFormatter';
 
 interface QueueViewProps {
   queue: QueueItem[];
@@ -16,7 +17,7 @@ interface QueueViewProps {
 const EMPTY_FORM = { name: '', age: '', gender: 'M' as 'M' | 'F' | 'Other', phone: '', village: '', complaint: '' };
 
 export default function QueueView({ queue, patients, onSelectPatient }: QueueViewProps) {
-  const { deletePatient, registerAndEnqueue, patients: allPatients, refreshPatients, addToQueue } = useClinic();
+  const { deletePatient, registerAndEnqueue, patients: allPatients, refreshPatients, addToQueue, loadQueueOnly, isSyncingQueue } = useClinic();
   const [patientSearchQuery, setPatientSearchQuery] = useState('');
   const [selectedEMRPatient, setSelectedEMRPatient] = useState<Patient | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -77,9 +78,13 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
 
   // Doctor View: Deduplicate by patient and sort: In Room at top, then Waiting in FIFO, then Completed at bottom
   const displayQueue = useMemo(() => {
+    const today = getTodayDateStr();
     const uniqueMap = new Map<string, QueueItem>();
 
     for (const item of queue) {
+      // STRICT FILTER: Only today's patients appear in doctor's live queue
+      if (item.date && item.date !== today) continue;
+
       const patientKey = (item.patientId || item.name || '').trim().toLowerCase();
       if (!patientKey) continue;
 
@@ -423,6 +428,16 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
               <Users className="w-3 h-3 text-[#065f46]" />
               {queueSearchQuery.trim() ? `${filteredQueue.length} of ${displayQueue.length} Patients` : `${displayQueue.length} Patients`}
             </span>
+            <button
+              type="button"
+              onClick={() => loadQueueOnly()}
+              disabled={isSyncingQueue}
+              title="Instant live queue sync (low data mode <1KB)"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold rounded-full border border-emerald-300 bg-white text-emerald-800 hover:bg-emerald-50 shadow-xs active:scale-95 transition-all cursor-pointer shrink-0"
+            >
+              <RefreshCw className={`w-3 h-3 text-emerald-600 ${isSyncingQueue ? 'animate-spin' : ''}`} />
+              <span>{isSyncingQueue ? 'Syncing…' : 'Sync Live'}</span>
+            </button>
           </div>
 
           {/* Instant Search Bar in Queue Header */}

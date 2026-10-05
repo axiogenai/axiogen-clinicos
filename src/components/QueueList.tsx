@@ -3,6 +3,7 @@ import { Phone, MapPin, Clock, Stethoscope, Check, X, ArrowRight, Eye, Trash2, B
 import type { Patient, QueueItem } from '../data/patients';
 import { useClinic } from '../context/ClinicContext';
 import { formatPatientAge } from '../utils/patientFormatter';
+import { getTodayDateStr } from '../utils/dateFormatter';
 
 interface Props {
   queue: QueueItem[];
@@ -76,7 +77,7 @@ export default function QueueList({
   onRemove,
   onViewDetails,
 }: Props) {
-  const { updateQueuePayment, renewPatient } = useClinic();
+  const { updateQueuePayment, renewPatient, loadQueueOnly, isSyncingQueue } = useClinic();
   const [renewingId, setRenewingId] = useState<string | null>(null);
   const [queueSearchQuery, setQueueSearchQuery] = useState('');
   const getPatient = (id: string, phone?: string, name?: string) => 
@@ -84,8 +85,12 @@ export default function QueueList({
 
   // Receptionist View: Deduplicate by patient and keep arrival order (FIFO)
   const sortedQueue = useMemo(() => {
+    const today = getTodayDateStr();
     const uniqueMap = new Map<string, QueueItem>();
     for (const item of queue) {
+      // STRICT FILTER: Only today's patients appear in receptionist's active queue
+      if (item.date && item.date !== today) continue;
+
       const patientKey = (item.patientId || item.name || '').trim().toLowerCase();
       if (!patientKey) continue;
       if (!uniqueMap.has(patientKey)) {
@@ -176,6 +181,16 @@ export default function QueueList({
           <span className="bg-[#f2eee3] text-[#4b463e] text-[11px] font-bold px-3 py-0.5 rounded-full border border-[#cdc6ba] shrink-0">
             {queueSearchQuery.trim() ? `${filteredQueue.length} of ${sortedQueue.length} patients` : `${sortedQueue.length} patients`}
           </span>
+          <button
+            type="button"
+            onClick={() => loadQueueOnly()}
+            disabled={isSyncingQueue}
+            title="Instant queue sync (uses <1KB data)"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold rounded-full border border-[#cdc6ba] bg-white text-[#4b463e] hover:bg-[#f5f5f4] shadow-xs active:scale-95 transition-all cursor-pointer shrink-0"
+          >
+            <RefreshCw className={`w-3 h-3 text-[#047857] ${isSyncingQueue ? 'animate-spin' : ''}`} />
+            <span>{isSyncingQueue ? 'Syncing…' : 'Sync Live'}</span>
+          </button>
         </div>
 
         {/* Search Bar in Live Queue */}

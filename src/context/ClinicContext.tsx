@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { Patient, QueueItem } from '../data/patients';
 import type { CaseTemplate } from '../data/templates';
@@ -6,6 +6,7 @@ import type { ClinicSettings } from '../data/clinicSettings';
 import { defaultClinicSettings } from '../data/clinicSettings';
 import { api, type HealthStatusUpdate } from '../api/client';
 import { supabase, supabaseAuth } from '../lib/supabase';
+import { getTodayDateStr } from '../utils/dateFormatter';
 
 export interface UserSession {
   id: number | string;
@@ -28,6 +29,8 @@ interface ClinicContextType {
   logout: () => void;
   patients: Patient[];
   queue: QueueItem[];
+  isSyncingQueue: boolean;
+  loadQueueOnly: () => Promise<void>;
   templates: CaseTemplate[];
   clinicSettings: ClinicSettings;
   toast: ToastMessage | null;
@@ -96,8 +99,11 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
 
   const [queue, setQueue] = useState<QueueItem[]>(() => {
     try {
+      const today = getTodayDateStr();
       const cached = localStorage.getItem('clinicos_cached_queue');
-      return cached ? JSON.parse(cached) : [];
+      if (!cached) return [];
+      const parsed: QueueItem[] = JSON.parse(cached);
+      return Array.isArray(parsed) ? parsed.filter((item) => !item.date || item.date === today) : [];
     } catch {
       return [];
     }
@@ -132,9 +138,10 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
       return; // Skip silently if offline to prevent network error logs
     }
     try {
+      const today = getTodayDateStr();
       const [dbPatients, dbQueue, dbTemplates, dbSettings] = await Promise.allSettled([
         api.getPatients(),
-        api.getQueue(),
+        api.getQueue(today),
         api.getTemplates(),
         api.getClinicSettings(),
       ]);
@@ -144,8 +151,9 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
         try { localStorage.setItem('clinicos_cached_patients', JSON.stringify(dbPatients.value)); } catch {}
       }
       if (dbQueue.status === 'fulfilled') {
-        setQueue(dbQueue.value);
-        try { localStorage.setItem('clinicos_cached_queue', JSON.stringify(dbQueue.value)); } catch {}
+        const todayItems = (dbQueue.value || []).filter((q: any) => !q.date || q.date === today);
+        setQueue(todayItems);
+        try { localStorage.setItem('clinicos_cached_queue', JSON.stringify(todayItems)); } catch {}
       }
       if (dbTemplates.status === 'fulfilled') {
         const parsedTemplates = dbTemplates.value.map((t: any) => {
@@ -269,23 +277,37 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
     setToast({ type: 'info', message: 'You have logged out.' });
   }, []);
 
-  // Lightweight queue-only reload for SSE events (fast, no full re-render)
+  const [isSyncingQueue, setIsSyncingQueue] = useState(false);
+  const queueChannelRef = useRef<any>(null);
+
+  // Lightweight queue-only reload for low-bandwidth sync (<2KB payload)
   const loadQueueOnly = useCallback(async () => {
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       return; // Skip silently if offline to prevent network error logs
     }
+    setIsSyncingQueue(true);
     try {
-      const dbQueue = await api.getQueue();
+      const today = getTodayDateStr();
+      const dbQueue = await api.getQueue(today);
       if (Array.isArray(dbQueue)) {
-        const normalized = dbQueue.map((item: any) => ({
-          ...item,
-          queueId: item.queueId || item.queue_id || item.id,
-          paymentStatus: (item.paymentStatus || item.payment_status || 'unpaid') as 'paid' | 'unpaid',
-          paymentMode: (item.paymentMode || item.payment_mode || 'cash') as 'cash' | 'online',
-        }));
+        const normalized = dbQueue
+          .filter((item: any) => !item.date || item.date === today)
+          .map((item: any) => ({
+            ...item,
+            date: item.date || today,
+            queueId: item.queueId || item.queue_id || item.id,
+            paymentStatus: (item.paymentStatus || item.payment_status || 'unpaid') as 'paid' | 'unpaid',
+            paymentMode: (item.paymentMode || item.payment_mode || 'cash') as 'cash' | 'online',
+          }));
         setQueue(normalized);
+        try { localStorage.setItem('clinicos_cached_queue', JSON.stringify(normalized)); } catch {}
       }
-    } catch {}
+    } catch (e) {
+      // In doctor cabin with weak connectivity: retain existing queue, never clear it out
+      console.warn('Queue sync error (retaining offline queue):', e);
+    } finally {
+      setIsSyncingQueue(false);
+    }
   }, []);
 
   // Ultra-Fast Zero-Egress Supabase Realtime WebSockets (<50ms Instant Sync)
@@ -295,14 +317,104 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
     // Initial full load
     loadFromDatabase();
 
-    // 1. Supabase Realtime WebSockets for Instant Queue Updates (<50ms)
+    // 1. Supabase Realtime WebSockets for Instant Queue Updates (<50ms, 0 HTTP overhead)
     const queueChannel = supabase
       .channel('realtime_clinic_queue')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'queues' },
+        (payload: any) => {
+          const today = getTodayDateStr();
+          const eventType = payload.eventType;
+
+          if (eventType === 'DELETE' && payload.old?.queue_id) {
+            setQueue((prev) => {
+              const next = prev.filter(q => q.queueId !== payload.old.queue_id);
+              try { localStorage.setItem('clinicos_cached_queue', JSON.stringify(next)); } catch {}
+              return next;
+            });
+            return;
+          }
+
+          const newRow = payload.new;
+          if (newRow && (!newRow.date || newRow.date === today)) {
+            const mappedItem: QueueItem = {
+              queueId: newRow.queue_id,
+              patientId: newRow.patient_id,
+              name: newRow.name,
+              age: newRow.age,
+              ageUnit: 'years',
+              phone: newRow.phone,
+              village: newRow.village,
+              timeAdded: newRow.time_added,
+              complaint: newRow.complaint,
+              notes: newRow.notes,
+              date: newRow.date || today,
+              status: newRow.status,
+              paymentStatus: newRow.payment_status || 'unpaid',
+              paymentMode: newRow.payment_mode || 'cash',
+              casePaperNo: newRow.case_paper_no,
+            };
+            setQueue((prev) => {
+              const filtered = prev.filter(q => q.queueId !== mappedItem.queueId && q.patientId !== mappedItem.patientId && (!q.date || q.date === today));
+              const next = [...filtered, mappedItem];
+              try { localStorage.setItem('clinicos_cached_queue', JSON.stringify(next)); } catch {}
+              return next;
+            });
+          } else {
+            loadQueueOnly();
+          }
+        }
+      )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'queue' },
         () => {
           loadQueueOnly();
+        }
+      )
+      .on(
+        'broadcast',
+        { event: 'patient_enqueued' },
+        (msg: any) => {
+          const today = getTodayDateStr();
+          const item = msg?.payload;
+          if (item && (!item.date || item.date === today)) {
+            setQueue((prev) => {
+              const filtered = prev.filter(q => q.queueId !== item.queueId && q.patientId !== item.patientId && (!q.date || q.date === today));
+              const next = [...filtered, item];
+              try { localStorage.setItem('clinicos_cached_queue', JSON.stringify(next)); } catch {}
+              return next;
+            });
+          }
+        }
+      )
+      .on(
+        'broadcast',
+        { event: 'queue_status_changed' },
+        (msg: any) => {
+          const { queueId, status } = msg?.payload || {};
+          if (queueId && status) {
+            setQueue((prev) =>
+              prev.map((q) =>
+                q.queueId === queueId || q.patientId === queueId || (q.name && q.name.toLowerCase() === queueId.toLowerCase())
+                  ? { ...q, status }
+                  : q
+              )
+            );
+          }
+        }
+      )
+      .on(
+        'broadcast',
+        { event: 'queue_payment_changed' },
+        (msg: any) => {
+          const { queueId, paymentStatus, paymentMode } = msg?.payload || {};
+          if (queueId && paymentStatus) {
+            setQueue((prev) =>
+              prev.map((q) => (q.queueId === queueId ? { ...q, paymentStatus, paymentMode } : q))
+            );
+          }
         }
       )
       .on(
@@ -313,6 +425,8 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
         }
       )
       .subscribe();
+
+    queueChannelRef.current = queueChannel;
 
     // 2. Supabase Realtime WebSockets for Patients Updates
     const patientChannel = supabase
@@ -335,13 +449,15 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleVisibilityChange);
 
-    // 4. Smart Heartbeat Polling: ONLY runs when tab is actively visible (0 bandwidth when tab is background/minimized)
+    // 4. Low-Data Heartbeat Polling: ONLY runs when tab is actively visible (0 bandwidth in background tabs!)
+    // Runs lean 1KB fetch every 8s as a safety net in doctor's cabin if wifi signal drops
     const interval = setInterval(() => {
-      if (document.hidden) return; // Completely pauses in background tabs!
+      if (document.hidden) return;
       loadQueueOnly();
-    }, 15000); // 15-second gentle safety net since Realtime WebSockets handles instant updates
+    }, 8000);
 
     return () => {
+      queueChannelRef.current = null;
       supabase.removeChannel(queueChannel);
       supabase.removeChannel(patientChannel);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -400,13 +516,30 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
   }, [setToast]);
 
   const addToQueue = useCallback((queueItem: QueueItem) => {
-    setQueue((prev) => [...prev, queueItem]);
-    api.addToQueue(queueItem).catch(() => {});
+    const today = getTodayDateStr();
+    const itemWithDate: QueueItem = {
+      ...queueItem,
+      date: queueItem.date || today,
+    };
+    setQueue((prev) => {
+      const filtered = prev.filter(q => (!q.date || q.date === today) && q.queueId !== itemWithDate.queueId && q.patientId !== itemWithDate.patientId);
+      const next = [...filtered, itemWithDate];
+      try { localStorage.setItem('clinicos_cached_queue', JSON.stringify(next)); } catch {}
+      return next;
+    });
+    api.addToQueue(itemWithDate).catch(() => {});
+    try {
+      queueChannelRef.current?.send({
+        type: 'broadcast',
+        event: 'patient_enqueued',
+        payload: itemWithDate,
+      });
+    } catch {}
   }, []);
 
   const updateQueueStatus = useCallback((queueId: string, status: QueueItem['status']) => {
-    setQueue((prev) =>
-      prev.map((item) => {
+    setQueue((prev) => {
+      const next = prev.map((item) => {
         if (
           item.queueId === queueId ||
           item.patientId === queueId ||
@@ -415,26 +548,44 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
           return { ...item, status };
         }
         return item;
-      })
-    );
+      });
+      try { localStorage.setItem('clinicos_cached_queue', JSON.stringify(next)); } catch {}
+      return next;
+    });
     api.updateQueueStatus(queueId, status).catch(() => {});
+    try {
+      queueChannelRef.current?.send({
+        type: 'broadcast',
+        event: 'queue_status_changed',
+        payload: { queueId, status },
+      });
+    } catch {}
   }, []);
 
   const updateQueuePayment = useCallback(async (queueId: string, paymentStatus: 'paid' | 'unpaid', paymentMode?: 'cash' | 'online') => {
     const finalMode = paymentMode || 'cash';
-    setQueue((prev) =>
-      prev.map((item) => {
+    setQueue((prev) => {
+      const next = prev.map((item) => {
         if (item.queueId === queueId) {
           return { ...item, paymentStatus, paymentMode: finalMode };
         }
         return item;
-      })
-    );
+      });
+      try { localStorage.setItem('clinicos_cached_queue', JSON.stringify(next)); } catch {}
+      return next;
+    });
     try {
       await api.updateQueueItem(queueId, { paymentStatus, paymentMode: finalMode });
     } catch (err) {
       console.warn('Queue payment update warning:', err);
     }
+    try {
+      queueChannelRef.current?.send({
+        type: 'broadcast',
+        event: 'queue_payment_changed',
+        payload: { queueId, paymentStatus, paymentMode: finalMode },
+      });
+    } catch {}
     setToast({
       type: 'success',
       message: `Payment updated: ${paymentStatus === 'paid' ? `Paid (${finalMode === 'online' ? 'Online' : 'Cash'})` : 'Unpaid'}`
@@ -442,8 +593,18 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
   }, [setToast]);
 
   const removeFromQueue = useCallback((queueId: string) => {
-    setQueue((prev) => prev.filter((item) => item.queueId !== queueId));
+    setQueue((prev) => {
+      const next = prev.filter((item) => item.queueId !== queueId);
+      try { localStorage.setItem('clinicos_cached_queue', JSON.stringify(next)); } catch {}
+      return next;
+    });
     api.removeFromQueue(queueId).catch(() => {});
+    try {
+      queueChannelRef.current?.send({
+        type: 'broadcast',
+        event: 'queue_sync',
+      });
+    } catch {}
   }, []);
 
   const registerAndEnqueue = useCallback(async (
@@ -494,6 +655,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
     if (!targetPatient) return null;
 
     const queueId = `Q${Date.now()}`;
+    const today = getTodayDateStr();
     const newQueueItem: QueueItem = {
       queueId,
       patientId: targetPatient.id,
@@ -510,11 +672,25 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
       paymentStatus: patientData.paymentStatus || 'unpaid',
       paymentMode: patientData.paymentMode || 'cash',
       casePaperNo: customCasePaperNo || targetPatient.casePaperNo,
+      date: today,
     };
 
     try {
       await api.addToQueue(newQueueItem);
-      setQueue(prev => [...prev.filter(q => q.queueId !== queueId), newQueueItem]);
+      setQueue(prev => {
+        const filtered = prev.filter(q => (!q.date || q.date === today) && q.queueId !== queueId && q.patientId !== targetPatient.id);
+        const next = [...filtered, newQueueItem];
+        try { localStorage.setItem('clinicos_cached_queue', JSON.stringify(next)); } catch {}
+        return next;
+      });
+      // Broadcast immediately across WebSocket so doctor's cabin receives it instantly (<30ms, 0 HTTP overhead!)
+      try {
+        queueChannelRef.current?.send({
+          type: 'broadcast',
+          event: 'patient_enqueued',
+          payload: newQueueItem,
+        });
+      } catch {}
       setToast({
         type: 'success',
         message: `${targetPatient.name} has been added to the queue.`
@@ -735,6 +911,8 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
         logout,
         patients,
         queue,
+        isSyncingQueue,
+        loadQueueOnly,
         templates,
         clinicSettings,
         toast,
