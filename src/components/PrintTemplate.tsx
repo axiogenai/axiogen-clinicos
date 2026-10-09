@@ -940,6 +940,7 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
       {/* ══════════════════════════════════════════════════════ */}
       {!isGeneralPad && (
       <footer
+        className="rx-paper-footer bg-white text-gray-900"
         style={{
           height: '20mm',
           minHeight: '20mm',
@@ -951,29 +952,31 @@ export default function PrintTemplate({ patient, casePaper, clinicSettings, hide
           lineHeight: 1.15,
           boxSizing: 'border-box',
           position: 'relative',
+          backgroundColor: '#ffffff',
+          color: '#111827',
         }}
       >
         {!printOnStationery && (
           <>
             {!isGeneralPad ? (
               <>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '2px' }}>
-                  <div style={{ flex: '0 0 62%' }}>
-                    <div style={{ marginBottom: '1px' }}>☑ Methotrexate- weekly dosing explained & overdose risk etc. Explained.</div>
-                    <div style={{ marginBottom: '1px' }}>☑ JAK inhibitors - DVT/PE warning explained & leukopenia etc. Explained.</div>
-                    <div style={{ marginBottom: '1px' }}>☑ DAPSONE - DAPSONE syndrome, organ toxicity, Jaundice risk etc. Explained</div>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '2px', color: '#111827' }}>
+                  <div style={{ flex: '0 0 62%', color: '#111827' }}>
+                    <div style={{ marginBottom: '1px', color: '#111827' }}>☑ Methotrexate- weekly dosing explained &amp; overdose risk etc. Explained.</div>
+                    <div style={{ marginBottom: '1px', color: '#111827' }}>☑ JAK inhibitors - DVT/PE warning explained &amp; leukopenia etc. Explained.</div>
+                    <div style={{ marginBottom: '1px', color: '#111827' }}>☑ DAPSONE - DAPSONE syndrome, organ toxicity, Jaundice risk etc. Explained</div>
                   </div>
-                  <div style={{ flex: '0 0 38%' }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-                      <span>☑ </span>
-                      <span style={{ lineHeight: 1.15 }}>
-                        Azathioprine-related myelosuppression &<br />
+                  <div style={{ flex: '0 0 38%', color: '#111827' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', color: '#111827' }}>
+                      <span style={{ color: '#111827' }}>☑ </span>
+                      <span style={{ lineHeight: 1.15, color: '#111827' }}>
+                        Azathioprine-related myelosuppression &amp;<br />
                         hair fall etc. Explained
                       </span>
                     </div>
                   </div>
                 </div>
-                <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '11px', marginTop: '2px', lineHeight: 1.2 }}>
+                <div style={{ fontFamily: "'Mukta', sans-serif", fontSize: '11px', marginTop: '2px', lineHeight: 1.2, color: '#222' }}>
                   - त्वचा विकाराची औषधे इतर औषधांप्रमाणे महाग असू शकतात. - चिठ्ठीमधील औषधे दिलेल्या अवधीसाठीच आहेत.<br />
                   - काही विकार बरे होण्यास वेळ लागतो. तसेच काही विकार औषधानंतर काही प्रमाणात वाढतात व त्यानंतर बरे होतात.
                 </div>

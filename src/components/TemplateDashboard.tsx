@@ -78,10 +78,10 @@ export default function TemplateDashboard({ onUseTemplateInEMR }: TemplateDashbo
 
 
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#faf9f6] p-5 rounded-2xl border border-[#e4e2e1] shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#faf9f6] dark:bg-[#121214] p-5 rounded-2xl border border-[#e4e2e1] dark:border-[#27272a] shadow-sm">
         <div>
-          <h2 className="text-xl font-serif font-bold text-[#1a1c1a]">Prescription Protocol & Layout Builder</h2>
-          <p className="text-xs text-[#7c766d] mt-0.5">
+          <h2 className="text-xl font-serif font-bold text-[#1a1c1a] dark:text-[#f4f4f5]">Prescription Protocol & Layout Builder</h2>
+          <p className="text-xs text-[#7c766d] dark:text-[#a1a1aa] mt-0.5">
             Customize clinic header details, bulk import medicines via CSV/Excel, and 1-click clinical protocol templates.
           </p>
         </div>
@@ -97,18 +97,18 @@ export default function TemplateDashboard({ onUseTemplateInEMR }: TemplateDashbo
 
           <button
             onClick={() => setIsFullLayoutEditorOpen(true)}
-            className="px-4 py-2.5 bg-[#f2eee3] hover:bg-[#e8e2d2] text-[#1a1c1a] border border-[#cdc6ba] rounded-xl font-bold text-xs shadow-sm transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-[#f2eee3] hover:bg-[#e8e2d2] dark:bg-[#18181b] dark:hover:bg-[#222226] text-[#1a1c1a] dark:text-[#f4f4f5] border border-[#cdc6ba] dark:border-[#27272a] rounded-xl font-bold text-xs shadow-sm transition-all flex items-center gap-2"
           >
-            <Layout className="w-4 h-4 text-[#4c1d95]" />
+            <Layout className="w-4 h-4 text-[#047857] dark:text-emerald-400" />
             <span>Edit Full Layout & Header</span>
           </button>
 
           {view === 'list' && (
             <button
               onClick={handleCreateNew}
-              className="px-5 py-2.5 bg-gradient-to-r from-[#4c1d95] to-[#6b21a8] hover:from-[#3b0764] hover:to-[#4c1d95] text-white rounded-xl font-bold text-xs shadow-md shadow-purple-950/20 transition-all flex items-center gap-2 active:scale-95"
+              className="px-5 py-2.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-950 rounded-xl font-bold text-xs shadow-md shadow-black/20 transition-all flex items-center gap-2 active:scale-95"
             >
-              <Plus className="w-4 h-4 text-white" />
+              <Plus className="w-4 h-4 text-white dark:text-zinc-950" />
               <span>Create Protocol Template</span>
             </button>
           )}

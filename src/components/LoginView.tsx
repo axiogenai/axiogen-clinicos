@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Lock, UserCheck, ShieldAlert, ArrowRight, KeyRound, CheckCircle2, RefreshCw, X, Eye, EyeOff, ArrowLeft, ShieldCheck, Smartphone, Server, Database, Clock, Activity, RotateCw } from 'lucide-react';
 import { useClinic } from '../context/ClinicContext';
 import { api, apiRequest, type HealthStatusUpdate } from '../api/client';
+import ThemeToggle from './ThemeToggle';
 import { supabaseAuth } from '../lib/supabase';
 import logoHd from '../assets/logo-hd.png';
 
@@ -272,7 +273,12 @@ export default function LoginView({ onSuccess }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f8f6f0] via-[#f2eee3] to-[#e8e2d2] flex items-center justify-center p-4">
+    <div className="relative min-h-screen bg-gradient-to-br from-[#f8f6f0] via-[#f2eee3] to-[#e8e2d2] flex items-center justify-center p-4">
+      {/* Top right Theme Toggle */}
+      <div className="absolute top-4 right-4 z-10">
+        <ThemeToggle />
+      </div>
+
       <div className="w-full max-w-md bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-[#e4e2e1] p-8 space-y-6">
         
         {/* Brand Header */}

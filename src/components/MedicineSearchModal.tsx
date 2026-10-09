@@ -361,12 +361,12 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
   const countLabel = totalCount !== null ? `${totalCount.toLocaleString()} Available` : 'Loading...';
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
       {/* Container with overflow-visible so dropdowns float outside cleanly */}
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full border border-gray-200 animate-in fade-in duration-200 relative my-auto max-h-[92vh] flex flex-col">
-        <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center rounded-t-2xl shrink-0">
-          <h3 className="font-bold text-gray-900 text-sm sm:text-base">Add Medicine to Template</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+      <div className="bg-white dark:bg-[#121214] rounded-2xl shadow-2xl max-w-lg w-full border border-gray-200 dark:border-[#27272a] animate-in fade-in duration-200 relative my-auto max-h-[92vh] flex flex-col">
+        <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-200 dark:border-[#27272a] bg-gray-50 dark:bg-[#161618] flex justify-between items-center rounded-t-2xl shrink-0">
+          <h3 className="font-bold text-gray-900 dark:text-[#f4f4f5] text-sm sm:text-base">Add Medicine to Template</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-[#f4f4f5] p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#222226] transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -375,14 +375,14 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
           {!selectedMed ? (
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-[#a1a1aa]">
                   Search Drug Formulary ({countLabel})
                 </label>
                 {search.trim() && (
                   <button
                     type="button"
                     onClick={handleAddCustomDrug}
-                    className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                    className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Add as Custom Drug</span>
@@ -391,8 +391,8 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
               </div>
               <div className="relative">
                 {loading
-                  ? <Loader2 className="w-4 h-4 text-indigo-400 absolute left-3 top-3.5 animate-spin" />
-                  : <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
+                  ? <Loader2 className="w-4 h-4 text-emerald-500 absolute left-3 top-3.5 animate-spin" />
+                  : <Search className="w-4 h-4 text-gray-400 dark:text-[#71717a] absolute left-3 top-3.5" />
                 }
                 <input
                   ref={searchInputRef}
@@ -400,23 +400,23 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
                   value={search}
                   onChange={(e) => handleSearch(e.target.value)}
                   placeholder="Search from all 42,000+ medicines..."
-                  className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full pl-9 pr-3 py-2.5 border border-gray-300 dark:border-[#2e2e32] bg-white dark:bg-[#161618] text-gray-900 dark:text-[#f4f4f5] placeholder:text-gray-400 dark:placeholder:text-[#71717a] rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 />
               </div>
 
-              <div className="mt-3 max-h-64 overflow-y-auto divide-y divide-gray-100 border border-gray-200 rounded-lg">
+              <div className="mt-3 max-h-64 overflow-y-auto divide-y divide-gray-100 dark:divide-[#27272a] border border-gray-200 dark:border-[#27272a] rounded-lg bg-white dark:bg-[#121214]">
                 {results.length > 0 ? (
                   results.map((med, idx) => (
                     <div
                       key={med.id || idx}
                       onClick={() => handleSelectMed(med)}
-                      className="p-3 hover:bg-indigo-50 cursor-pointer transition-colors flex justify-between items-center group"
+                      className="p-3 hover:bg-emerald-50/50 dark:hover:bg-[#1e1e22] cursor-pointer transition-colors flex justify-between items-center group"
                     >
                       <div className="w-full pr-4">
                         <div className="flex items-center justify-between w-full">
-                          <span className="font-semibold text-gray-900 text-sm group-hover:text-indigo-900">{med.name}</span>
+                          <span className="font-semibold text-gray-900 dark:text-[#f4f4f5] text-sm group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{med.name}</span>
                           {med.category && (
-                            <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-semibold">
+                            <span className="text-[10px] bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded font-semibold border border-emerald-200 dark:border-emerald-800/60">
                               {med.category}
                             </span>
                           )}
@@ -428,10 +428,10 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
                           if (s && !isJunkStrength && !med.name.toLowerCase().includes(s.toLowerCase())) parts.push(s);
                           if (med.form && med.form !== 'Surgical' && med.form !== 'General') parts.push(med.form);
                           const text = parts.join(' • ');
-                          return text ? <div className="text-xs text-gray-500 mt-0.5">{text}</div> : null;
+                          return text ? <div className="text-xs text-gray-500 dark:text-[#a1a1aa] mt-0.5">{text}</div> : null;
                         })()}
                       </div>
-                      <span className="text-xs text-indigo-600 font-semibold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
                         <span>Select</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </span>
@@ -439,7 +439,7 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
                   ))
                 ) : !loading ? (
                   <div className="p-5 text-center space-y-3">
-                    <div className="text-xs text-gray-500">No match found for "{search}".</div>
+                    <div className="text-xs text-gray-500 dark:text-[#a1a1aa]">No match found for "{search}".</div>
                     <button
                       type="button"
                       onClick={() => setShowAddCustomModal(true)}
@@ -456,15 +456,15 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
             </div>
           ) : (
             <div className="space-y-4 min-h-[280px] pb-36">
-              <div className="bg-indigo-50 border border-indigo-100 p-3.5 rounded-xl flex justify-between items-center">
+              <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 p-3.5 rounded-xl flex justify-between items-center">
                 <div>
-                  <div className="font-bold text-indigo-900 text-sm">{getPrintMedicineName(selectedMed)}</div>
-                  <div className="text-xs text-indigo-700">{selectedMed.form}</div>
+                  <div className="font-bold text-emerald-950 dark:text-emerald-200 text-sm">{getPrintMedicineName(selectedMed)}</div>
+                  <div className="text-xs text-emerald-700 dark:text-emerald-400">{selectedMed.form}</div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setSelectedMed(null)}
-                  className="text-xs text-indigo-600 hover:text-indigo-800 underline font-medium"
+                  className="text-xs text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 underline font-medium"
                 >
                   Change Drug
                 </button>
@@ -475,7 +475,7 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Frequency Dropdown & Custom Editing + Groq AI */}
                 <div className="relative" onClick={(e) => e.stopPropagation()}>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-[#a1a1aa] mb-1">
                     Frequency
                   </label>
                   <div className="relative flex items-center">
@@ -496,21 +496,21 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
                           handleAiTranslateFrequency(freqInput);
                         }
                       }}
-                      className="w-full p-2.5 pr-10 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                      className="w-full p-2.5 pr-10 border border-gray-300 dark:border-[#2e2e32] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white dark:bg-[#161618] text-gray-900 dark:text-[#f4f4f5] placeholder:text-gray-400 dark:placeholder:text-[#71717a]"
                     />
                     <button
                       type="button"
                       title="मराठी भाषांतर"
                       onClick={() => handleAiTranslateFrequency(freqInput || frequency)}
                       disabled={translatingFreq}
-                      className="absolute right-2 text-emerald-600 hover:text-emerald-700 p-1 rounded hover:bg-emerald-50 transition-colors z-10 shrink-0"
+                      className="absolute right-2 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 p-1 rounded hover:bg-emerald-50 dark:hover:bg-[#222226] transition-colors z-10 shrink-0"
                     >
                       {translatingFreq ? <Loader2 className="w-4 h-4 animate-spin" /> : <Languages className="w-4 h-4" />}
                     </button>
                   </div>
                   {freqOpen && (
                     <div 
-                      className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl overflow-y-auto divide-y divide-gray-50" 
+                      className="absolute left-0 top-full mt-1 bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#27272a] rounded-xl shadow-2xl overflow-y-auto divide-y divide-gray-50 dark:divide-[#27272a]" 
                       style={{ zIndex: 99999, width: '100%', minWidth: '280px', maxHeight: '220px' }}
                     >
                       {freqInput.trim() && !/[\u0900-\u097F]/.test(freqInput) && (
@@ -519,7 +519,7 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
                             e.preventDefault();
                             handleAiTranslateFrequency(freqInput);
                           }}
-                          className="px-3 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 cursor-pointer flex items-center justify-between gap-2 border-b border-emerald-200"
+                          className="px-3 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 cursor-pointer flex items-center justify-between gap-2 border-b border-emerald-200 dark:border-emerald-800"
                         >
                           <span className="flex items-center gap-1.5 truncate">
                             <Languages className="w-3.5 h-3.5 shrink-0" />
@@ -538,7 +538,7 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
                             setFreqInput(''); 
                           }}
                           className={`px-3 py-2 text-xs cursor-pointer transition-colors ${
-                            frequency === f ? 'bg-[#ecfdf5] text-[#047857] font-semibold' : 'text-gray-800 hover:bg-indigo-50'
+                            frequency === f ? 'bg-[#ecfdf5] dark:bg-emerald-950/60 text-[#047857] dark:text-emerald-300 font-semibold' : 'text-gray-800 dark:text-[#d4d4d8] hover:bg-emerald-50 dark:hover:bg-[#1e1e22]'
                           }`}
                         >
                           {f}
@@ -550,7 +550,7 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
 
                 {/* Duration Dropdown */}
                 <div className="relative" onClick={(e) => e.stopPropagation()}>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-[#a1a1aa] mb-1">
                     Duration
                   </label>
                   <input
@@ -559,11 +559,11 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
                     onFocus={() => { setDurOpen(true); setFreqOpen(false); }}
                     onChange={(e) => setDuration(e.target.value)}
                     placeholder="e.g. 7 Days"
-                    className="w-full p-2.5 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                    className="w-full p-2.5 border border-gray-300 dark:border-[#2e2e32] rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white dark:bg-[#161618] text-gray-900 dark:text-[#f4f4f5] placeholder:text-gray-400 dark:placeholder:text-[#71717a]"
                   />
                   {durOpen && (
                     <div 
-                      className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl overflow-y-auto divide-y divide-gray-50" 
+                      className="absolute left-0 top-full mt-1 bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#27272a] rounded-xl shadow-2xl overflow-y-auto divide-y divide-gray-50 dark:divide-[#27272a]" 
                       style={{ zIndex: 99999, width: '100%', minWidth: '160px', maxHeight: '220px' }}
                     >
                       {DURATIONS.map(d => (
@@ -575,7 +575,7 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
                             setDurOpen(false); 
                           }}
                           className={`px-3 py-2 text-xs cursor-pointer transition-colors ${
-                            duration === d ? 'bg-[#ecfdf5] text-[#047857] font-semibold' : 'text-gray-800 hover:bg-indigo-50'
+                            duration === d ? 'bg-[#ecfdf5] dark:bg-emerald-950/60 text-[#047857] dark:text-emerald-300 font-semibold' : 'text-gray-800 dark:text-[#d4d4d8] hover:bg-emerald-50 dark:hover:bg-[#1e1e22]'
                           }`}
                         >
                           {d}
@@ -589,11 +589,11 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
           )}
         </div>
 
-        <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:py-3 border-t border-gray-200 flex justify-end gap-2 rounded-b-2xl shrink-0">
+        <div className="bg-gray-50 dark:bg-[#161618] px-4 py-3 sm:px-6 sm:py-3 border-t border-gray-200 dark:border-[#27272a] flex justify-end gap-2 rounded-b-2xl shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-100"
+            className="px-4 py-2 border border-gray-300 dark:border-[#27272a] text-gray-700 dark:text-[#d4d4d8] rounded-lg text-xs font-medium hover:bg-gray-100 dark:hover:bg-[#222226] transition-colors"
           >
             Cancel
           </button>
@@ -601,7 +601,7 @@ export default function MedicineSearchModal({ onAdd, onClose }: MedicineSearchMo
             <button
               type="button"
               onClick={handleConfirmAdd}
-              className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-sm flex items-center gap-1.5"
+              className="px-5 py-2 bg-[#047857] hover:bg-[#065f46] text-white rounded-lg text-xs font-bold shadow-sm flex items-center gap-1.5 transition-colors"
             >
               <Plus className="w-4 h-4" /> Add to Template
             </button>

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Pill, FlaskConical, Lightbulb, Calendar, ArrowLeft, Printer, Trash2, CheckCircle2, Search, Plus, X, ChevronDown, FileText, Languages, Loader2, Edit2, Save, User, BookOpen, Phone } from 'lucide-react';
+import { Pill, FlaskConical, Lightbulb, Calendar, ArrowLeft, Printer, Trash2, CheckCircle2, Search, Plus, X, ChevronDown, FileText, Languages, Loader2, Edit2, Save, User, BookOpen, Phone, History, RotateCcw, Copy } from 'lucide-react';
 import type { Patient } from '../data/patients';
 import { medicines as initialLocalMedicines } from '../data/medicines';
 import { useClinic } from '../context/ClinicContext';
@@ -17,6 +17,39 @@ import { formatFollowUpDate } from '../utils/dateFormatter';
 import { translateFrequencyToMarathi } from '../utils/marathiTranslator';
 import { parsePrescriptionSentence, formatClinicalMedicineName } from '../utils/sentenceParser';
 import { formatAgeGender } from '../utils/patientFormatter';
+
+export interface HistoricalVisit {
+  id: string;
+  visitNumber: number;
+  date: string;
+  formattedDate: string;
+  complaint?: string;
+  pastHistory?: string;
+  allergies?: string;
+  medicines: CasePaperMedicine[];
+  investigationsAdvised: string[];
+  counsellingDone: string[];
+  followUpDate?: string;
+  templateId?: string;
+  source: 'database' | 'local' | 'mock';
+  createdAt?: string;
+}
+
+function formatShortVisitDate(dateStr?: string): string {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const day = d.getDate();
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = months[d.getMonth()];
+    const year = String(d.getFullYear()).slice(-2);
+    const currentYear = String(new Date().getFullYear()).slice(-2);
+    return year === currentYear ? `${day} ${month}` : `${day} ${month} '${year}`;
+  } catch {
+    return dateStr;
+  }
+}
 
 interface CasepaperFormProps {
   patient: Patient;
@@ -427,6 +460,241 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
   const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const templateSearchRef = useRef<HTMLDivElement>(null);
+
+  // ── Patient Past Visits History State & Logic ──
+  const [pastVisits, setPastVisits] = useState<HistoricalVisit[]>([]);
+  const [isLoadingVisits, setIsLoadingVisits] = useState(false);
+  const [activeVisitId, setActiveVisitId] = useState<string | 'current'>('current');
+  const todayDraftRef = useRef<CasePaper>(casePaper);
+
+  // Keep today's draft updated with any live changes while in 'current' mode
+  useEffect(() => {
+    if (activeVisitId === 'current') {
+      todayDraftRef.current = casePaper;
+    }
+  }, [casePaper, activeVisitId]);
+
+  // Reset active visit when patient changes
+  useEffect(() => {
+    setActiveVisitId('current');
+    todayDraftRef.current = casePaper;
+  }, [currentPatient.id]);
+
+  // Active visit record when viewing historical case paper
+  const activeVisitRecord = useMemo(() => {
+    if (activeVisitId === 'current') return null;
+    return pastVisits.find((v) => v.id === activeVisitId) || null;
+  }, [activeVisitId, pastVisits]);
+
+  // Fetch and normalize patient's past visits (Supabase DB + mock history)
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadPastVisits() {
+      if (!currentPatient?.id) return;
+      setIsLoadingVisits(true);
+      try {
+        // 1. Fetch case papers from Supabase
+        const records = await api.getCasePapers(currentPatient.id);
+        const validDbRecords = Array.isArray(records) ? records : [];
+
+        // 2. Fetch mock visits if defined on patient
+        const mockVisits = Array.isArray(currentPatient.pastVisits) ? currentPatient.pastVisits : [];
+
+        // 3. Normalize DB records
+        const normalizedDbVisits: HistoricalVisit[] = validDbRecords.map((item: any, idx: number) => {
+          let meds: CasePaperMedicine[] = [];
+          try {
+            const rawMeds = item.medicines;
+            const parsed = Array.isArray(rawMeds) ? rawMeds : (typeof rawMeds === 'string' ? JSON.parse(rawMeds || '[]') : []);
+            meds = parsed.map((m: any) => {
+              if (m.name) return m;
+              const matched = dbMedicines.find(dbM => dbM.id === m.medicineId);
+              return {
+                ...m,
+                name: matched ? matched.name : (m.medicineId || 'Medicine')
+              };
+            });
+          } catch {
+            meds = [];
+          }
+
+          let invs: string[] = [];
+          try {
+            const rawInv = item.investigations_advised || item.investigationsAdvised;
+            invs = Array.isArray(rawInv) ? rawInv : (typeof rawInv === 'string' ? JSON.parse(rawInv || '[]') : []);
+          } catch {
+            invs = [];
+          }
+
+          let couns: string[] = [];
+          try {
+            const rawCoun = item.counselling_done || item.counsellingDone || item.counsellingPoints;
+            couns = Array.isArray(rawCoun) ? rawCoun : (typeof rawCoun === 'string' ? JSON.parse(rawCoun || '[]') : []);
+          } catch {
+            couns = [];
+          }
+
+          const rawDate = item.date || (item.created_at ? item.created_at.split('T')[0] : '');
+
+          return {
+            id: String(item.id || `db_visit_${idx}`),
+            visitNumber: 0,
+            date: rawDate,
+            formattedDate: formatShortVisitDate(rawDate),
+            complaint: item.complaint || '',
+            pastHistory: item.past_history || item.pastHistory || '',
+            allergies: item.allergies || '',
+            medicines: meds,
+            investigationsAdvised: invs,
+            counsellingDone: couns,
+            followUpDate: item.follow_up_date || item.followUpDate || '',
+            templateId: item.template_id || item.templateId || '',
+            source: 'database' as const,
+            createdAt: item.created_at || rawDate,
+          };
+        });
+
+        // 4. Normalize mock records (if date is not already recorded in DB)
+        const normalizedMockVisits: HistoricalVisit[] = [];
+        mockVisits.forEach((mv: any, mIdx: number) => {
+          const alreadyExistsInDb = normalizedDbVisits.some(dv => dv.date === mv.date);
+          if (!alreadyExistsInDb) {
+            const matchedTpl = templates.find(t => t.name === mv.template || t.id === mv.template);
+            let mockMeds: CasePaperMedicine[] = [];
+            if (matchedTpl && Array.isArray(matchedTpl.medicines)) {
+              mockMeds = matchedTpl.medicines.map(tm => {
+                const medMatch = dbMedicines.find(m => m.id === tm.medicineId);
+                return {
+                  medicineId: tm.medicineId,
+                  name: tm.medicineName || medMatch?.name || tm.medicineId,
+                  dosage: tm.dosage || '',
+                  frequency: tm.frequency || '',
+                  duration: tm.duration || '',
+                  count: tm.count || calculateMedicineCount({ frequency: tm.frequency, duration: tm.duration, name: tm.medicineName || medMatch?.name })
+                };
+              });
+            }
+
+            normalizedMockVisits.push({
+              id: `mock_visit_${mIdx}_${mv.date}`,
+              visitNumber: 0,
+              date: mv.date,
+              formattedDate: formatShortVisitDate(mv.date),
+              complaint: mv.diagnosis || '',
+              pastHistory: currentPatient.pastHistory || '',
+              allergies: currentPatient.allergies || '',
+              medicines: mockMeds,
+              investigationsAdvised: matchedTpl?.investigationsAdvised || [],
+              counsellingDone: matchedTpl?.counsellingPoints || [],
+              followUpDate: '',
+              templateId: matchedTpl?.id || '',
+              source: 'mock' as const,
+              createdAt: mv.date,
+            });
+          }
+        });
+
+        // 5. Combine and sort chronologically (oldest first: Visit 1, Visit 2, ...)
+        const combined = [...normalizedDbVisits, ...normalizedMockVisits];
+        combined.sort((a, b) => {
+          const timeA = new Date(a.createdAt || a.date).getTime();
+          const timeB = new Date(b.createdAt || b.date).getTime();
+          return timeA - timeB;
+        });
+
+        // 6. Assign Visit Numbers: Visit 1, Visit 2, Visit 3...
+        const withVisitNumbers = combined.map((v, i) => ({
+          ...v,
+          visitNumber: i + 1,
+        }));
+
+        if (!isCancelled) {
+          setPastVisits(withVisitNumbers);
+        }
+      } catch (err) {
+        console.error('Error fetching patient visits history:', err);
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingVisits(false);
+        }
+      }
+    }
+
+    loadPastVisits();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentPatient.id, templates, dbMedicines]);
+
+  // Click on past visit to load that historical case paper into active form
+  const handleSelectVisit = (visit: HistoricalVisit) => {
+    // If navigating away from today's draft, cache today's draft
+    if (activeVisitId === 'current') {
+      todayDraftRef.current = { ...activeCasePaperRef.current };
+    }
+
+    const selectedCp: CasePaper = {
+      patientId: currentPatient.id,
+      date: visit.date,
+      templateId: visit.templateId || '',
+      complaint: visit.complaint || '',
+      pastHistory: visit.pastHistory || currentPatient.pastHistory || '',
+      allergies: visit.allergies || currentPatient.allergies || '',
+      medicines: visit.medicines ? JSON.parse(JSON.stringify(visit.medicines)) : [],
+      investigationsAdvised: visit.investigationsAdvised ? [...visit.investigationsAdvised] : [],
+      counsellingDone: visit.counsellingDone ? [...visit.counsellingDone] : [],
+      followUpDate: visit.followUpDate || '',
+    };
+
+    updateCasePaperState(selectedCp);
+    setActiveVisitId(visit.id);
+
+    setToast({
+      type: 'info',
+      title: `Loaded Visit ${visit.visitNumber}`,
+      message: `Historical case paper from ${visit.date} loaded into consultation form`,
+    });
+  };
+
+  // Switch back to today's active draft
+  const handleReturnToCurrentDraft = () => {
+    if (todayDraftRef.current) {
+      updateCasePaperState(todayDraftRef.current);
+    } else {
+      updateCasePaperState({
+        date: new Date().toISOString().split('T')[0],
+        medicines: [],
+        complaint: '',
+        investigationsAdvised: [],
+        counsellingDone: [],
+        followUpDate: '',
+      });
+    }
+    setActiveVisitId('current');
+    setToast({
+      type: 'info',
+      message: "Switched back to today's active consultation draft",
+    });
+  };
+
+  // Copy past visit's medicines as today's prescription base
+  const handleUseAsTodayBase = () => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const carriedCp: CasePaper = {
+      ...activeCasePaperRef.current,
+      date: todayStr,
+    };
+    updateCasePaperState(carriedCp);
+    todayDraftRef.current = carriedCp;
+    setActiveVisitId('current');
+    setToast({
+      type: 'success',
+      title: "Prescription Carried Forward",
+      message: `Prescription set for today (${todayStr}) with loaded medicines and clinical notes`,
+    });
+  };
 
   const handleTranslateRowFrequency = async (index: number, customText?: string) => {
     const textToTranslate = customText !== undefined ? customText : (freqInputDisplay || casePaper.medicines[index]?.frequency || '');
@@ -935,13 +1203,15 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
     <div className="space-y-4 sm:space-y-5 pb-12 overflow-x-hidden">
       
       {/* ── Top Patient Header Bar ── */}
-      <div className="bg-[#faf9f6] rounded-2xl border border-[#e4e2e1] shadow-sm overflow-hidden">
-        <div className="px-4 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+      <div className="bg-[#faf9f6] dark:bg-[#18181b] rounded-2xl border border-[#e4e2e1] dark:border-[#27272a] shadow-sm overflow-hidden">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-3 sm:gap-4">
+          
+          {/* Patient Details Left Section */}
+          <div className="flex items-center gap-3 shrink-0">
             <button
               type="button"
               onClick={onBack}
-              className="p-2 bg-[#f2eee3] hover:bg-[#e8e2d2] rounded-xl border border-[#cdc6ba] transition-colors text-[#4b463e] shrink-0"
+              className="p-2 bg-[#f2eee3] dark:bg-[#27272a] hover:bg-[#e8e2d2] dark:hover:bg-[#3f3f46] rounded-xl border border-[#cdc6ba] dark:border-[#3f3f46] transition-colors text-[#4b463e] dark:text-[#d4d4d8] shrink-0 cursor-pointer"
               title="Back"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -951,18 +1221,18 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-serif font-bold text-[#1a1c1a] leading-tight truncate">{currentPatient.name}</h2>
+                <h2 className="text-base sm:text-lg font-serif font-bold text-[#1a1c1a] dark:text-zinc-100 leading-tight truncate">{currentPatient.name}</h2>
                 <button
                   type="button"
                   onClick={openPatientEditModal}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 hover:border-emerald-400 transition-all shadow-2xs cursor-pointer shrink-0"
+                  className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-700 hover:bg-teal-100 dark:hover:bg-teal-900/50 transition-all shadow-2xs cursor-pointer shrink-0"
                   title="Edit Patient Details"
                 >
-                  <Edit2 className="w-3 h-3 text-emerald-700" />
+                  <Edit2 className="w-3 h-3 text-teal-700 dark:text-teal-400" />
                   <span>Edit</span>
                 </button>
               </div>
-              <p className="text-[10px] sm:text-xs text-[#7c766d] mt-0.5 flex items-center gap-1.5 flex-wrap">
+              <p className="text-[10px] sm:text-xs text-[#7c766d] dark:text-zinc-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
                 <span>{formatAgeGender(currentPatient)}</span>
                 <span>·</span>
                 <span>{currentPatient.phone || 'N/A'}</span>
@@ -971,8 +1241,8 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
                 {Boolean(currentPatient.casePaperNo) && (
                   <>
                     <span>·</span>
-                    <span className="inline-flex items-center gap-0.5 font-mono font-bold text-[10px] px-1.5 py-0.2 rounded bg-amber-50 text-amber-900 border border-amber-200">
-                      <BookOpen className="w-2.5 h-2.5 text-amber-700" />
+                    <span className="inline-flex items-center gap-0.5 font-mono font-bold text-[10px] px-1.5 py-0.2 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border border-amber-200 dark:border-amber-800">
+                      <BookOpen className="w-2.5 h-2.5 text-amber-700 dark:text-amber-400" />
                       #{currentPatient.casePaperNo}
                     </span>
                   </>
@@ -981,21 +1251,132 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
             </div>
           </div>
 
-          {/* Prescription Date (Custom Date Picker) */}
-          <div className="flex items-center gap-2 self-start sm:self-auto bg-white px-3 py-1.5 rounded-xl border border-[#e4e2e1] shadow-xs">
-            <Calendar className="w-4 h-4 text-[#047857] shrink-0" />
+          {/* ── Patient Past Visits Row in Front of Name ── */}
+          <div className="flex-1 w-full xl:w-auto overflow-x-auto no-scrollbar py-1 flex items-center gap-1.5 min-w-0">
+            <div className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 shrink-0 mr-1">
+              <History className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+              <span>Visits:</span>
+            </div>
+
+            {isLoadingVisits ? (
+              <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 px-2 py-1">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-teal-600" />
+                <span className="text-[11px]">Loading history...</span>
+              </div>
+            ) : pastVisits.length === 0 ? (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold bg-[#f2eee3] dark:bg-[#27272a] text-[#7c766d] dark:text-zinc-400 border border-[#cdc6ba] dark:border-[#3f3f46]">
+                <FileText className="w-3 h-3 text-teal-600 dark:text-teal-400" />
+                <span>Visit 1 (New Consultation)</span>
+              </div>
+            ) : (
+              <>
+                {/* Past visit pills (Visit 1, Visit 2, Visit 3...) */}
+                {pastVisits.map((v) => {
+                  const isActive = activeVisitId === v.id;
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => handleSelectVisit(v)}
+                      className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer shadow-2xs ${
+                        isActive
+                          ? 'bg-teal-700 dark:bg-teal-600 text-white border border-teal-800 dark:border-teal-500 ring-2 ring-teal-500/30'
+                          : 'bg-white dark:bg-[#27272a] text-[#1a1c1a] dark:text-zinc-200 border border-[#cdc6ba] dark:border-[#3f3f46] hover:bg-[#f2eee3] dark:hover:bg-[#3f3f46] hover:border-teal-600/60'
+                      }`}
+                      title={`Visit ${v.visitNumber} on ${v.date}${v.complaint ? ` · ${v.complaint}` : ''} (${v.medicines.length} medicines) - Click to load`}
+                    >
+                      <span>Visit {v.visitNumber}</span>
+                      {v.formattedDate && (
+                        <span className={`text-[10px] font-medium ${isActive ? 'text-teal-100' : 'text-zinc-500 dark:text-zinc-400'}`}>
+                          ({v.formattedDate})
+                        </span>
+                      )}
+                      {v.medicines.length > 0 && (
+                        <span className={`text-[9px] px-1 py-0.2 rounded font-mono ${isActive ? 'bg-teal-800 text-teal-100' : 'bg-zinc-100 dark:bg-[#18181b] text-zinc-600 dark:text-zinc-400'}`}>
+                          {v.medicines.length} Rx
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+
+                {/* Today's Draft / Current Consultation Pill */}
+                <button
+                  type="button"
+                  onClick={handleReturnToCurrentDraft}
+                  className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer shadow-2xs ${
+                    activeVisitId === 'current'
+                      ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border border-zinc-900 dark:border-white ring-2 ring-zinc-500/30'
+                      : 'bg-white dark:bg-[#27272a] text-[#1a1c1a] dark:text-zinc-200 border border-dashed border-zinc-400 dark:border-zinc-600 hover:bg-[#f2eee3] dark:hover:bg-[#3f3f46]'
+                  }`}
+                  title="Switch back to today's active consultation draft"
+                >
+                  <FileText className="w-3 h-3 text-teal-500" />
+                  <span>Today's Draft</span>
+                </button>
+
+                {/* Full EMR History modal button */}
+                <button
+                  type="button"
+                  onClick={() => setShowEMRModal(true)}
+                  className="px-2 py-1 rounded-xl text-[11px] font-bold text-teal-700 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 border border-transparent hover:border-teal-200 dark:hover:border-teal-800 transition-all flex items-center gap-1 shrink-0 cursor-pointer ml-1"
+                  title="Open full timeline modal"
+                >
+                  <BookOpen className="w-3 h-3" />
+                  <span className="hidden sm:inline">All Records</span>
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Prescription Date Right Section */}
+          <div className="flex items-center gap-2 self-start xl:self-auto bg-white dark:bg-[#18181b] px-3 py-1.5 rounded-xl border border-[#e4e2e1] dark:border-[#27272a] shadow-xs shrink-0">
+            <Calendar className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
             <div className="flex flex-col">
-              <label className="text-[9px] font-bold uppercase tracking-wider text-[#7c766d]">Prescription Date</label>
+              <label className="text-[9px] font-bold uppercase tracking-wider text-[#7c766d] dark:text-zinc-400">Prescription Date</label>
               <input
                 type="date"
                 value={casePaper.date || new Date().toISOString().split('T')[0]}
                 onChange={(e) => updateCasePaperState({ date: e.target.value })}
-                className="text-xs font-bold text-[#1a1c1a] bg-transparent border-0 p-0 focus:ring-0 cursor-pointer"
+                className="text-xs font-bold text-[#1a1c1a] dark:text-zinc-100 bg-transparent border-0 p-0 focus:ring-0 cursor-pointer"
               />
             </div>
           </div>
         </div>
       </div>
+
+      {/* ── Active Historical Visit Notice Banner ── */}
+      {activeVisitId !== 'current' && activeVisitRecord && (
+        <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 rounded-xl px-4 py-2.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5 text-xs text-amber-900 dark:text-amber-200">
+            <History className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <div>
+              <span className="font-bold">Viewing Visit {activeVisitRecord.visitNumber} ({activeVisitRecord.date}):</span>{' '}
+              <span>Loaded historical case paper ({activeVisitRecord.medicines.length} medicines prescribed).</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={handleUseAsTodayBase}
+              className="px-3 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+              title="Copy this prescription as today's consultation base"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              <span>Use as Today's Base</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleReturnToCurrentDraft}
+              className="px-3 py-1.5 rounded-xl bg-white dark:bg-[#18181b] border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-[#27272a] text-zinc-800 dark:text-zinc-200 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              title="Return to today's active draft"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
+              <span>Return to Today's Draft</span>
+            </button>
+          </div>
+        </div>
+      )}
       {/* ── Main 3-column grid ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
         

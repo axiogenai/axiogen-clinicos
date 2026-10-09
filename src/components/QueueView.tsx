@@ -248,7 +248,7 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
 
         {/* Search Results list */}
         {patientSearchQuery.trim() && (
-          <div className="bg-white border border-[#e4e2e1] rounded-xl shadow-lg max-h-72 overflow-y-auto divide-y divide-[#f2eee3]">
+          <div className="bg-white dark:bg-[#121214] border border-[#e4e2e1] dark:border-[#27272a] rounded-xl shadow-lg max-h-72 overflow-y-auto divide-y divide-[#f2eee3] dark:divide-[#27272a]">
             {searchedPatients.length > 0 ? (
               searchedPatients.map((p) => {
                 const existingQueueItem = queue.find(q => q.patientId === p.id || (q.name && q.name.trim().toLowerCase() === p.name.trim().toLowerCase()));
@@ -269,12 +269,12 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                 };
 
                 return (
-                  <div key={p.id} className="p-3 hover:bg-[#faf9f6] flex flex-col gap-2 transition-colors">
+                  <div key={p.id} className="p-3 hover:bg-[#faf9f6] dark:hover:bg-[#1e1e22] flex flex-col gap-2 transition-colors">
                     {/* Patient Info Row */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                       <div>
-                        <div className="font-bold text-[#1a1c1a] text-sm">{p.name}</div>
-                        <div className="text-xs text-[#7c766d] mt-0.5 flex flex-wrap items-center gap-2">
+                        <div className="font-bold text-[#1a1c1a] dark:text-[#f4f4f5] text-sm">{p.name}</div>
+                        <div className="text-xs text-[#7c766d] dark:text-[#a1a1aa] mt-0.5 flex flex-wrap items-center gap-2">
                           <span>{p.age} Yrs / {p.gender === 'M' ? 'Male' : 'Female'}</span>
                           <span>·</span>
                           <span className="inline-flex items-center gap-1">
@@ -417,15 +417,15 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
       </div>
 
       {/* Queue Table */}
-      <div className="bg-[#faf9f6] rounded-2xl shadow-sm border border-[#e4e2e1] overflow-hidden">
-        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#e4e2e1] flex flex-col md:flex-row justify-between items-start md:items-center gap-3 bg-[#f8f6f0]">
+      <div className="bg-[#faf9f6] dark:bg-[#121214] rounded-2xl shadow-sm border border-[#e4e2e1] dark:border-[#27272a] overflow-hidden">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#e4e2e1] dark:border-[#27272a] flex flex-col md:flex-row justify-between items-start md:items-center gap-3 bg-[#f8f6f0] dark:bg-[#18181b]">
           <div className="flex items-center gap-3 min-w-0">
-            <h2 className="text-sm sm:text-base font-serif font-bold text-[#1a1c1a] flex items-center gap-2 min-w-0">
+            <h2 className="text-sm sm:text-base font-serif font-bold text-[#1a1c1a] dark:text-[#f4f4f5] flex items-center gap-2 min-w-0">
               <Clock className="w-4 h-4 text-[#047857] shrink-0" />
               <span className="truncate">Today's Consultation Queue</span>
             </h2>
-            <span className="bg-[#ecfdf5] text-[#047857] py-1 px-3 rounded-full text-[10px] sm:text-[11px] font-bold flex items-center gap-1.5 border border-[#a7f3d0] shrink-0">
-              <Users className="w-3 h-3 text-[#065f46]" />
+            <span className="bg-[#ecfdf5] dark:bg-[#064e3b]/30 text-[#047857] dark:text-[#6ee7b7] py-1 px-3 rounded-full text-[10px] sm:text-[11px] font-bold flex items-center gap-1.5 border border-[#a7f3d0] dark:border-[#065f46] shrink-0">
+              <Users className="w-3 h-3 text-[#065f46] dark:text-[#6ee7b7]" />
               {queueSearchQuery.trim() ? `${filteredQueue.length} of ${displayQueue.length} Patients` : `${displayQueue.length} Patients`}
             </span>
             <button
@@ -433,22 +433,22 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
               onClick={() => loadQueueOnly()}
               disabled={isSyncingQueue}
               title="Instant live queue sync (low data mode <1KB)"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold rounded-full border border-emerald-300 bg-white text-emerald-800 hover:bg-emerald-50 shadow-xs active:scale-95 transition-all cursor-pointer shrink-0"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold rounded-full border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-[#18181b] text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 shadow-xs active:scale-95 transition-all cursor-pointer shrink-0"
             >
-              <RefreshCw className={`w-3 h-3 text-emerald-600 ${isSyncingQueue ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3 h-3 text-emerald-600 dark:text-emerald-400 ${isSyncingQueue ? 'animate-spin' : ''}`} />
               <span>{isSyncingQueue ? 'Syncing…' : 'Sync Live'}</span>
             </button>
           </div>
 
           {/* Instant Search Bar in Queue Header */}
           <div className="relative w-full md:w-80">
-            <Search className="w-3.5 h-3.5 text-[#7c766d] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 text-[#7c766d] dark:text-[#a1a1aa] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               placeholder="Search queue (Name, Phone, Village, #Case)..."
               value={queueSearchQuery}
               onChange={(e) => setQueueSearchQuery(e.target.value)}
-              className="w-full bg-white border border-[#cdc6ba] focus:border-[#047857] focus:ring-1 focus:ring-[#047857] rounded-xl text-xs py-2 pl-8 pr-7 placeholder:text-[#9c9589] font-medium transition-all shadow-xs"
+              className="w-full bg-white dark:bg-[#161618] border border-[#cdc6ba] dark:border-[#2e2e32] text-[#1a1c1a] dark:text-[#f4f4f5] focus:border-[#047857] focus:ring-1 focus:ring-[#047857] rounded-xl text-xs py-2 pl-8 pr-7 placeholder:text-[#9c9589] dark:placeholder:text-[#71717a] font-medium transition-all shadow-xs"
             />
             {queueSearchQuery && (
               <button
@@ -464,7 +464,7 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
         </div>
         
         {/* Mobile View (Stacked Cards — No Horizontal Scrollbar) */}
-        <div className="block md:hidden divide-y divide-[#e4e2e1]">
+        <div className="block md:hidden divide-y divide-[#e4e2e1] dark:divide-[#27272a]">
           {filteredQueue.map((item, index) => {
             const patient = getPatient(item.patientId) || {
               id: item.patientId || item.queueId,
@@ -487,20 +487,20 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
               <div 
                 key={item.queueId}
                 onClick={() => onSelectPatient(item, patient)}
-                className="p-4 space-y-3 bg-[#faf9f6] cursor-pointer hover:bg-[#f8f6f0] transition-colors"
+                className="p-4 space-y-3 bg-[#faf9f6] dark:bg-[#121214] cursor-pointer hover:bg-[#f8f6f0] dark:hover:bg-[#1e1e22] transition-colors"
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="w-6 h-6 rounded-full bg-[#f2eee3] border border-[#cdc6ba] text-[#7c766d] font-mono text-[10px] font-bold inline-flex items-center justify-center shrink-0">
+                    <span className="w-6 h-6 rounded-full bg-[#f2eee3] dark:bg-[#18181b] border border-[#cdc6ba] dark:border-[#27272a] text-[#7c766d] dark:text-[#a1a1aa] font-mono text-[10px] font-bold inline-flex items-center justify-center shrink-0">
                       {index + 1}
                     </span>
                     <div className="min-w-0">
-                      <div className="font-bold text-[#1a1c1a] text-sm truncate">{patient.name}</div>
-                      <div className="text-[11px] text-[#7c766d] flex items-center gap-1.5 flex-wrap">
+                      <div className="font-bold text-[#1a1c1a] dark:text-[#f4f4f5] text-sm truncate">{patient.name}</div>
+                      <div className="text-[11px] text-[#7c766d] dark:text-[#a1a1aa] flex items-center gap-1.5 flex-wrap">
                         <span>{patient.age}y · {patient.gender === 'M' ? 'Male' : 'Female'}</span>
                         {casePaper && (
-                          <span className="inline-flex items-center gap-0.5 text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-900 border border-amber-200">
-                            <BookOpen className="w-2.5 h-2.5 text-amber-700" />
+                          <span className="inline-flex items-center gap-0.5 text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                            <BookOpen className="w-2.5 h-2.5 text-amber-700 dark:text-amber-400" />
                             #{casePaper}
                           </span>
                         )}
@@ -526,12 +526,12 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                   </div>
                 </div>
 
-                <div className="bg-[#f8f6f0] p-2.5 rounded-xl border border-[#e4e2e1] text-xs text-[#4b463e] space-y-1">
-                  <div className="flex items-center justify-between text-[11px] text-[#7c766d]">
+                <div className="bg-[#f8f6f0] dark:bg-[#161618] p-2.5 rounded-xl border border-[#e4e2e1] dark:border-[#27272a] text-xs text-[#4b463e] dark:text-[#d4d4d8] space-y-1">
+                  <div className="flex items-center justify-between text-[11px] text-[#7c766d] dark:text-[#a1a1aa]">
                     <span>Time Added: {item.timeAdded}</span>
                   </div>
                   <div>
-                    <span className="font-semibold text-[#1a1c1a]">Complaint: </span>
+                    <span className="font-semibold text-[#1a1c1a] dark:text-[#f4f4f5]">Complaint: </span>
                     <span>{item.complaint}</span>
                   </div>
                 </div>
@@ -551,9 +551,9 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                     <button
                       type="button"
                       onClick={() => onSelectPatient(item, patient)}
-                      className="inline-flex items-center justify-center gap-1.5 w-full bg-[#f8f6f0] hover:bg-[#f2eee3] text-[#4b463e] border border-[#e4e2e1] hover:border-[#cdc6ba] px-3 py-1.5 rounded-xl font-bold text-xs transition-all shadow-sm"
+                      className="inline-flex items-center justify-center gap-1.5 w-full bg-[#f8f6f0] hover:bg-[#f2eee3] dark:bg-[#18181b] dark:hover:bg-[#222226] text-[#4b463e] dark:text-[#d4d4d8] border border-[#e4e2e1] dark:border-[#27272a] hover:border-[#cdc6ba] dark:hover:border-[#3f3f46] px-3 py-1.5 rounded-xl font-bold text-xs transition-all shadow-sm"
                     >
-                      <FileText className="w-3.5 h-3.5 text-[#7c766d]" />
+                      <FileText className="w-3.5 h-3.5 text-[#7c766d] dark:text-[#a1a1aa]" />
                       <span>Open EMR</span>
                     </button>
                   )}
@@ -563,12 +563,12 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
           })}
 
           {filteredQueue.length === 0 && queue.length > 0 && (
-            <div className="px-6 py-10 text-center bg-white">
-              <p className="text-[#4b463e] font-semibold text-xs">No patients in queue matching "{queueSearchQuery}"</p>
+            <div className="px-6 py-10 text-center bg-white dark:bg-[#121214]">
+              <p className="text-[#4b463e] dark:text-[#d4d4d8] font-semibold text-xs">No patients in queue matching "{queueSearchQuery}"</p>
               <button
                 type="button"
                 onClick={() => setQueueSearchQuery('')}
-                className="mt-2 text-xs font-bold text-[#047857] hover:underline"
+                className="mt-2 text-xs font-bold text-[#047857] dark:text-[#34d399] hover:underline"
               >
                 Clear Search
               </button>
@@ -578,12 +578,12 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
           {queue.length === 0 && (
             <div className="px-6 py-12 text-center">
               <div className="flex flex-col items-center justify-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-[#f2eee3] border border-[#e4e2e1] flex items-center justify-center">
-                  <Users className="w-6 h-6 text-[#cdc6ba]" />
+                <div className="w-12 h-12 rounded-2xl bg-[#f2eee3] dark:bg-[#18181b] border border-[#e4e2e1] dark:border-[#27272a] flex items-center justify-center">
+                  <Users className="w-6 h-6 text-[#cdc6ba] dark:text-[#71717a]" />
                 </div>
                 <div>
-                  <p className="text-[#4b463e] font-semibold text-sm">No patients in queue today</p>
-                  <p className="text-[#7c766d] text-xs mt-1">Ask reception to add patients to today's OPD</p>
+                  <p className="text-[#4b463e] dark:text-[#d4d4d8] font-semibold text-sm">No patients in queue today</p>
+                  <p className="text-[#7c766d] dark:text-[#a1a1aa] text-xs mt-1">Ask reception to add patients to today's OPD</p>
                 </div>
               </div>
             </div>
@@ -629,45 +629,45 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                   <tr 
                     key={item.queueId} 
                     onClick={() => onSelectPatient(item, patient)}
-                    className="cursor-pointer group hover:bg-[#f8f6f0]/60 transition-colors"
+                    className="cursor-pointer group hover:bg-[#f8f6f0]/60 dark:hover:bg-[#1e1e22] transition-colors"
                   >
-                    <td className="text-center font-mono font-semibold text-xs text-[#7c766d]">
+                    <td className="text-center font-mono font-semibold text-xs text-[#7c766d] dark:text-[#a1a1aa]">
                       {index + 1}
                     </td>
                     <td className="text-center">
-                      <span className="text-[#7c766d] font-semibold text-xs whitespace-nowrap">{item.timeAdded}</span>
+                      <span className="text-[#7c766d] dark:text-[#a1a1aa] font-semibold text-xs whitespace-nowrap">{item.timeAdded}</span>
                     </td>
                     <td className="text-left">
                       <div className="flex flex-col text-left">
-                        <div className="font-bold text-[#1a1c1a] text-sm truncate group-hover:text-[#047857] transition-colors">
+                        <div className="font-bold text-[#1a1c1a] dark:text-[#f4f4f5] text-sm truncate group-hover:text-[#047857] dark:group-hover:text-emerald-400 transition-colors">
                           {patient.name}
                         </div>
-                        <div className="text-[11px] text-[#7c766d] truncate">{patient.age}y · {patient.gender === 'M' ? 'Male' : 'Female'}</div>
+                        <div className="text-[11px] text-[#7c766d] dark:text-[#a1a1aa] truncate">{patient.age}y · {patient.gender === 'M' ? 'Male' : 'Female'}</div>
                       </div>
                     </td>
                     <td className="text-left">
-                      <div className="flex items-center gap-1.5 font-semibold text-[#1a1c1a] text-xs truncate mb-0.5">
-                        <Phone className="w-3 h-3 text-[#047857] shrink-0" />
+                      <div className="flex items-center gap-1.5 font-semibold text-[#1a1c1a] dark:text-[#f4f4f5] text-xs truncate mb-0.5">
+                        <Phone className="w-3 h-3 text-[#047857] dark:text-emerald-400 shrink-0" />
                         <span className="truncate">{item.phone || patient.phone || 'N/A'}</span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-[#7c766d] text-xs truncate">
-                        <MapPin className="w-3 h-3 shrink-0" />
+                      <div className="flex items-center gap-1.5 text-[#7c766d] dark:text-[#a1a1aa] text-xs truncate">
+                        <MapPin className="w-3 h-3 shrink-0 text-[#7c766d] dark:text-[#a1a1aa]" />
                         <span className="truncate">{item.village || patient.village || 'N/A'}</span>
                       </div>
                     </td>
                     {/* Case Paper Number */}
                     <td className="text-center">
                       {casePaper ? (
-                        <span className="inline-flex items-center gap-1 font-mono font-bold text-xs px-2.5 py-1 rounded-lg bg-amber-50 text-amber-900 border border-amber-200/80 shadow-2xs">
-                          <BookOpen className="w-3 h-3 text-amber-700 shrink-0" />
+                        <span className="inline-flex items-center gap-1 font-mono font-bold text-xs px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800 shadow-2xs">
+                          <BookOpen className="w-3 h-3 text-amber-700 dark:text-amber-400 shrink-0" />
                           <span>#{casePaper}</span>
                         </span>
                       ) : (
-                        <span className="text-[#7c766d] text-xs font-mono">—</span>
+                        <span className="text-[#7c766d] dark:text-[#71717a] text-xs font-mono">—</span>
                       )}
                     </td>
                     <td className="text-center" title={item.complaint || 'No complaint listed'}>
-                      <span className="text-[#4b463e] text-sm font-medium truncate block text-center">{item.complaint || '—'}</span>
+                      <span className="text-[#4b463e] dark:text-[#d4d4d8] text-sm font-medium truncate block text-center">{item.complaint || '—'}</span>
                     </td>
                     <td className="text-center">
                       <div className="flex justify-center">
@@ -704,9 +704,9 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                           <button
                             type="button"
                             onClick={() => onSelectPatient(item, patient)}
-                            className="inline-flex items-center gap-1.5 bg-[#f8f6f0] hover:bg-[#f2eee3] text-[#4b463e] border border-[#e4e2e1] hover:border-[#cdc6ba] px-3 py-1.5 rounded-xl font-bold text-xs transition-all shadow-sm"
+                            className="inline-flex items-center gap-1.5 bg-[#f8f6f0] hover:bg-[#f2eee3] dark:bg-[#18181b] dark:hover:bg-[#222226] text-[#4b463e] dark:text-[#d4d4d8] border border-[#e4e2e1] dark:border-[#27272a] hover:border-[#cdc6ba] dark:hover:border-[#3f3f46] px-3 py-1.5 rounded-xl font-bold text-xs transition-all shadow-sm"
                           >
-                            <FileText className="w-3.5 h-3.5 text-[#7c766d]" />
+                            <FileText className="w-3.5 h-3.5 text-[#7c766d] dark:text-[#a1a1aa]" />
                             <span>Open EMR</span>
                           </button>
                         )}
@@ -718,12 +718,12 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
               
               {filteredQueue.length === 0 && queue.length > 0 && (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center bg-white">
-                    <p className="text-[#4b463e] font-semibold text-xs">No patients in queue matching "<strong>{queueSearchQuery}</strong>"</p>
+                  <td colSpan={8} className="px-6 py-12 text-center bg-white dark:bg-[#121214]">
+                    <p className="text-[#4b463e] dark:text-[#d4d4d8] font-semibold text-xs">No patients in queue matching "<strong>{queueSearchQuery}</strong>"</p>
                     <button
                       type="button"
                       onClick={() => setQueueSearchQuery('')}
-                      className="mt-2 text-xs font-bold text-[#047857] hover:underline"
+                      className="mt-2 text-xs font-bold text-[#047857] dark:text-[#34d399] hover:underline"
                     >
                       Clear Search
                     </button>
@@ -735,12 +735,12 @@ export default function QueueView({ queue, patients, onSelectPatient }: QueueVie
                 <tr>
                   <td colSpan={8} className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center justify-center gap-3">
-                      <div className="w-14 h-14 rounded-2xl bg-[#f2eee3] border border-[#e4e2e1] flex items-center justify-center">
-                        <Users className="w-7 h-7 text-[#cdc6ba]" />
+                      <div className="w-14 h-14 rounded-2xl bg-[#f2eee3] dark:bg-[#18181b] border border-[#e4e2e1] dark:border-[#27272a] flex items-center justify-center">
+                        <Users className="w-7 h-7 text-[#cdc6ba] dark:text-[#71717a]" />
                       </div>
                       <div>
-                        <p className="text-[#4b463e] font-semibold text-sm">No patients in queue today</p>
-                        <p className="text-[#7c766d] text-xs mt-1">Ask reception to add patients to today's OPD</p>
+                        <p className="text-[#4b463e] dark:text-[#d4d4d8] font-semibold text-sm">No patients in queue today</p>
+                        <p className="text-[#7c766d] dark:text-[#a1a1aa] text-xs mt-1">Ask reception to add patients to today's OPD</p>
                       </div>
                     </div>
                   </td>

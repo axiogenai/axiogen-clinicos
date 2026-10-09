@@ -150,17 +150,17 @@ export default function MedicineEditorRow({
   );
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm hover:border-gray-300 transition-all space-y-2.5 sm:space-y-0 sm:flex sm:items-center sm:gap-2.5">
+    <div className="bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#27272a] rounded-xl p-3 shadow-sm hover:border-gray-300 dark:hover:border-[#3f3f46] transition-all space-y-2.5 sm:space-y-0 sm:flex sm:items-center sm:gap-2.5">
       {/* Top Header on Mobile / Left Info on Desktop */}
       <div className="flex items-center gap-1.5 w-full sm:flex-1 min-w-0">
         {/* Reorder Arrows (visible on mobile and desktop) */}
         {(onMoveUp || onMoveDown) && (
-          <div className="flex flex-row sm:flex-col gap-1 sm:gap-0.5 shrink-0 text-gray-400">
+          <div className="flex flex-row sm:flex-col gap-1 sm:gap-0.5 shrink-0 text-gray-400 dark:text-[#71717a]">
             <button
               type="button"
               onClick={() => onMoveUp?.(index)}
               disabled={isFirst}
-              className="p-1 sm:p-0.5 hover:text-indigo-600 disabled:opacity-20 disabled:hover:text-gray-400 rounded transition-colors"
+              className="p-1 sm:p-0.5 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-20 disabled:hover:text-gray-400 rounded transition-colors"
               title="Move Up"
             >
               <ArrowUp className="w-3.5 h-3.5" />
@@ -169,7 +169,7 @@ export default function MedicineEditorRow({
               type="button"
               onClick={() => onMoveDown?.(index)}
               disabled={isLast}
-              className="p-1 sm:p-0.5 hover:text-indigo-600 disabled:opacity-20 disabled:hover:text-gray-400 rounded transition-colors"
+              className="p-1 sm:p-0.5 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-20 disabled:hover:text-gray-400 rounded transition-colors"
               title="Move Down"
             >
               <ArrowDown className="w-3.5 h-3.5" />
@@ -194,13 +194,13 @@ export default function MedicineEditorRow({
                   setIsEditingName(false);
                 }
               }}
-              className="flex-1 min-w-0 px-2.5 py-1 text-xs sm:text-sm font-semibold border-2 border-indigo-500 rounded-lg outline-none bg-indigo-50/40 text-gray-900 shadow-inner"
+              className="flex-1 min-w-0 px-2.5 py-1 text-xs sm:text-sm font-semibold border-2 border-emerald-500 rounded-lg outline-none bg-emerald-50/40 dark:bg-[#18181b] text-gray-900 dark:text-[#f4f4f5] shadow-inner"
               placeholder="Edit medicine name..."
             />
             <button
               type="button"
               onClick={handleSaveName}
-              className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md transition-colors shrink-0 shadow-sm"
+              className="p-1.5 bg-[#047857] hover:bg-[#065f46] text-white rounded-md transition-colors shrink-0 shadow-sm"
               title="Save Name"
             >
               <Check className="w-3.5 h-3.5" />
@@ -211,7 +211,7 @@ export default function MedicineEditorRow({
                 setNameVal(item.medicineName || '');
                 setIsEditingName(false);
               }}
-              className="p-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md transition-colors shrink-0"
+              className="p-1.5 bg-gray-200 hover:bg-gray-300 dark:bg-[#27272a] dark:hover:bg-[#3f3f46] text-gray-700 dark:text-[#d4d4d8] rounded-md transition-colors shrink-0"
               title="Cancel"
             >
               <X className="w-3.5 h-3.5" />
@@ -222,7 +222,7 @@ export default function MedicineEditorRow({
             <div className="flex items-center gap-1.5 min-w-0 flex-1">
               <span
                 onClick={() => setIsEditingName(true)}
-                className="font-bold text-xs sm:text-sm text-gray-900 truncate cursor-pointer hover:text-indigo-600 transition-colors"
+                className="font-bold text-xs sm:text-sm text-gray-900 dark:text-[#f4f4f5] truncate cursor-pointer hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
                 title="Click to rename medicine"
               >
                 {item.medicineName || 'Unknown Medicine'}
@@ -231,7 +231,7 @@ export default function MedicineEditorRow({
                 <button
                   type="button"
                   onClick={() => setIsEditingName(true)}
-                  className="p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                  className="p-1 text-gray-400 dark:text-[#71717a] hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-[#1e1e22] rounded transition-colors"
                   title="Edit / Rename Medicine"
                 >
                   <Edit2 className="w-3.5 h-3.5" />
@@ -240,7 +240,7 @@ export default function MedicineEditorRow({
                   <button
                     type="button"
                     onClick={() => onSearchReplace(index)}
-                    className="p-1 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                    className="p-1 text-gray-400 dark:text-[#71717a] hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-[#1e1e22] rounded transition-colors"
                     title="Search & Replace Medicine (keeps exact position)"
                   >
                     <Search className="w-3.5 h-3.5" />
@@ -252,10 +252,10 @@ export default function MedicineEditorRow({
             <button
               type="button"
               onClick={() => onRemove(index)}
-              className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+              className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors shrink-0"
               title="Remove medicine"
             >
-              <Trash2 className="w-4 h-4 text-red-500" />
+              <Trash2 className="w-4 h-4 text-red-500 dark:text-red-400" />
             </button>
           </div>
         )}
@@ -280,20 +280,20 @@ export default function MedicineEditorRow({
               }
             }}
             placeholder="Frequency (sakali 1 goli)"
-            className="w-full px-2.5 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-lg pr-9 focus:ring-emerald-500 focus:border-emerald-500"
+            className="w-full px-2.5 py-1.5 text-xs sm:text-sm border border-gray-300 dark:border-[#2e2e32] bg-white dark:bg-[#161618] text-gray-900 dark:text-[#f4f4f5] rounded-lg pr-9 focus:ring-emerald-500 focus:border-emerald-500 placeholder:text-gray-400 dark:placeholder:text-[#71717a]"
           />
           <button
             type="button"
             title="मराठी भाषांतर"
             onClick={handleAiTranslate}
             disabled={translating}
-            className="absolute right-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 p-1 rounded transition-colors z-10 shrink-0"
+            className="absolute right-1.5 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-[#222226] p-1 rounded transition-colors z-10 shrink-0"
           >
             {translating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Languages className="w-3.5 h-3.5" />}
           </button>
 
           {showDropdown && (
-            <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-56 overflow-y-auto py-1">
+            <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#27272a] rounded-xl shadow-xl z-50 max-h-56 overflow-y-auto py-1">
               {item.frequency && !/^[\u0900-\u097F\s\d\:\-\_\,]+$/.test(item.frequency) && (
                 <button
                   type="button"
@@ -301,13 +301,13 @@ export default function MedicineEditorRow({
                     e.preventDefault();
                     handleAiTranslate();
                   }}
-                  className="w-full text-left px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border-b border-emerald-100 flex items-center justify-between text-xs font-medium"
+                  className="w-full text-left px-3 py-2 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-900 dark:text-emerald-200 border-b border-emerald-100 dark:border-emerald-900/50 flex items-center justify-between text-xs font-medium"
                 >
                   <span className="flex items-center gap-1.5">
-                    <Languages className="w-3.5 h-3.5 text-emerald-700" />
+                    <Languages className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" />
                     <span>मराठीत रूपांतर करा: "{item.frequency}"</span>
                   </span>
-                  <span className="bg-emerald-200 text-emerald-800 text-[10px] px-1.5 py-0.5 rounded font-bold">मराठी</span>
+                  <span className="bg-emerald-200 dark:bg-emerald-800 text-emerald-800 dark:text-emerald-200 text-[10px] px-1.5 py-0.5 rounded font-bold">मराठी</span>
                 </button>
               )}
               {filteredFrequencies.length > 0 ? (
@@ -320,13 +320,13 @@ export default function MedicineEditorRow({
                       onUpdate(index, 'frequency', f);
                       setShowDropdown(false);
                     }}
-                    className="w-full text-left px-3 py-1.5 text-xs text-gray-800 hover:bg-emerald-50 hover:text-emerald-900 transition-colors"
+                    className="w-full text-left px-3 py-1.5 text-xs text-gray-800 dark:text-[#d4d4d8] hover:bg-emerald-50 dark:hover:bg-[#1e1e22] hover:text-emerald-900 dark:hover:text-emerald-300 transition-colors"
                   >
                     {f}
                   </button>
                 ))
               ) : (
-                <div className="px-3 py-2 text-xs text-gray-400 italic">No matching frequencies</div>
+                <div className="px-3 py-2 text-xs text-gray-400 dark:text-[#71717a] italic">No matching frequencies</div>
               )}
             </div>
           )}
@@ -349,7 +349,7 @@ export default function MedicineEditorRow({
                 }
               }}
               placeholder="Duration (7 Days)"
-              className="w-full px-2.5 py-1.5 text-xs sm:text-sm font-semibold border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+              className="w-full px-2.5 py-1.5 text-xs sm:text-sm font-semibold border border-gray-300 dark:border-[#2e2e32] bg-white dark:bg-[#161618] text-gray-900 dark:text-[#f4f4f5] rounded-lg focus:ring-emerald-500 focus:border-emerald-500 placeholder:text-gray-400 dark:placeholder:text-[#71717a]"
             />
           </div>
 
@@ -360,7 +360,7 @@ export default function MedicineEditorRow({
               onChange={(e) => onUpdate(index, 'count', e.target.value)}
               placeholder="Count"
               title="Total Medicine Count (Editable)"
-              className="w-16 sm:w-16 px-1.5 py-1.5 text-xs sm:text-sm font-bold text-center text-emerald-700 bg-emerald-50 border border-emerald-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+              className="w-16 sm:w-16 px-1.5 py-1.5 text-xs sm:text-sm font-bold text-center text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
             />
           </div>
         </div>

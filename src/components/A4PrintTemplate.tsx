@@ -1373,6 +1373,7 @@ export default function A4PrintTemplate({
       {/* 4. FOOTER SECTION (Left: 8mm, Right: 8mm, Bottom: 3mm)      */}
       {/* ══════════════════════════════════════════════════════════ */}
       <footer
+        className="rx-paper-footer bg-white text-gray-900"
         style={{
           width: '100%',
           borderTop: printOnStationery ? 'none' : '2px solid #a53b3b',
@@ -1385,26 +1386,28 @@ export default function A4PrintTemplate({
           lineHeight: 1.15,
           boxSizing: 'border-box',
           position: 'relative',
+          backgroundColor: '#ffffff',
+          color: '#111827',
         }}
       >
         {!printOnStationery && (
           <>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '2px' }}>
-              <div style={{ flex: '0 0 62%' }}>
-                <div style={{ marginBottom: '1px' }}>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '2px', color: '#111827' }}>
+              <div style={{ flex: '0 0 62%', color: '#111827' }}>
+                <div style={{ marginBottom: '1px', color: '#111827' }}>
                   ☑ Methotrexate- weekly dosing explained &amp; overdose risk etc. Explained.
                 </div>
-                <div style={{ marginBottom: '1px' }}>
+                <div style={{ marginBottom: '1px', color: '#111827' }}>
                   ☑ JAK inhibitors - DVT/PE warning explained &amp; leukopenia etc. Explained.
                 </div>
-                <div style={{ marginBottom: '1px' }}>
+                <div style={{ marginBottom: '1px', color: '#111827' }}>
                   ☑ DAPSONE - DAPSONE syndrome, organ toxicity, Jaundice risk etc. Explained
                 </div>
               </div>
-              <div style={{ flex: '0 0 38%' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-                  <span>☑ </span>
-                  <span style={{ lineHeight: 1.15 }}>
+              <div style={{ flex: '0 0 38%', color: '#111827' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', color: '#111827' }}>
+                  <span style={{ color: '#111827' }}>☑ </span>
+                  <span style={{ lineHeight: 1.15, color: '#111827' }}>
                     Azathioprine-related myelosuppression &amp;<br />
                     hair fall etc. Explained
                   </span>
@@ -1423,6 +1426,7 @@ export default function A4PrintTemplate({
               <GroqTranslatedText
                 text="- त्वचा विकाराची औषधे इतर औषधांप्रमाणे महाग असू शकतात. - चिठ्ठीमधील औषधे दिलेल्या अवधीसाठीच आहेत. काही विकार बरे होण्यास वेळ लागतो. तसेच काही विकार औषधानंतर काही प्रमाणात वाढतात व त्यानंतर बरे होतात."
                 lang={language}
+                style={{ color: '#222' }}
               />
             </div>
           </>

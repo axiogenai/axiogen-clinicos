@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Stethoscope, Zap, LogOut, BookOpen } from 'lucide-react';
+import { Stethoscope, Zap, LogOut, BookOpen, MessageSquare } from 'lucide-react';
 import { ClinicProvider, useClinic } from './context/ClinicContext';
+import { ThemeProvider } from './context/ThemeContext';
 import type { Patient, QueueItem } from './data/patients';
 import type { CasePaper } from './types';
 import QueueView from './components/QueueView';
@@ -17,6 +18,7 @@ import WhatsAppGatewayModal from './components/WhatsAppGatewayModal';
 import DoctorPasscodeModal from './components/DoctorPasscodeModal';
 import ComingSoonLandingPage from './components/ComingSoonLandingPage';
 import { AppUpdateModal } from './components/AppUpdateModal';
+import ThemeToggle from './components/ThemeToggle';
 
 import logoHd from './assets/logo-hd.png';
 
@@ -275,19 +277,42 @@ function MainApp() {
     return sessionStorage.getItem('clinicos_doctor_passcode_unlocked') === 'true';
   });
 
-  const isPublicDomain = typeof window !== 'undefined' && (
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1' ||
-    window.location.hostname === 'shingareclinicos.vercel.app' ||
-    (window.location.hostname.includes('vercel.app') &&
-     !window.location.hostname.includes('reception') &&
-     !window.location.hostname.includes('doctor') &&
-     !window.location.hostname.includes('dr-'))
+  const isDoctorRoute = typeof window !== 'undefined' && (
+    window.location.pathname.toLowerCase().startsWith('/dr') ||
+    window.location.pathname.toLowerCase().startsWith('/doctor') ||
+    window.location.hostname.toLowerCase().includes('dr-') ||
+    window.location.hostname.toLowerCase().includes('doctor') ||
+    window.location.search.toLowerCase().includes('doctor') ||
+    window.location.search.toLowerCase().includes('dr')
+  );
+
+  const isReceptionRoute = typeof window !== 'undefined' && (
+    window.location.pathname.toLowerCase().startsWith('/reception') ||
+    window.location.hostname.toLowerCase().includes('reception') ||
+    window.location.search.toLowerCase().includes('reception')
   );
 
   const showStaffPortal = typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
     window.location.search.includes('portal=true') ||
-    window.location.search.includes('login=true')
+    window.location.search.includes('login=true') ||
+    window.location.search.includes('staff=true') ||
+    isDoctorRoute ||
+    isReceptionRoute
+  );
+
+  const isPublicDomain = typeof window !== 'undefined' && !showStaffPortal && (
+    window.location.pathname === '/coming-soon' ||
+    window.location.search.includes('preview=coming-soon') ||
+    (
+      (window.location.hostname === 'shingareclinicos.vercel.app' ||
+       window.location.hostname.includes('vercel.app')) &&
+      !window.location.hostname.includes('reception') &&
+      !window.location.hostname.includes('doctor') &&
+      !window.location.hostname.includes('dr-') &&
+      (window.location.pathname === '/' || window.location.pathname === '')
+    )
   );
 
   useEffect(() => {
@@ -360,19 +385,22 @@ function MainApp() {
               </div>
             </div>
 
-            {/* Mobile User Badge + Logout */}
+            {/* Mobile User Badge + Theme Toggle + Logout */}
             <div className="flex sm:hidden items-center gap-1.5 shrink-0">
+              <ThemeToggle size="sm" />
+
               {isDoctor && (
                 <button
                   onClick={() => setIsWhatsAppModalOpen(true)}
                   title="WhatsApp Gateway"
-                  className="px-2 py-0.5 text-[10px] font-bold bg-[#ecfdf5] text-[#047857] border border-[#a7f3d0] rounded-lg flex items-center gap-1 cursor-pointer"
+                  className="px-2 py-0.5 text-[10px] font-bold bg-[#ecfdf5] dark:bg-[#064e3b]/30 text-[#047857] dark:text-[#6ee7b7] border border-[#a7f3d0] dark:border-[#065f46] rounded-lg flex items-center gap-1 cursor-pointer"
                 >
-                  <span>📱 WA</span>
+                  <MessageSquare className="w-3 h-3 text-[#047857] dark:text-[#6ee7b7]" />
+                  <span>WA</span>
                 </button>
               )}
-              <div className={`flex items-center gap-1 px-2 py-0.5 rounded-lg border text-xs ${isDoctor ? 'bg-[#ecfdf5] border-[#a7f3d0]' : 'bg-[#f0f9ff] border-[#bae6fd]'}`}>
-                <span className={`font-bold text-[10px] truncate max-w-[80px] ${isDoctor ? 'text-[#064e3b]' : 'text-[#1d4ed8]'}`}>
+              <div className={`flex items-center gap-1 px-2 py-0.5 rounded-lg border text-xs ${isDoctor ? 'bg-[#ecfdf5] dark:bg-[#064e3b]/20 border-[#a7f3d0] dark:border-[#065f46]' : 'bg-[#f0f9ff] dark:bg-blue-950/20 border-[#bae6fd] dark:border-blue-900'}`}>
+                <span className={`font-bold text-[10px] truncate max-w-[80px] ${isDoctor ? 'text-[#064e3b] dark:text-[#6ee7b7]' : 'text-[#1d4ed8] dark:text-[#93c5fd]'}`}>
                   Dr. {user.name.split(' ')[0]}
                 </span>
               </div>
@@ -380,7 +408,7 @@ function MainApp() {
               <button
                 onClick={handleLogout}
                 title="Sign Out"
-                className="p-1 text-[#7c766d] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-200"
+                className="p-1 text-[#7c766d] dark:text-[#a1a1aa] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors border border-transparent hover:border-red-200 dark:hover:border-red-900/50"
               >
                 <LogOut className="w-3.5 h-3.5" />
               </button>
@@ -389,13 +417,13 @@ function MainApp() {
 
           {/* Role-Based Nav Tabs */}
           {isDoctor && (
-            <nav className="w-full sm:w-auto flex items-center justify-between sm:justify-center gap-1 bg-[#f2eee3]/80 p-1 rounded-xl border border-[#e4e2e1] overflow-x-auto no-scrollbar">
+            <nav className="w-full sm:w-auto flex items-center justify-between sm:justify-center gap-1 bg-[#f2eee3]/80 dark:bg-[#18181b] p-1 rounded-xl border border-[#e4e2e1] dark:border-[#27272a] overflow-x-auto no-scrollbar">
               <button
                 onClick={() => setTab('doctor')}
                 className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 flex-1 sm:flex-initial whitespace-nowrap ${
                   tab === 'doctor'
                     ? 'bg-gradient-to-r from-[#064e3b] to-[#047857] text-[#ecfdf5] shadow-md shadow-emerald-950/20'
-                    : 'text-[#4b463e] hover:text-[#1a1c1a] hover:bg-white/60'
+                    : 'text-[#4b463e] dark:text-[#a1a1aa] hover:text-[#1a1c1a] dark:hover:text-white hover:bg-white/60 dark:hover:bg-[#27272a]'
                 }`}
               >
                 <Stethoscope className="w-3.5 h-3.5" />
@@ -407,7 +435,7 @@ function MainApp() {
                 className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 flex-1 sm:flex-initial whitespace-nowrap ${
                   tab === 'register'
                     ? 'bg-gradient-to-r from-[#064e3b] to-[#047857] text-[#ecfdf5] shadow-md shadow-emerald-950/20'
-                    : 'text-[#4b463e] hover:text-[#1a1c1a] hover:bg-white/60'
+                    : 'text-[#4b463e] dark:text-[#a1a1aa] hover:text-[#1a1c1a] dark:hover:text-white hover:bg-white/60 dark:hover:bg-[#27272a]'
                 }`}
               >
                 <BookOpen className="w-3.5 h-3.5" />
@@ -419,7 +447,7 @@ function MainApp() {
                 className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 flex-1 sm:flex-initial whitespace-nowrap ${
                   tab === 'templates'
                     ? 'bg-gradient-to-r from-[#064e3b] to-[#047857] text-[#ecfdf5] shadow-md shadow-emerald-950/20'
-                    : 'text-[#4b463e] hover:text-[#1a1c1a] hover:bg-white/60'
+                    : 'text-[#4b463e] dark:text-[#a1a1aa] hover:text-[#1a1c1a] dark:hover:text-white hover:bg-white/60 dark:hover:bg-[#27272a]'
                 }`}
               >
                 <Zap className={`w-3.5 h-3.5 ${tab === 'templates' ? 'text-amber-300 fill-amber-300' : 'text-amber-600 fill-amber-500'}`} />
@@ -428,28 +456,31 @@ function MainApp() {
             </nav>
           )}
 
-          {/* Desktop User Badge + WhatsApp QR + Logout */}
+          {/* Desktop User Badge + WhatsApp QR + Theme Toggle + Logout */}
           <div className="hidden sm:flex items-center gap-2 shrink-0">
+            {/* Theme Toggle Button */}
+            <ThemeToggle />
+
             {isDoctor && (
               <button
                 onClick={() => setIsWhatsAppModalOpen(true)}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-[#ecfdf5] text-[#047857] border border-[#a7f3d0] hover:bg-[#d1fae5] shadow-sm cursor-pointer"
+                className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-[#ecfdf5] dark:bg-[#064e3b]/30 text-[#047857] dark:text-[#6ee7b7] border border-[#a7f3d0] dark:border-[#065f46] hover:bg-[#d1fae5] dark:hover:bg-[#064e3b]/50 shadow-sm cursor-pointer"
               >
-                <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-[#10b981]" />
                 <span>WhatsApp QR</span>
               </button>
             )}
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs ${isDoctor ? 'bg-[#ecfdf5] border-[#a7f3d0]' : 'bg-[#f0f9ff] border-[#bae6fd]'}`}>
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs ${isDoctor ? 'bg-[#ecfdf5] dark:bg-[#064e3b]/20 border-[#a7f3d0] dark:border-[#065f46]' : 'bg-[#f0f9ff] dark:bg-blue-950/20 border-[#bae6fd] dark:border-blue-900'}`}>
               <div>
-                <div className={`font-bold text-xs ${isDoctor ? 'text-[#064e3b]' : 'text-[#1d4ed8]'}`}>{user.name}</div>
-                <div className="text-[10px] text-[#7c766d] uppercase font-bold tracking-wider">{user.role === 'doctor' ? 'Consultant' : user.role === 'admin' ? 'Admin' : 'Receptionist'}</div>
+                <div className={`font-bold text-xs ${isDoctor ? 'text-[#064e3b] dark:text-[#6ee7b7]' : 'text-[#1d4ed8] dark:text-[#93c5fd]'}`}>{user.name}</div>
+                <div className="text-[10px] text-[#7c766d] dark:text-[#a1a1aa] uppercase font-bold tracking-wider">{user.role === 'doctor' ? 'Consultant' : user.role === 'admin' ? 'Admin' : 'Receptionist'}</div>
               </div>
             </div>
 
             <button
               onClick={handleLogout}
               title="Sign Out"
-              className="p-2 text-[#7c766d] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-200"
+              className="p-2 text-[#7c766d] dark:text-[#a1a1aa] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors border border-transparent hover:border-red-200 dark:hover:border-red-900/50"
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -502,8 +533,10 @@ function MainApp() {
 
 export default function App() {
   return (
-    <ClinicProvider>
-      <MainApp />
-    </ClinicProvider>
+    <ThemeProvider>
+      <ClinicProvider>
+        <MainApp />
+      </ClinicProvider>
+    </ThemeProvider>
   );
 }

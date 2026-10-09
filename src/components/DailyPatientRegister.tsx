@@ -64,15 +64,15 @@ function CustomDropdown<T extends string | number>({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 bg-white border border-[#cdc6ba] hover:border-[#047857] rounded-xl px-3 py-2 text-xs font-bold text-[#1a1c1a] shadow-sm transition-all cursor-pointer active:scale-95"
+        className="flex items-center gap-2 bg-white dark:bg-[#161618] border border-[#cdc6ba] dark:border-[#2e2e32] hover:border-[#047857] dark:hover:border-emerald-500 rounded-xl px-3 py-2 text-xs font-bold text-[#1a1c1a] dark:text-[#f4f4f5] shadow-sm transition-all cursor-pointer active:scale-95"
       >
-        {labelPrefix && <span className="text-[#656056] font-normal">{labelPrefix}</span>}
-        <span className="text-[#047857]">{selectedOption.label}</span>
-        <ChevronDown className={`w-3.5 h-3.5 text-[#047857] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        {labelPrefix && <span className="text-[#656056] dark:text-[#a1a1aa] font-normal">{labelPrefix}</span>}
+        <span className="text-[#047857] dark:text-emerald-400">{selectedOption.label}</span>
+        <ChevronDown className={`w-3.5 h-3.5 text-[#047857] dark:text-emerald-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
-        <div className={`absolute ${placement === 'right' ? 'right-0' : 'left-0'} mt-1.5 w-44 max-w-[calc(100vw-2rem)] rounded-xl bg-white border border-[#e4e2e1] shadow-xl ring-1 ring-black/5 z-50 py-1.5 animate-in fade-in zoom-in-95 duration-100`}>
+        <div className={`absolute ${placement === 'right' ? 'right-0' : 'left-0'} mt-1.5 w-44 max-w-[calc(100vw-2rem)] rounded-xl bg-white dark:bg-[#121214] border border-[#e4e2e1] dark:border-[#27272a] shadow-xl ring-1 ring-black/5 z-50 py-1.5 animate-in fade-in zoom-in-95 duration-100`}>
           <div className="max-h-60 overflow-y-auto space-y-0.5 px-1 no-scrollbar">
             {options.map((opt) => {
               const isSelected = opt.value === value;
@@ -86,12 +86,12 @@ function CustomDropdown<T extends string | number>({
                   }}
                   className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer ${
                     isSelected
-                      ? 'bg-[#ecfdf5] text-[#047857] font-bold'
-                      : 'text-[#4b463e] hover:bg-[#faf9f6] hover:text-[#1a1c1a]'
+                      ? 'bg-[#ecfdf5] dark:bg-[#064e3b]/30 text-[#047857] dark:text-[#6ee7b7] font-bold'
+                      : 'text-[#4b463e] dark:text-[#d4d4d8] hover:bg-[#faf9f6] dark:hover:bg-[#1e1e22] hover:text-[#1a1c1a] dark:hover:text-white'
                   }`}
                 >
                   <span>{opt.label}</span>
-                  {isSelected && <Check className="w-3.5 h-3.5 text-[#047857]" />}
+                  {isSelected && <Check className="w-3.5 h-3.5 text-[#047857] dark:text-[#6ee7b7]" />}
                 </button>
               );
             })}

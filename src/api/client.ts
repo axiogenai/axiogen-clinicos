@@ -101,6 +101,31 @@ function mapQueueItem(q: any) {
 }
 
 /**
+ * Helper to fetch ALL records from Supabase by auto-paginating .range(from, to).
+ * Overcomes PostgREST's default 1,000-row query truncation limit.
+ */
+async function fetchSupabaseAll<T = any>(
+  makeQuery: (from: number, to: number) => any,
+  batchSize = 1000
+): Promise<T[]> {
+  let allRows: T[] = [];
+  let from = 0;
+  while (true) {
+    const to = from + batchSize - 1;
+    const { data, error } = await makeQuery(from, to);
+    if (error) {
+      console.error('[Supabase Pagination Error]:', error);
+      break;
+    }
+    if (!data || data.length === 0) break;
+    allRows = allRows.concat(data);
+    if (data.length < batchSize) break;
+    from += batchSize;
+  }
+  return allRows;
+}
+
+/**
  * Primary Supabase Cloud Direct Handler:
  * Executes 100% of Clinic operations directly against Supabase PostgreSQL in ~30ms.
  */
@@ -851,15 +876,17 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
     const startDate = `${monthPrefix}-01`;
     const endDate = `${monthPrefix}-31`;
 
-    const [opdRes, qRes, cpRes] = await Promise.all([
-      supabase.from('opd_registers').select('*').gte('date', startDate).lte('date', endDate).order('date', { ascending: true }),
-      supabase.from('queues').select('*').gte('date', startDate).lte('date', endDate).order('date', { ascending: true }),
-      supabase.from('case_papers').select('*').gte('date', startDate).lte('date', endDate).order('date', { ascending: true }),
+    const [opdData, qData, cpData] = await Promise.all([
+      fetchSupabaseAll((from, to) =>
+        supabase.from('opd_registers').select('*').gte('date', startDate).lte('date', endDate).order('date', { ascending: true }).range(from, to)
+      ),
+      fetchSupabaseAll((from, to) =>
+        supabase.from('queues').select('*').gte('date', startDate).lte('date', endDate).order('date', { ascending: true }).range(from, to)
+      ),
+      fetchSupabaseAll((from, to) =>
+        supabase.from('case_papers').select('*').gte('date', startDate).lte('date', endDate).order('date', { ascending: true }).range(from, to)
+      ),
     ]);
-
-    const opdData = opdRes.data || [];
-    const qData = qRes.data || [];
-    const cpData = cpRes.data || [];
 
     const pIds = new Set<string>();
     qData.forEach((q: any) => { if (q.patient_id) pIds.add(q.patient_id); });
@@ -868,18 +895,25 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
     let pMap = new Map<string, any>();
     if (pIds.size > 0) {
       const ids = Array.from(pIds);
+      const chunks: string[][] = [];
       for (let i = 0; i < ids.length; i += 500) {
-        const chunk = ids.slice(i, i + 500);
-        const { data: pList } = await supabase.from('patients').select('id, name, age, gender, phone, village').in('id', chunk);
-        (pList || []).forEach((p: any) => pMap.set(p.id, p));
+        chunks.push(ids.slice(i, i + 500));
       }
+      const pResults = await Promise.all(
+        chunks.map(chunk =>
+          supabase.from('patients').select('id, name, age, gender, phone, village').in('id', chunk)
+        )
+      );
+      pResults.forEach(res => {
+        (res.data || []).forEach((p: any) => pMap.set(p.id, p));
+      });
     }
 
     const unified: any[] = [];
     const seen = new Set<string>();
 
     opdData.forEach((r: any) => {
-      const key = `${r.date}_${r.patient_id || r.patient_name}`.toLowerCase();
+      const key = `${r.date}_${r.patient_id || r.patient_name || r.id}`.toLowerCase();
       seen.add(key);
       unified.push({
         id: r.id || `opd_${r.date}_${r.sr_no}`,
@@ -898,7 +932,7 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
     });
 
     qData.forEach((q: any) => {
-      const key = `${q.date}_${q.patient_id || q.name}`.toLowerCase();
+      const key = `${q.date}_${q.patient_id || q.name || q.queue_id || q.id}`.toLowerCase();
       if (!seen.has(key)) {
         seen.add(key);
         const p = q.patient_id ? pMap.get(q.patient_id) : null;
@@ -922,7 +956,7 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
     cpData.forEach((cp: any) => {
       const p = cp.patient_id ? pMap.get(cp.patient_id) : null;
       const pName = p?.name || cp.patient_id;
-      const key = `${cp.date}_${cp.patient_id || pName}`.toLowerCase();
+      const key = `${cp.date}_${cp.patient_id || pName || cp.id}`.toLowerCase();
       if (!seen.has(key)) {
         seen.add(key);
         unified.push({
@@ -965,15 +999,17 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
     const startDate = `${year}-01-01`;
     const endDate = `${year}-12-31`;
 
-    const [opdRes, qRes, cpRes] = await Promise.all([
-      supabase.from('opd_registers').select('date, patient_id, patient_name, status').gte('date', startDate).lte('date', endDate),
-      supabase.from('queues').select('date, patient_id, name, status').gte('date', startDate).lte('date', endDate),
-      supabase.from('case_papers').select('date, patient_id, status').gte('date', startDate).lte('date', endDate),
+    const [opdData, qData, cpData] = await Promise.all([
+      fetchSupabaseAll((from, to) =>
+        supabase.from('opd_registers').select('date, patient_id, patient_name, status, id').gte('date', startDate).lte('date', endDate).range(from, to)
+      ),
+      fetchSupabaseAll((from, to) =>
+        supabase.from('queues').select('date, patient_id, name, status, queue_id, id').gte('date', startDate).lte('date', endDate).range(from, to)
+      ),
+      fetchSupabaseAll((from, to) =>
+        supabase.from('case_papers').select('date, patient_id, status, id').gte('date', startDate).lte('date', endDate).range(from, to)
+      ),
     ]);
-
-    const opdData = opdRes.data || [];
-    const qData = qRes.data || [];
-    const cpData = cpRes.data || [];
 
     let grandTotal = 0;
     const monthlyBreakdown = Array.from({ length: 12 }, (_, i) => {
@@ -985,7 +1021,7 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
       let waiting = 0;
 
       opdData.filter((r: any) => (r.date || '').startsWith(monthPrefix)).forEach((r: any) => {
-        const k = `${r.date}_${r.patient_id || r.patient_name}`.toLowerCase();
+        const k = `${r.date}_${r.patient_id || r.patient_name || r.id}`.toLowerCase();
         seen.add(k);
         totalPatients++;
         if ((r.status || '').toLowerCase() === 'completed' || (r.status || '').toLowerCase() === 'done') completed++;
@@ -993,7 +1029,7 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
       });
 
       qData.filter((q: any) => (q.date || '').startsWith(monthPrefix)).forEach((q: any) => {
-        const k = `${q.date}_${q.patient_id || q.name}`.toLowerCase();
+        const k = `${q.date}_${q.patient_id || q.name || q.queue_id || q.id}`.toLowerCase();
         if (!seen.has(k)) {
           seen.add(k);
           totalPatients++;
@@ -1003,7 +1039,7 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
       });
 
       cpData.filter((cp: any) => (cp.date || '').startsWith(monthPrefix)).forEach((cp: any) => {
-        const k = `${cp.date}_${cp.patient_id}`.toLowerCase();
+        const k = `${cp.date}_${cp.patient_id || cp.id}`.toLowerCase();
         if (!seen.has(k)) {
           seen.add(k);
           totalPatients++;

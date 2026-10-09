@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Stethoscope, Phone, Mail, ShieldCheck, ArrowRight, Calendar, CheckCircle2, Clock, Zap } from 'lucide-react';
 import logoHd from '../assets/logo-hd.png';
+import ThemeToggle from './ThemeToggle';
 
 export default function ComingSoonLandingPage() {
   const [emailSubscribed, setEmailSubscribed] = useState(false);
@@ -18,6 +19,26 @@ export default function ComingSoonLandingPage() {
       
       {/* Subtle Background Aesthetic Glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-gradient-to-b from-[#ecfdf5]/80 via-[#f5f5f0]/40 to-transparent blur-3xl pointer-events-none rounded-full" />
+
+      {/* ── Top Bar: Doctor Portal Access & Theme Toggle ── */}
+      <div className="w-full max-w-4xl mx-auto flex items-center justify-between pb-4 z-20">
+        <div className="flex items-center gap-2">
+          <span className="bg-[#ecfdf5] dark:bg-emerald-950/60 text-[#047857] dark:text-emerald-300 text-[11px] font-bold px-3 py-1 rounded-full border border-[#a7f3d0] dark:border-emerald-800">
+            ClinicOS Healthcare Portal
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <ThemeToggle size="sm" />
+          <a
+            href="/dr?portal=true"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#047857] hover:bg-[#065f46] text-white shadow-sm transition-all"
+          >
+            <Stethoscope className="w-3.5 h-3.5" />
+            <span>Doctor EMR Portal</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </a>
+        </div>
+      </div>
 
       {/* ── Centered Logo & Brand Mark ── */}
       <div className="relative z-10 flex flex-col items-center justify-center text-center">
@@ -170,8 +191,17 @@ export default function ComingSoonLandingPage() {
       </main>
 
       {/* ── Footer ── */}
-      <footer className="relative z-10 w-full max-w-4xl mx-auto pt-4 border-t border-[#e7e5e4] text-center text-xs text-[#78716c]">
+      <footer className="relative z-10 w-full max-w-4xl mx-auto pt-4 border-t border-[#e7e5e4] text-center text-xs text-[#78716c] space-y-2">
         <p>© {new Date().getFullYear()} Shingare Skin & Hair Clinic. All rights reserved.</p>
+        <div className="flex items-center justify-center gap-4 text-xs font-semibold">
+          <a href="/dr?portal=true" className="text-[#047857] hover:underline flex items-center gap-1">
+            <span>Doctor EMR Portal</span>
+          </a>
+          <span>•</span>
+          <a href="/reception?portal=true" className="text-[#047857] hover:underline flex items-center gap-1">
+            <span>Reception Desk</span>
+          </a>
+        </div>
       </footer>
 
     </div>
