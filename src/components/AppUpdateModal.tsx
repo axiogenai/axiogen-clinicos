@@ -56,7 +56,7 @@ export const AppUpdateModal: React.FC = () => {
 
   const handleWhatsAppUnlock = () => {
     if (!updateData) return;
-    const phone = updateData.whatsappContactNumber || '919022646272';
+    const phone = updateData.whatsappContactNumber || '918010127704';
     const message = updateData.customWhatsAppMessage || `Hello Axiogen Team, I want to unlock the new ${updateData.version} update ("${updateData.title}") for ₹${updateData.priceAmount || '4,999'} for Shingare ClinicOS. Please provide payment details and activate our license.`;
     const encoded = encodeURIComponent(message);
     window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank');
@@ -164,10 +164,10 @@ export const AppUpdateModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 bg-[#0f1115]/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
-      <div className={`bg-white dark:bg-[#18181b] border rounded-2xl sm:rounded-3xl max-w-md w-full max-h-[92vh] sm:max-h-[88vh] flex flex-col p-4 sm:p-6 shadow-2xl relative overflow-hidden transition-colors ${
+      <div className={`bg-white dark:bg-[#262932] border rounded-2xl sm:rounded-3xl max-w-md w-full max-h-[92vh] sm:max-h-[88vh] flex flex-col p-4 sm:p-6 shadow-2xl relative overflow-hidden transition-colors ${
         isAnnouncement
           ? 'border-amber-400 dark:border-amber-600/60'
-          : (isPaid ? 'border-amber-300 dark:border-amber-700/60' : 'border-neutral-200 dark:border-[#27272a]')
+          : (isPaid ? 'border-amber-300 dark:border-amber-700/60' : 'border-neutral-200 dark:border-[#383b47]')
       }`}>
         
         {/* Header - Fixed Top */}
@@ -212,7 +212,7 @@ export const AppUpdateModal: React.FC = () => {
           <button
             onClick={handleDismiss}
             aria-label="Close modal"
-            className="p-1.5 sm:p-1 text-neutral-400 hover:text-neutral-900 dark:text-zinc-400 dark:hover:text-white rounded-lg hover:bg-neutral-100 dark:hover:bg-[#27272a] transition-colors shrink-0 cursor-pointer"
+            className="p-1.5 sm:p-1 text-neutral-400 hover:text-neutral-900 dark:text-zinc-400 dark:hover:text-white rounded-lg hover:bg-neutral-100 dark:hover:bg-[#363a47] transition-colors shrink-0 cursor-pointer"
           >
             <X className="w-4 h-4 sm:w-4 sm:h-4" />
           </button>
@@ -226,7 +226,7 @@ export const AppUpdateModal: React.FC = () => {
             <div className={`p-3 rounded-xl border text-xs sm:text-sm leading-relaxed ${
               isAnnouncement
                 ? 'bg-amber-50/80 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/40 text-amber-950 dark:text-amber-100'
-                : 'bg-neutral-50 dark:bg-[#121214] border-neutral-200 dark:border-[#27272a] text-neutral-700 dark:text-zinc-300'
+                : 'bg-neutral-50 dark:bg-[#2e313c] border-neutral-200 dark:border-[#383b47] text-neutral-700 dark:text-zinc-200'
             }`}>
               {description}
             </div>
@@ -234,7 +234,7 @@ export const AppUpdateModal: React.FC = () => {
 
           {/* Improvements / Points List */}
           {updateData.changelog && updateData.changelog.length > 0 && (
-            <div className="bg-neutral-50 dark:bg-[#121214] border border-neutral-200 dark:border-[#27272a] rounded-xl sm:rounded-2xl p-3 sm:p-4 space-y-1.5 sm:space-y-2">
+            <div className="bg-neutral-50 dark:bg-[#2e313c] border border-neutral-200 dark:border-[#383b47] rounded-xl sm:rounded-2xl p-3 sm:p-4 space-y-1.5 sm:space-y-2">
               <h4 className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-zinc-400">
                 {isAnnouncement ? 'Details & Schedule:' : (isPaid ? 'Included in this release:' : "What's New in this Maintenance Update:")}
               </h4>
@@ -255,7 +255,7 @@ export const AppUpdateModal: React.FC = () => {
         </div>
 
         {/* Action Button - Fixed Bottom */}
-        <div className="pt-3 sm:pt-4 border-t border-neutral-100 dark:border-[#27272a] shrink-0">
+        <div className="pt-3 sm:pt-4 border-t border-neutral-100 dark:border-[#383b47] shrink-0">
           {isAnnouncement ? (
             <button
               onClick={handleDismiss}

@@ -1004,7 +1004,7 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
         supabase.from('opd_registers').select('date, patient_id, patient_name, status, id').gte('date', startDate).lte('date', endDate).range(from, to)
       ),
       fetchSupabaseAll((from, to) =>
-        supabase.from('queues').select('date, patient_id, name, status, queue_id, id').gte('date', startDate).lte('date', endDate).range(from, to)
+        supabase.from('queues').select('date, patient_id, name, status, queue_id').gte('date', startDate).lte('date', endDate).range(from, to)
       ),
       fetchSupabaseAll((from, to) =>
         supabase.from('case_papers').select('date, patient_id, status, id').gte('date', startDate).lte('date', endDate).range(from, to)
@@ -1029,7 +1029,7 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
       });
 
       qData.filter((q: any) => (q.date || '').startsWith(monthPrefix)).forEach((q: any) => {
-        const k = `${q.date}_${q.patient_id || q.name || q.queue_id || q.id}`.toLowerCase();
+        const k = `${q.date}_${q.patient_id || q.name || q.queue_id}`.toLowerCase();
         if (!seen.has(k)) {
           seen.add(k);
           totalPatients++;

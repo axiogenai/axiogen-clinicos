@@ -87,8 +87,9 @@ export default function ReprintPreview({
       return;
     }
 
+    const pageSizeRule = isA4 ? 'size: A4 portrait;' : `size: ${paperW_mm} ${paperH_mm};`;
     doc.open();
-    doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8">${styles}<style>@page{size: A4 portrait;margin:0}html,body{margin:0;padding:0;width:210mm;height:297mm;background:#fff;overflow:hidden}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}.rx-paper-root{width:210mm!important;min-width:210mm!important;max-width:210mm!important;height:297mm!important;min-height:297mm!important;max-height:297mm!important;margin:0!important;padding:0!important;overflow:hidden!important;box-sizing:border-box!important}</style></head><body>${html}</body></html>`);
+    doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8">${styles}<style>@page{${pageSizeRule}margin:0}html,body{margin:0;padding:0;width:${paperW_mm};height:${paperH_mm};background:#fff!important;overflow:hidden;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}.rx-paper-root{width:${paperW_mm}!important;min-width:${paperW_mm}!important;max-width:${paperW_mm}!important;height:${paperH_mm}!important;min-height:${paperH_mm}!important;max-height:${paperH_mm}!important;margin:0!important;padding:0!important;overflow:hidden!important;box-sizing:border-box!important;background-color:#fff!important}</style></head><body>${html}</body></html>`);
     doc.close();
 
     let finished = false;
@@ -165,9 +166,9 @@ export default function ReprintPreview({
   const sep = <div className="w-px h-4 bg-[#d6d3ce] dark:bg-[#27272a] shrink-0" />;
 
   return (
-    <div id="reprint-preview-root" className="fixed inset-0 z-50 bg-[#eeeae0] dark:bg-[#09090b] flex flex-col overflow-hidden">
+    <div id="reprint-preview-root" className="fixed inset-0 z-50 bg-[#eeeae0] dark:bg-[#1e2026] flex flex-col overflow-hidden">
       {/* ── DESKTOP TOOLBAR ── */}
-      <div ref={barRef} className="shrink-0 bg-white dark:bg-[#121214] border-b border-[#e4e2e1] dark:border-[#27272a] shadow-sm">
+      <div ref={barRef} className="shrink-0 bg-white dark:bg-[#262932] border-b border-[#e4e2e1] dark:border-[#383b47] shadow-sm">
         <div className="hidden md:flex items-center gap-2 px-4 h-12 border-b border-[#f0ede6] dark:border-[#27272a]">
           <button type="button" onClick={onBack}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#f2eee3] dark:bg-[#18181b] border border-[#cdc6ba] dark:border-[#27272a] text-[#4b463e] dark:text-[#d4d4d8] text-xs font-semibold hover:bg-[#e4e2e1] dark:hover:bg-[#242428] dark:hover:text-white transition-colors shrink-0">
@@ -360,7 +361,7 @@ export default function ReprintPreview({
 
       {/* ════════════════ PREVIEW CANVAS ════════════════ */}
       <div ref={canvasRef}
-        className="flex-1 w-full flex items-start sm:items-center justify-center overflow-auto p-4 bg-[#eeeae0] dark:bg-[#0c0c0e]">
+        className="flex-1 w-full flex items-start sm:items-center justify-center overflow-auto p-4 bg-[#eeeae0] dark:bg-[#1e2026]">
         <div
           className="shadow-2xl border border-slate-300/60 dark:border-black/80 rounded-sm bg-white overflow-hidden"
           style={{ width: paperW_px * scale, height: paperH_px * scale, flexShrink: 0 }}
