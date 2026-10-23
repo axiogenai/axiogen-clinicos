@@ -69,7 +69,7 @@ export const AppUpdateModal: React.FC = () => {
   };
 
   const processIncomingRelease = (payload: any) => {
-    if (!payload || !payload.version || !payload.timestamp) return;
+    if (!payload) return;
 
     // MAINTENANCE / FREEZE: ZERO POPUP, ZERO MODAL, FULL AUTOMATIC INPUT FREEZE
     if (payload.mode === 'maintenance') {
@@ -80,6 +80,8 @@ export const AppUpdateModal: React.FC = () => {
       setUpdateData(null); // CRITICAL: NEVER show any popup/modal
       return;
     }
+
+    if (!payload.version || !payload.timestamp) return;
 
     const lastApplied = Number(localStorage.getItem('clinicos_last_applied_ota_ts') || '0');
     const dismissed = Number(localStorage.getItem('clinicos_dismissed_ota_ts') || '0');
@@ -122,19 +124,38 @@ export const AppUpdateModal: React.FC = () => {
   };
 
   useEffect(() => {
-    const channel = supabase.channel('axiogen_ota_axiogen-clinicos');
+    // 1. Project-specific Realtime channel
+    const projectChannel = supabase.channel('axiogen_ota_axiogen-clinicos');
     
-    channel.on('broadcast', { event: 'end_maintenance' }, () => {
+    projectChannel.on('broadcast', { event: 'start_maintenance' }, () => {
+      try { localStorage.setItem('clinicos_maintenance_hold', 'true'); } catch {}
+      setIsFrozen(true);
+      setUpdateData(null);
+    });
+
+    projectChannel.on('broadcast', { event: 'end_maintenance' }, () => {
       unfreezeMaintenance();
     });
 
-    channel.on('broadcast', { event: 'force_hard_refresh' }, (response: any) => {
+    projectChannel.on('broadcast', { event: 'force_hard_refresh' }, (response: any) => {
       processIncomingRelease(response?.payload);
     });
 
-    channel.subscribe();
+    projectChannel.subscribe();
 
+    // 2. Global Fleet Broadcast channel
     const globalChannel = supabase.channel('axiogen_ota_global');
+
+    globalChannel.on('broadcast', { event: 'start_maintenance' }, () => {
+      try { localStorage.setItem('clinicos_maintenance_hold', 'true'); } catch {}
+      setIsFrozen(true);
+      setUpdateData(null);
+    });
+
+    globalChannel.on('broadcast', { event: 'end_maintenance' }, () => {
+      unfreezeMaintenance();
+    });
+
     globalChannel.on('broadcast', { event: 'app_release_broadcast' }, (response: any) => {
       const p = response?.payload;
       if (p && (p.projectId === 'axiogen-clinicos' || p.projectId === 'all')) {
@@ -144,34 +165,45 @@ export const AppUpdateModal: React.FC = () => {
 
     globalChannel.subscribe();
 
-    // Database polling: checks if maintenance freeze is active in DB
+    // 3. Database polling: ensures freeze / unfreeze persists across refresh & reconnect
     const checkDbRelease = async () => {
       try {
         const { data } = await supabase.from('clinics').select('sections').eq('id', 1).single();
         if (data?.sections) {
           const sectionsObj = typeof data.sections === 'string' ? JSON.parse(data.sections) : data.sections;
-          if (sectionsObj && sectionsObj.ota_release && sectionsObj.ota_release.version) {
-            processIncomingRelease(sectionsObj.ota_release);
-          } else if (sectionsObj && (!sectionsObj.ota_release || sectionsObj.ota_release.mode !== 'maintenance')) {
+          const ota = sectionsObj?.ota_release;
+          if (ota && ota.mode === 'maintenance') {
+            try {
+              localStorage.setItem('clinicos_maintenance_hold', 'true');
+            } catch {}
+            setIsFrozen(true);
+            setUpdateData(null);
+          } else {
+            // DB does not have maintenance hold active: clear hold and unfreeze
             if (localStorage.getItem('clinicos_maintenance_hold') === 'true') {
               unfreezeMaintenance();
             }
+            if (ota && ota.version && ota.timestamp) {
+              processIncomingRelease(ota);
+            }
           }
         }
-      } catch {}
+      } catch (err) {
+        console.warn('DB check error:', err);
+      }
     };
 
     checkDbRelease();
-    const interval = setInterval(checkDbRelease, 4000);
+    const interval = setInterval(checkDbRelease, 2500);
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(projectChannel);
       supabase.removeChannel(globalChannel);
       clearInterval(interval);
     };
   }, []);
 
-  // Complete Input Blocker: Keyboard events, mouse wheel, scrolling & text selection intercepted
+  // Complete Input Interceptor: Block 100% of mouse, touch, scroll, and keyboard events
   useEffect(() => {
     if (!isFrozen) {
       document.body.style.overflow = '';
@@ -180,8 +212,8 @@ export const AppUpdateModal: React.FC = () => {
 
     document.body.style.overflow = 'hidden';
 
+    // Emergency unlock shortcut: Ctrl + Alt + Shift + U
     const blockAllKeys = (e: KeyboardEvent) => {
-      // Secret emergency shortcut: Ctrl + Alt + Shift + U
       if (e.ctrlKey && e.altKey && e.shiftKey && (e.code === 'KeyU' || e.key === 'U' || e.key === 'u')) {
         console.log('[Dev] Emergency unfreeze triggered by key combo');
         unfreezeMaintenance();
@@ -193,26 +225,29 @@ export const AppUpdateModal: React.FC = () => {
       return false;
     };
 
-    const blockWheel = (e: Event) => {
+    const blockAllInteractions = (e: Event) => {
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
       return false;
     };
 
+    const blockedEvents = [
+      'click', 'dblclick', 'mousedown', 'mouseup', 'pointerdown', 'pointerup',
+      'touchstart', 'touchend', 'touchmove', 'contextmenu', 'wheel'
+    ];
+
     window.addEventListener('keydown', blockAllKeys, true);
     window.addEventListener('keypress', blockAllKeys, true);
     window.addEventListener('keyup', blockAllKeys, true);
-    window.addEventListener('wheel', blockWheel, { passive: false, capture: true });
-    window.addEventListener('touchmove', blockWheel, { passive: false, capture: true });
+    blockedEvents.forEach(evt => window.addEventListener(evt, blockAllInteractions, { passive: false, capture: true }));
 
     return () => {
       document.body.style.overflow = '';
       window.removeEventListener('keydown', blockAllKeys, true);
       window.removeEventListener('keypress', blockAllKeys, true);
       window.removeEventListener('keyup', blockAllKeys, true);
-      window.removeEventListener('wheel', blockWheel, true);
-      window.removeEventListener('touchmove', blockWheel, true);
+      blockedEvents.forEach(evt => window.removeEventListener(evt, blockAllInteractions, true));
     };
   }, [isFrozen]);
 
@@ -223,7 +258,7 @@ export const AppUpdateModal: React.FC = () => {
         <div
           id="clinicos-maintenance-hold"
           className="fixed inset-0 z-[99999999] bg-transparent cursor-default select-none pointer-events-auto"
-          style={{ pointerEvents: 'all', userSelect: 'none' }}
+          style={{ pointerEvents: 'auto', userSelect: 'none' }}
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
           onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
           onMouseUp={(e) => { e.preventDefault(); e.stopPropagation(); }}
