@@ -36,11 +36,23 @@ export default function PatientDetailsModal({ queueItem, patient, onClose }: Pro
     e.preventDefault();
     setIsSaving(true);
     try {
+      const pId = patient?.id || queueItem.patientId || '';
       await updatePatientDetails(
-        patient?.id || queueItem.patientId || '',
+        pId,
         queueItem.queueId,
         formData
       );
+      // Synchronize current queueItem object in memory
+      queueItem.name = formData.name.trim();
+      queueItem.phone = formData.phone.trim();
+      queueItem.village = formData.village.trim();
+      queueItem.casePaperNo = formData.casePaperNo.trim();
+      if (patient) {
+        patient.name = formData.name.trim();
+        patient.phone = formData.phone.trim();
+        patient.village = formData.village.trim();
+        patient.casePaperNo = formData.casePaperNo.trim();
+      }
       setIsEditing(false);
     } catch (err) {
       console.error('Failed to update patient:', err);

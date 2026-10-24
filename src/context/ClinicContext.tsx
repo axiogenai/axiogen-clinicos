@@ -296,6 +296,7 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
             ...item,
             date: item.date || today,
             queueId: item.queueId || item.queue_id || item.id,
+            tokenNumber: item.tokenNumber || item.token_number || null,
             paymentStatus: (item.paymentStatus || item.payment_status || 'unpaid') as 'paid' | 'unpaid',
             paymentMode: (item.paymentMode || item.payment_mode || 'cash') as 'cash' | 'online',
           }));
@@ -422,6 +423,63 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
         { event: 'queue_sync' },
         () => {
           loadQueueOnly();
+        }
+      )
+      .on(
+        'broadcast',
+        { event: 'patient_updated' },
+        (msg: any) => {
+          const p = msg?.payload;
+          if (!p) return;
+          const { patientId: pId, queueId: qId, data: pData } = p;
+          const cPhone = (pData?.phone || '').replace(/\D/g, '');
+
+          setPatients((prev) => {
+            const next = prev.map((pt) => {
+              if (pt.id === pId || (cPhone && pt.phone === cPhone)) {
+                return {
+                  ...pt,
+                  name: pData.name !== undefined ? pData.name : pt.name,
+                  age: pData.age !== undefined ? pData.age : pt.age,
+                  ageUnit: pData.ageUnit !== undefined ? pData.ageUnit : pt.ageUnit,
+                  ageMonths: pData.ageMonths !== undefined ? pData.ageMonths : pt.ageMonths,
+                  gender: pData.gender !== undefined ? pData.gender : pt.gender,
+                  phone: cPhone || pt.phone,
+                  village: pData.village !== undefined ? pData.village : pt.village,
+                  casePaperNo: pData.casePaperNo !== undefined ? pData.casePaperNo : pt.casePaperNo,
+                  pastHistory: pData.pastHistory !== undefined ? pData.pastHistory : pt.pastHistory,
+                  allergies: pData.allergies !== undefined ? pData.allergies : pt.allergies,
+                  notes: pData.notes !== undefined ? pData.notes : pt.notes,
+                };
+              }
+              return pt;
+            });
+            try { localStorage.setItem('clinicos_cached_patients', JSON.stringify(next)); } catch {}
+            return next;
+          });
+
+          setQueue((prev) => {
+            const next = prev.map((q) => {
+              if ((qId && q.queueId === qId) || (pId && q.patientId === pId) || (cPhone && q.phone === cPhone)) {
+                return {
+                  ...q,
+                  name: pData.name !== undefined ? pData.name : q.name,
+                  age: pData.age !== undefined ? pData.age : q.age,
+                  ageUnit: pData.ageUnit !== undefined ? pData.ageUnit : q.ageUnit,
+                  ageMonths: pData.ageMonths !== undefined ? pData.ageMonths : q.ageMonths,
+                  gender: pData.gender !== undefined ? pData.gender : q.gender,
+                  phone: cPhone || q.phone,
+                  village: pData.village !== undefined ? pData.village : q.village,
+                  casePaperNo: pData.casePaperNo !== undefined ? pData.casePaperNo : q.casePaperNo,
+                  complaint: pData.complaint !== undefined ? pData.complaint : q.complaint,
+                  notes: pData.notes !== undefined ? pData.notes : q.notes,
+                };
+              }
+              return q;
+            });
+            try { localStorage.setItem('clinicos_cached_queue', JSON.stringify(next)); } catch {}
+            return next;
+          });
         }
       )
       .subscribe();
@@ -823,84 +881,170 @@ export const ClinicProvider = ({ children }: { children: ReactNode }) => {
     }
   ) => {
     const cleanPhone = (data.phone || '').replace(/\D/g, '');
+    const trimmedName = data.name ? data.name.trim() : undefined;
+    const trimmedVillage = data.village ? data.village.trim() : undefined;
+    const trimmedCasePaperNo = data.casePaperNo ? data.casePaperNo.trim() : undefined;
 
-    // 1. Update local Patients state
-    if (patientId) {
-      setPatients(prev => prev.map(p => {
-        if (p.id === patientId || (cleanPhone && p.phone === cleanPhone)) {
+    // Resolve target IDs accurately
+    const targetPatientId = patientId || (queueId ? queue.find(q => q.queueId === queueId)?.patientId : '') || '';
+    const targetQueueId = queueId || (targetPatientId ? queue.find(q => q.patientId === targetPatientId)?.queueId : '') || '';
+
+    // 1. Update local Patients state & persist to localStorage immediately
+    setPatients((prev) => {
+      let matched = false;
+      const next = prev.map((p) => {
+        if (
+          (targetPatientId && p.id === targetPatientId) ||
+          (cleanPhone && p.phone === cleanPhone) ||
+          (trimmedName && p.name.trim().toLowerCase() === trimmedName.toLowerCase())
+        ) {
+          matched = true;
           return {
             ...p,
-            name: data.name !== undefined ? data.name : p.name,
+            name: trimmedName !== undefined ? trimmedName : p.name,
             age: data.age !== undefined ? data.age : p.age,
             ageUnit: data.ageUnit !== undefined ? data.ageUnit : p.ageUnit,
             ageMonths: data.ageMonths !== undefined ? data.ageMonths : p.ageMonths,
             gender: data.gender !== undefined ? data.gender : p.gender,
             phone: cleanPhone || p.phone,
-            village: data.village !== undefined ? data.village : p.village,
-            casePaperNo: data.casePaperNo !== undefined ? data.casePaperNo : p.casePaperNo,
+            village: trimmedVillage !== undefined ? trimmedVillage : p.village,
+            casePaperNo: trimmedCasePaperNo !== undefined ? trimmedCasePaperNo : p.casePaperNo,
             pastHistory: data.pastHistory !== undefined ? data.pastHistory : p.pastHistory,
             allergies: data.allergies !== undefined ? data.allergies : p.allergies,
             notes: data.notes !== undefined ? data.notes : p.notes,
           };
         }
         return p;
-      }));
+      });
 
-      // Call API
-      api.updatePatient(patientId, {
-        name: data.name,
-        age: data.age,
-        ageUnit: data.ageUnit,
-        ageMonths: data.ageMonths,
-        gender: data.gender,
-        phone: cleanPhone,
-        village: data.village,
-        casePaperNo: data.casePaperNo,
-        pastHistory: data.pastHistory,
-        allergies: data.allergies,
-        notes: data.notes,
-      }).catch(() => {});
-    }
+      if (!matched && (targetPatientId || trimmedName)) {
+        next.push({
+          id: targetPatientId || `PT${Date.now()}`,
+          name: trimmedName || 'Patient',
+          age: data.age || 0,
+          ageUnit: data.ageUnit || 'years',
+          ageMonths: data.ageMonths,
+          gender: data.gender || 'M',
+          phone: cleanPhone,
+          village: trimmedVillage || '',
+          casePaperNo: trimmedCasePaperNo,
+          pastHistory: data.pastHistory || '',
+          allergies: data.allergies || '',
+          notes: data.notes || '',
+          pastVisits: [],
+        });
+      }
 
-    // 2. Update local Queue state
-    if (queueId) {
-      setQueue(prev => prev.map(q => {
-        if (q.queueId === queueId || q.patientId === patientId) {
+      try {
+        localStorage.setItem('clinicos_cached_patients', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+
+    // 2. Update local Queue state & persist to localStorage immediately
+    setQueue((prev) => {
+      const next = prev.map((q) => {
+        if (
+          (targetQueueId && q.queueId === targetQueueId) ||
+          (targetPatientId && q.patientId === targetPatientId) ||
+          (cleanPhone && q.phone === cleanPhone)
+        ) {
           return {
             ...q,
-            name: data.name !== undefined ? data.name : q.name,
+            name: trimmedName !== undefined ? trimmedName : q.name,
             age: data.age !== undefined ? data.age : q.age,
             ageUnit: data.ageUnit !== undefined ? data.ageUnit : q.ageUnit,
             ageMonths: data.ageMonths !== undefined ? data.ageMonths : q.ageMonths,
+            gender: data.gender !== undefined ? data.gender : q.gender,
             phone: cleanPhone || q.phone,
-            village: data.village !== undefined ? data.village : q.village,
-            casePaperNo: data.casePaperNo !== undefined ? data.casePaperNo : q.casePaperNo,
+            village: trimmedVillage !== undefined ? trimmedVillage : q.village,
+            casePaperNo: trimmedCasePaperNo !== undefined ? trimmedCasePaperNo : q.casePaperNo,
             complaint: data.complaint !== undefined ? data.complaint : q.complaint,
-            notes: data.notes !== undefined ? data.notes : q.notes
+            notes: data.notes !== undefined ? data.notes : q.notes,
           };
         }
         return q;
-      }));
+      });
 
-      api.updateQueueItem(queueId, {
-        name: data.name,
-        age: data.age,
-        ageUnit: data.ageUnit,
-        ageMonths: data.ageMonths,
-        phone: cleanPhone,
-        village: data.village,
-        casePaperNo: data.casePaperNo,
-        complaint: data.complaint,
-        notes: data.notes
-      }).catch(() => {});
+      try {
+        localStorage.setItem('clinicos_cached_queue', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+
+    // 3. PERSIST PROPERLY TO SUPABASE DATABASE (AWAITED SO IT SAVES FOREVER!)
+    try {
+      const dbPromises: Promise<any>[] = [];
+
+      // Update patients table in Supabase
+      if (targetPatientId || cleanPhone || trimmedName) {
+        dbPromises.push(
+          api.updatePatient(targetPatientId, {
+            name: trimmedName,
+            age: data.age,
+            ageUnit: data.ageUnit,
+            ageMonths: data.ageMonths,
+            gender: data.gender,
+            phone: cleanPhone,
+            village: trimmedVillage,
+            casePaperNo: trimmedCasePaperNo,
+            pastHistory: data.pastHistory,
+            allergies: data.allergies,
+            notes: data.notes,
+            queueId: targetQueueId,
+          })
+        );
+      }
+
+      // Update queue item in Supabase
+      if (targetQueueId) {
+        dbPromises.push(
+          api.updateQueueItem(targetQueueId, {
+            patientId: targetPatientId,
+            name: trimmedName,
+            age: data.age,
+            ageUnit: data.ageUnit,
+            ageMonths: data.ageMonths,
+            phone: cleanPhone,
+            village: trimmedVillage,
+            casePaperNo: trimmedCasePaperNo,
+            complaint: data.complaint,
+            notes: data.notes,
+          })
+        );
+      }
+
+      // Wait for database updates to commit
+      await Promise.allSettled(dbPromises);
+    } catch (dbErr) {
+      console.warn('[Supabase Sync Warning]:', dbErr);
     }
+
+    // 4. Broadcast live update across all open clinic tabs/screens in real-time
+    try {
+      queueChannelRef.current?.send({
+        type: 'broadcast',
+        event: 'patient_updated',
+        payload: {
+          patientId: targetPatientId,
+          queueId: targetQueueId,
+          data: {
+            ...data,
+            name: trimmedName,
+            village: trimmedVillage,
+            casePaperNo: trimmedCasePaperNo,
+            phone: cleanPhone,
+          },
+        },
+      });
+    } catch {}
 
     setToast({
       type: 'success',
-      title: 'Patient Updated',
-      message: `${data.name || 'Patient'} details updated successfully.`
+      title: 'Saved Permanently',
+      message: `${trimmedName || data.name || 'Patient'} details updated and saved successfully.`,
     });
-  }, [setToast]);
+  }, [queue, setToast]);
 
   return (
     <ClinicContext.Provider

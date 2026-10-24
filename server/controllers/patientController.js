@@ -136,10 +136,54 @@ exports.getPatient = async (req, res, next) => {
 
 exports.updatePatient = async (req, res, next) => {
   try {
-    const patient = await Patient.findByPk(req.params.id);
+    const { id } = req.params;
+    let patient = await Patient.findByPk(id);
+    if (!patient) {
+      const cleanPhone = (req.body.phone || id || '').replace(/\D/g, '');
+      if (cleanPhone) {
+        patient = await Patient.findOne({ where: { phone: cleanPhone } });
+      }
+    }
     if (!patient) return res.status(404).json({ error: 'Patient not found' });
 
     await patient.update(req.body);
+
+    // Cascade update to Queue and OpdRegister models so spelling changes persist everywhere
+    try {
+      const { Queue, OpdRegister } = require('../models');
+      const cleanPhone = (patient.phone || '').replace(/\D/g, '');
+      const qUpdates = {};
+      if (req.body.name) qUpdates.name = req.body.name.trim();
+      if (req.body.age !== undefined) qUpdates.age = req.body.age;
+      if (cleanPhone) qUpdates.phone = cleanPhone;
+      if (req.body.village) qUpdates.village = req.body.village.trim();
+      if (req.body.casePaperNo) qUpdates.casePaperNo = req.body.casePaperNo.trim();
+
+      if (Object.keys(qUpdates).length > 0 && Queue) {
+        await Queue.update(qUpdates, {
+          where: {
+            [Op.or]: [
+              { patientId: patient.id },
+              ...(cleanPhone ? [{ phone: cleanPhone }] : [])
+            ]
+          }
+        }).catch(() => {});
+      }
+
+      if (OpdRegister && req.body.name) {
+        await OpdRegister.update({ patientName: req.body.name.trim() }, {
+          where: {
+            [Op.or]: [
+              { patientId: patient.id },
+              ...(cleanPhone ? [{ phone: cleanPhone }] : [])
+            ]
+          }
+        }).catch(() => {});
+      }
+    } catch (cascadeErr) {
+      console.warn('[Cascade Update Warning]:', cascadeErr);
+    }
+
     res.json(patient);
   } catch (err) {
     next(err);

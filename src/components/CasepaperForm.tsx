@@ -4,6 +4,7 @@ import type { Patient } from '../data/patients';
 import { medicines as initialLocalMedicines } from '../data/medicines';
 import { useClinic } from '../context/ClinicContext';
 import { api } from '../api/client';
+import MedicalCertificateModal from './MedicalCertificateModal';
 import type { CasePaper, CasePaperMedicine } from '../types';
 import MedicineImportModal from './MedicineImportModal';
 import ReprintPreview from './ReprintPreview';
@@ -409,6 +410,18 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
         onUpdatePatient(updatedPatient);
       }
 
+      // Update cached case paper draft with corrected name
+      try {
+        const cp = activeCasePaperRef.current;
+        const savedDraft = {
+          ...cp,
+          patientId: currentPatient.id,
+          patientName: updatedPatient.name,
+          casePaperNo: updatedPatient.casePaperNo || '',
+        };
+        localStorage.setItem(`clinicos_saved_casepaper_${currentPatient.id}`, JSON.stringify(savedDraft));
+      } catch {}
+
       // Sync updated past history or allergies to active case paper without losing medicines
       if (payload.pastHistory !== activeCasePaperRef.current.pastHistory || payload.allergies !== activeCasePaperRef.current.allergies) {
         updateCasePaperState({
@@ -449,6 +462,7 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [isMedicineImportOpen, setIsMedicineImportOpen] = useState(false);
+  const [showCertificateModal, setShowCertificateModal] = useState(false);
   const [showPrintOverlay, setShowPrintOverlay] = useState(false);
   const [showEMRModal, setShowEMRModal] = useState(false);
   const [showAddCustomModal, setShowAddCustomModal] = useState(false);
@@ -2270,6 +2284,8 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
             </div>
           </div>
 
+                    
+
           {/* ── Bottom Action Bar ── */}
           <div className="bg-[#1a1c1a] rounded-2xl px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 sticky bottom-3 sm:bottom-4 z-30 shadow-2xl border border-[#4b463e]">
 
@@ -2592,6 +2608,15 @@ export default function CasepaperForm({ patient, queueId, casePaper, onUpdateCas
           isDestructive={false}
           onConfirm={confirmAction.onConfirm}
           onCancel={() => setConfirmAction(null)}
+        />
+      )}
+          {showCertificateModal && (
+        <MedicalCertificateModal
+          isOpen={showCertificateModal}
+          onClose={() => setShowCertificateModal(false)}
+          patient={patient}
+          casePaper={casePaper}
+          clinicSettings={clinicSettings}
         />
       )}
     </div>

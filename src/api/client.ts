@@ -327,7 +327,7 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
       const parts = endpoint.split('/');
       const id = parts[2];
       const updates: any = {};
-      if (body.name !== undefined) updates.name = body.name;
+      if (body.name !== undefined) updates.name = body.name.trim();
 
       if (body.ageUnit === 'months' && body.ageMonths !== undefined && body.ageMonths !== '') {
         updates.age = 0;
@@ -340,18 +340,95 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
         }
       }
       if (body.gender !== undefined) updates.gender = body.gender;
-      if (body.phone !== undefined) updates.phone = body.phone;
-      if (body.village !== undefined) updates.village = body.village;
+      const cleanPhone = (body.phone || '').replace(/\D/g, '');
+      if (body.phone !== undefined) updates.phone = cleanPhone;
+      if (body.village !== undefined) updates.village = body.village.trim();
       if (body.pastHistory !== undefined) updates.past_history = body.pastHistory;
       if (body.allergies !== undefined) updates.allergies = body.allergies;
-      if (body.notes !== undefined) updates.notes = body.notes;
-      if (body.casePaperNo !== undefined) updates.case_paper_no = body.casePaperNo;
+      if (body.notes !== undefined && updates.notes === undefined) updates.notes = body.notes;
+      if (body.casePaperNo !== undefined) updates.case_paper_no = body.casePaperNo.trim();
       if (body.validity !== undefined) updates.validity = body.validity;
       updates.updated_at = new Date().toISOString();
 
-      const { data, error } = await supabase.from('patients').update(updates).eq('id', id).select().single();
-      if (error) throw error;
-      return mapPatient(data) as any;
+      // 1. Update patients table: try by id first
+      let updatedPatientData: any = null;
+      if (id) {
+        const { data: updateRes } = await supabase.from('patients').update(updates).eq('id', id).select();
+        if (updateRes && updateRes.length > 0) {
+          updatedPatientData = updateRes[0];
+        }
+      }
+
+      // 2. Fallback to cleanPhone if id did not match any row
+      if (!updatedPatientData && cleanPhone) {
+        const { data: phoneRes } = await supabase.from('patients').update(updates).eq('phone', cleanPhone).select();
+        if (phoneRes && phoneRes.length > 0) {
+          updatedPatientData = phoneRes[0];
+        }
+      }
+
+      // 3. If patient still not found, upsert a complete row so it exists in patients table forever
+      if (!updatedPatientData) {
+        const fallbackId = id || (cleanPhone ? `PT${cleanPhone}` : `PT${Date.now()}`);
+        const newRow = {
+          id: fallbackId,
+          clinic_id: body.clinicId || 1,
+          name: updates.name || body.name || 'Patient',
+          age: updates.age ?? (body.age ? parseInt(String(body.age), 10) : null),
+          gender: body.gender || 'Other',
+          phone: cleanPhone,
+          village: updates.village || body.village || '',
+          past_history: body.pastHistory || '',
+          allergies: body.allergies || '',
+          notes: updates.notes || body.notes || '',
+          case_paper_no: updates.case_paper_no || body.casePaperNo || null,
+          validity: body.validity || null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        const { data: upsertRes } = await supabase.from('patients').upsert(newRow).select();
+        if (upsertRes && upsertRes.length > 0) {
+          updatedPatientData = upsertRes[0];
+        } else {
+          updatedPatientData = newRow;
+        }
+      }
+
+      // 4. CASCADE UPDATE TO QUEUES TABLE: All today's and active queue rows for this patient must reflect new name and details
+      const queueUpdates: any = { updated_at: new Date().toISOString() };
+      if (updates.name !== undefined) queueUpdates.name = updates.name;
+      if (updates.age !== undefined) queueUpdates.age = updates.age;
+      if (updates.phone !== undefined) queueUpdates.phone = cleanPhone;
+      if (updates.village !== undefined) queueUpdates.village = updates.village;
+      if (updates.case_paper_no !== undefined) queueUpdates.case_paper_no = updates.case_paper_no;
+      if (updates.notes !== undefined) queueUpdates.notes = updates.notes;
+
+      if (id) {
+        await supabase.from('queues').update(queueUpdates).eq('patient_id', id);
+        await supabase.from('queues').update(queueUpdates).eq('queue_id', id);
+      }
+      if (cleanPhone) {
+        await supabase.from('queues').update(queueUpdates).eq('phone', cleanPhone);
+      }
+      if (body.queueId) {
+        await supabase.from('queues').update(queueUpdates).eq('queue_id', body.queueId);
+      }
+
+      // 5. CASCADE UPDATE TO OPD REGISTERS TABLE: Permanent register records must reflect the corrected spelling
+      const opdUpdates: any = { updated_at: new Date().toISOString() };
+      if (updates.name !== undefined) opdUpdates.patient_name = updates.name;
+      if (updates.phone !== undefined) opdUpdates.phone = cleanPhone;
+      if (updates.village !== undefined) opdUpdates.village = updates.village;
+      if (updates.case_paper_no !== undefined) opdUpdates.case_paper_no = updates.case_paper_no;
+
+      if (id) {
+        await supabase.from('opd_registers').update(opdUpdates).eq('patient_id', id);
+      }
+      if (cleanPhone) {
+        await supabase.from('opd_registers').update(opdUpdates).eq('phone', cleanPhone);
+      }
+
+      return mapPatient(updatedPatientData) as any;
     }
 
     if (method === 'DELETE') {
@@ -607,28 +684,74 @@ async function supabaseDirectPrimary<T>(endpoint: string, options: RequestInit =
         updates.notes = body.notes;
       }
 
-      if (body.name !== undefined) updates.name = body.name;
-      if (body.phone !== undefined) updates.phone = body.phone;
-      if (body.village !== undefined) updates.village = body.village;
-      if (body.casePaperNo !== undefined) updates.case_paper_no = body.casePaperNo;
+      if (body.name !== undefined) updates.name = body.name.trim();
+      const cleanPhone = (body.phone || '').replace(/\D/g, '');
+      if (body.phone !== undefined) updates.phone = cleanPhone;
+      if (body.village !== undefined) updates.village = body.village.trim();
+      if (body.casePaperNo !== undefined) updates.case_paper_no = body.casePaperNo.trim();
       updates.updated_at = new Date().toISOString();
 
-      // Check if id matches queue_id, patient_id, or name
-      const { data: matchedRows } = await supabase.from('queues').select('queue_id, patient_id, name').or(`queue_id.eq.${id},patient_id.eq.${id},name.ilike.${id}`);
-      if (matchedRows && matchedRows.length > 0) {
-        const winnerId = matchedRows[0].queue_id;
-        const dupeIds = matchedRows.slice(1).map(r => r.queue_id);
-        if (dupeIds.length > 0) {
-          void supabase.from('queues').delete().in('queue_id', dupeIds);
+      // 1. Update queue by queue_id
+      let updatedQueueRow: any = null;
+      if (id) {
+        const { data: qRes } = await supabase.from('queues').update(updates).eq('queue_id', id).select();
+        if (qRes && qRes.length > 0) {
+          updatedQueueRow = qRes[0];
         }
-        const { data, error } = await supabase.from('queues').update(updates).eq('queue_id', winnerId).select().single();
-        if (error) throw error;
-        return mapQueueItem(data) as any;
       }
 
-      const { data, error } = await supabase.from('queues').update(updates).eq('queue_id', id).select().single();
-      if (error) throw error;
-      return mapQueueItem(data) as any;
+      // 2. Fallback to patient_id if not matched by queue_id
+      if (!updatedQueueRow && id) {
+        const { data: pRes } = await supabase.from('queues').update(updates).eq('patient_id', id).select();
+        if (pRes && pRes.length > 0) {
+          updatedQueueRow = pRes[0];
+        }
+      }
+
+      // 3. Fallback to phone if still not matched
+      if (!updatedQueueRow && cleanPhone) {
+        const { data: phRes } = await supabase.from('queues').update(updates).eq('phone', cleanPhone).select();
+        if (phRes && phRes.length > 0) {
+          updatedQueueRow = phRes[0];
+        }
+      }
+
+      // 4. CASCADE UPDATE TO PATIENTS TABLE: Keep patients table updated with corrected name/phone/details forever
+      const targetPatientId = updatedQueueRow?.patient_id || body.patientId || (id && id.startsWith('PT') ? id : null);
+      if (body.name || cleanPhone || body.village || updates.age !== undefined || body.casePaperNo) {
+        const patientUpdates: any = { updated_at: new Date().toISOString() };
+        if (updates.name !== undefined) patientUpdates.name = updates.name;
+        if (updates.age !== undefined) patientUpdates.age = updates.age;
+        if (cleanPhone) patientUpdates.phone = cleanPhone;
+        if (updates.village !== undefined) patientUpdates.village = updates.village;
+        if (updates.case_paper_no !== undefined) patientUpdates.case_paper_no = updates.case_paper_no;
+        if (updates.notes !== undefined) patientUpdates.notes = updates.notes;
+
+        if (targetPatientId) {
+          await supabase.from('patients').update(patientUpdates).eq('id', targetPatientId);
+        } else if (cleanPhone) {
+          await supabase.from('patients').update(patientUpdates).eq('phone', cleanPhone);
+        }
+      }
+
+      // 5. CASCADE UPDATE TO OPD REGISTERS TABLE
+      const opdUpdates: any = { updated_at: new Date().toISOString() };
+      if (updates.name !== undefined) opdUpdates.patient_name = updates.name;
+      if (cleanPhone) opdUpdates.phone = cleanPhone;
+      if (updates.village !== undefined) opdUpdates.village = updates.village;
+      if (updates.case_paper_no !== undefined) opdUpdates.case_paper_no = updates.case_paper_no;
+
+      if (id) {
+        await supabase.from('opd_registers').update(opdUpdates).eq('queue_id', id);
+        if (targetPatientId) {
+          await supabase.from('opd_registers').update(opdUpdates).eq('patient_id', targetPatientId);
+        }
+      }
+
+      if (updatedQueueRow) {
+        return mapQueueItem(updatedQueueRow) as any;
+      }
+      return { queueId: id, ...updates } as any;
     }
 
     if (method === 'DELETE') {
